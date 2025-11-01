@@ -1,0 +1,413 @@
+@extends('layouts.app')
+
+@section('title', 'Dashboard - Konnectix')
+
+@section('page-title', 'Dashboard')
+
+@section('content')
+<!-- Statistics Cards -->
+<div class="row">
+    <div class="col-xl-3 col-sm-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="media align-items-center">
+                    <div class="media-body me-3">
+                        <h2 class="fs-34 text-black font-w600">₹{{ number_format($monthlyAmount, 2) }}</h2>
+                        <span class="fs-18">Monthly Amount</span>
+                    </div>
+                    <svg width="54" height="54" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 31C24.866 31 28 27.866 28 24C28 20.134 24.866 17 21 17C17.134 17 14 20.134 14 24C14 27.866 17.134 31 21 31Z" fill="#1EA7C5"/>
+                        <path d="M31.5 31C35.366 31 38.5 27.866 38.5 24C38.5 20.134 35.366 17 31.5 17C27.634 17 24.5 20.134 24.5 24C24.5 27.866 27.634 31 31.5 31Z" fill="#1EA7C5" fill-opacity="0.5"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="media align-items-center">
+                    <div class="media-body me-3">
+                        <h2 class="fs-34 text-black font-w600">{{ $monthlyInvoices }}</h2>
+                        <span class="fs-18">Monthly Invoices</span>
+                    </div>
+                    <svg width="54" height="54" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M13 15H41V39H13V15Z" fill="#4CBC9A" fill-opacity="0.5"/>
+                        <rect x="17" y="19" width="20" height="3" fill="#4CBC9A"/>
+                        <rect x="17" y="26" width="20" height="3" fill="#4CBC9A"/>
+                        <rect x="17" y="33" width="14" height="3" fill="#4CBC9A"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="media align-items-center">
+                    <div class="media-body me-3">
+                        <h2 class="fs-34 text-black font-w600">₹{{ number_format($monthlyGST, 2) }}</h2>
+                        <span class="fs-18">Monthly GST</span>
+                    </div>
+                    <svg width="54" height="54" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M27 10L40 18V36L27 44L14 36V18L27 10Z" fill="#FF9B52" fill-opacity="0.7"/>
+                        <path d="M27 20V34" stroke="white" stroke-width="2"/>
+                        <path d="M20 27H34" stroke="white" stroke-width="2"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="media align-items-center">
+                    <div class="media-body me-3">
+                        <h2 class="fs-34 text-black font-w600">{{ $newCustomers }}</h2>
+                        <span class="fs-18">New Customers</span>
+                    </div>
+                    <svg width="54" height="54" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="27" cy="20" r="6" fill="#FF5E5E" fill-opacity="0.7"/>
+                        <path d="M15 38C15 32 20 28 27 28C34 28 39 32 39 38" stroke="#FF5E5E" stroke-width="3" fill="none"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Second Statistics Row -->
+<div class="row">
+    <div class="col-xl-6 col-sm-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="media align-items-center">
+                    <div class="media-body me-3">
+                        <h2 class="fs-34 text-black font-w600">₹{{ number_format($totalSalary, 2) }}</h2>
+                        <span class="fs-18">Total Salary</span>
+                    </div>
+                    <svg width="54" height="54" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="12" y="18" width="30" height="20" rx="2" fill="#9568FF" fill-opacity="0.6"/>
+                        <circle cx="27" cy="25" r="4" fill="#9568FF"/>
+                        <path d="M27 29V33" stroke="#9568FF" stroke-width="2"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-6 col-sm-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="media align-items-center">
+                    <div class="media-body me-3">
+                        <h2 class="fs-34 text-black font-w600">₹{{ number_format($totalExpense, 2) }}</h2>
+                        <span class="fs-18">Total Expense</span>
+                    </div>
+                    <svg width="54" height="54" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M27 14L40 22V38L27 46L14 38V22L27 14Z" fill="#FF6B6B" fill-opacity="0.6"/>
+                        <path d="M27 24L27 34" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                        <path d="M22 29L32 29" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Stats Row -->
+<div class="row">
+    <div class="col-xl-4 col-sm-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="media align-items-center">
+                    <span class="p-3 me-3 feature-icon rounded">
+                        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18 28C23.5228 28 28 23.5228 28 18C28 12.4772 23.5228 8 18 8C12.4772 8 8 12.4772 8 18C8 23.5228 12.4772 28 18 28Z" fill="#44814E"/>
+                        </svg>
+                    </span>
+                    <div class="media-body">
+                        <p class="fs-18 mb-2">Total Revenue</p>
+                        <span class="fs-28 text-black font-w600">₹{{ number_format($totalRevenue, 2) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-sm-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="media align-items-center">
+                    <span class="p-3 me-3 feature-icon rounded">
+                        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18 28C23.5228 28 28 23.5228 28 18C28 12.4772 23.5228 8 18 8C12.4772 8 8 12.4772 8 18C8 23.5228 12.4772 28 18 28Z" fill="#3B4CB8"/>
+                        </svg>
+                    </span>
+                    <div class="media-body">
+                        <p class="fs-18 mb-2">Total Customers</p>
+                        <span class="fs-28 text-black font-w600">{{ $totalCustomers }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-sm-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="media align-items-center">
+                    <span class="p-3 me-3 feature-icon rounded">
+                        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18 28C23.5228 28 28 23.5228 28 18C28 12.4772 23.5228 8 18 8C12.4772 8 8 12.4772 8 18C8 23.5228 12.4772 28 18 28Z" fill="#F7931A"/>
+                        </svg>
+                    </span>
+                    <div class="media-body">
+                        <p class="fs-18 mb-2">Total Invoices</p>
+                        <span class="fs-28 text-black font-w600">{{ $totalInvoices }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts and Tables Row -->
+<div class="row">
+    <!-- Revenue Chart -->
+    <div class="col-xl-8">
+        <div class="card">
+            <div class="card-header border-0 pb-0">
+                <h4 class="card-title">Revenue Trend (Last 6 Months)</h4>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="col-xl-4">
+        <div class="card">
+            <div class="card-header border-0 pb-0">
+                <h4 class="card-title">Quick Summary</h4>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-4">
+                        <div class="bg-light p-3 rounded">
+                            <h3 class="text-primary mb-1">{{ $monthlyInvoices }}</h3>
+                            <p class="mb-0">Invoices This Month</p>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-4">
+                        <div class="bg-light p-3 rounded">
+                            <h3 class="text-success mb-1">{{ $newCustomers }}</h3>
+                            <p class="mb-0">New Customers</p>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="bg-light p-3 rounded">
+                            <h4 class="text-info mb-1">₹{{ number_format($monthlyAmount, 2) }}</h4>
+                            <p class="mb-0">Monthly Revenue</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <a href="{{ route('invoices.create') }}" class="btn btn-primary btn-block">
+                        <i class="flaticon-381-plus me-2"></i>Create New Invoice
+                    </a>
+                    <a href="{{ route('customers.create') }}" class="btn btn-outline-primary btn-block mt-2">
+                        <i class="flaticon-381-user-7 me-2"></i>Add New Customer
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <!-- Recent Invoices -->
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header border-0 pb-0">
+                <h4 class="card-title">Recent Invoices</h4>
+                <a href="{{ route('invoices.index') }}" class="btn btn-primary btn-sm">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($recentInvoices as $invoice)
+                            <tr>
+                                <td>
+                                    <a href="{{ route('invoices.show', $invoice) }}" class="text-primary">
+                                        {{ $invoice->invoice_number }}
+                                    </a>
+                                </td>
+                                <td>{{ $invoice->customer->customer_name }}</td>
+                                <td>{{ $invoice->invoice_date->format('d M Y') }}</td>
+                                <td class="text-end"><strong>₹{{ number_format($invoice->grand_total, 2) }}</strong></td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="4" class="text-center">No invoices yet</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Customers -->
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header border-0 pb-0">
+                <h4 class="card-title">Recent Customers</h4>
+                <a href="{{ route('customers.index') }}" class="btn btn-primary btn-sm">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Company</th>
+                                <th>Phone</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($recentCustomers as $customer)
+                            <tr>
+                                <td>
+                                    <a href="{{ route('customers.edit', $customer) }}" class="text-primary">
+                                        {{ $customer->customer_name }}
+                                    </a>
+                                </td>
+                                <td>{{ $customer->company_name ?? '-' }}</td>
+                                <td>{{ $customer->number }}</td>
+                                <td>
+                                    @if($customer->active)
+                                        <span class="badge badge-success">Active</span>
+                                    @else
+                                        <span class="badge badge-danger">Inactive</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="4" class="text-center">No customers yet</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<script src="{{ asset('template/vendor/chart.js/Chart.bundle.min.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const monthlyTrend = @json($monthlyTrend);
+    
+    const ctx = document.getElementById('revenueChart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: monthlyTrend.map(item => item.month),
+                datasets: [{
+                    label: 'Revenue (₹)',
+                    data: monthlyTrend.map(item => item.amount),
+                    borderColor: '#1EA7C5',
+                    backgroundColor: 'rgba(30, 167, 197, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: 'Invoices',
+                    data: monthlyTrend.map(item => item.invoices),
+                    borderColor: '#4CBC9A',
+                    backgroundColor: 'rgba(76, 188, 154, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    if (context.datasetIndex === 0) {
+                                        label += '₹' + context.parsed.y.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                                    } else {
+                                        label += context.parsed.y;
+                                    }
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' + value.toLocaleString('en-IN');
+                            }
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+@endpush
