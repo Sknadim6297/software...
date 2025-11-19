@@ -32,6 +32,7 @@
                                 <th><strong>PROJECT TYPE</strong></th>
                                 <th><strong>PROJECT VALUE</strong></th>
                                 <th><strong>LEAD SOURCE</strong></th>
+                                <th><strong>DATE ADDED</strong></th>
                                 <th><strong>PROJECT START</strong></th>
                                 <th><strong>STATUS</strong></th>
                                 <th><strong>ACTIONS</strong></th>
@@ -61,7 +62,7 @@
                                     </div>
                                 </td>
                                 <td>{{ $customer->email ?? '-' }}</td>
-                                <td>{{ $customer->project_type ?? '-' }}</td>
+                                <td>{{ $customer->formatted_project_type ?? '-' }}</td>
                                 <td>
                                     @if($customer->project_valuation)
                                         <span class="text-success fw-bold">₹{{ number_format($customer->project_valuation, 2) }}</span>
@@ -71,8 +72,14 @@
                                 </td>
                                 <td>
                                     <span class="badge badge-{{ $customer->lead_source == 'facebook' ? 'primary' : ($customer->lead_source == 'google' ? 'info' : ($customer->lead_source == 'justdial' ? 'warning' : 'secondary')) }}">
-                                        {{ ucfirst($customer->lead_source) }}
+                                        {{ $customer->lead_source ? str_replace('_', ' ', ucwords($customer->lead_source, '_')) : '-' }}
                                     </span>
+                                </td>
+                                <td>
+                                    <div>
+                                        <strong>{{ $customer->created_at->format('d M Y') }}</strong>
+                                        <br><small class="text-muted">{{ $customer->created_at->format('H:i A') }}</small>
+                                    </div>
                                 </td>
                                 <td>
                                     @if($customer->project_start_date)
@@ -96,10 +103,10 @@
                                 </td>
                                 <td>
                                     <div class="dropdown">
-                                        <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="true">
                                             Actions
                                         </button>
-                                        <ul class="dropdown-menu">
+                                        <ul class="dropdown-menu dropdown-menu-end" style="position: absolute; z-index: 1050;">
                                             <li><a class="dropdown-item" href="{{ route('customers.show', $customer) }}"><i class="fa fa-eye me-2"></i>View</a></li>
                                             <li><a class="dropdown-item" href="{{ route('customers.edit', $customer) }}"><i class="fa fa-pencil me-2"></i>Edit</a></li>
                                             <li><hr class="dropdown-divider"></li>
@@ -121,7 +128,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="11" class="text-center">No customers found. <a href="{{ route('customers.create') }}">Add your first customer</a></td>
+                                <td colspan="12" class="text-center">No customers found. <a href="{{ route('customers.create') }}">Add your first customer</a></td>
                             </tr>
                             @endforelse
                         </tbody>

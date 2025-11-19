@@ -1,7 +1,5 @@
 @extends('layouts.app')
 
-@extends('layouts.app')
-
 @section('title', 'Add New Lead - Konnectix BDM')
 
 @section('page-title', 'Add New Lead')
@@ -17,6 +15,25 @@
                 </a>
             </div>
             <div class="card-body">
+                @if($errors->any())
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong>Please fix the following errors:</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+
+                @if(session('success'))
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        {{ session('success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+
                 <form action="{{ route('leads.store') }}" method="POST">
                     @csrf
                     
@@ -177,68 +194,103 @@
 
 @push('scripts')
 <script>
-// Auto-format phone number
-document.getElementById('phone_number').addEventListener('input', function(e) {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 10) {
-        value = value.substring(0, 10);
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-format phone number
+    const phoneField = document.getElementById('phone_number');
+    if (phoneField) {
+        phoneField.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 10) {
+                value = value.substring(0, 10);
+            }
+            if (value.length === 10 && !e.target.value.includes('+91')) {
+                e.target.value = '+91 ' + value;
+            }
+        });
     }
-    if (value.length === 10 && !value.startsWith('+91')) {
-        e.target.value = '+91 ' + value;
-    }
-});
 
-// Auto-format project valuation
-document.getElementById('project_valuation').addEventListener('input', function(e) {
-    let value = parseInt(e.target.value);
-    if (value && value < 1000) {
-        e.target.step = '100';
-    } else if (value && value >= 1000) {
-        e.target.step = '1000';
+    // Auto-format project valuation
+    const valuationField = document.getElementById('project_valuation');
+    if (valuationField) {
+        valuationField.addEventListener('input', function(e) {
+            let value = parseInt(e.target.value);
+            if (value && value < 1000) {
+                e.target.step = '100';
+            } else if (value && value >= 1000) {
+                e.target.step = '1000';
+            }
+        });
     }
-});
-}
 
-// Auto-format phone number
-document.getElementById('phone_number').addEventListener('input', function(e) {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 10) {
-        value = value.substring(0, 10);
+    // Email validation
+    const emailField = document.getElementById('email');
+    if (emailField) {
+        emailField.addEventListener('blur', function(e) {
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (e.target.value && !emailPattern.test(e.target.value)) {
+                e.target.classList.add('is-invalid');
+            } else {
+                e.target.classList.remove('is-invalid');
+            }
+        });
     }
-    if (value.length === 10 && !e.target.value.includes('+91')) {
-        e.target.value = '+91 ' + value;
-    }
-});
 
-// Auto-format project valuation
-document.getElementById('project_valuation').addEventListener('input', function(e) {
-    let value = parseInt(e.target.value);
-    if (value && value < 1000) {
-        e.target.step = '100';
-    } else if (value && value >= 1000) {
-        e.target.step = '1000';
+    // Phone number validation
+    if (phoneField) {
+        phoneField.addEventListener('blur', function(e) {
+            const phonePattern = /^\+91\s[0-9]{10}$|^[0-9]{10}$/;
+            if (e.target.value && !phonePattern.test(e.target.value)) {
+                e.target.classList.add('is-invalid');
+            } else {
+                e.target.classList.remove('is-invalid');
+            }
+        });
     }
-});
 
-// Form validation feedback
-document.querySelector('form').addEventListener('submit', function(e) {
-    let isValid = true;
-    const requiredFields = ['customer_name', 'email', 'phone_number', 'platform', 'project_type'];
-    
-    requiredFields.forEach(function(fieldName) {
-        const field = document.getElementById(fieldName);
-        if (!field.value.trim()) {
-            field.classList.add('is-invalid');
-            isValid = false;
-        } else {
-            field.classList.remove('is-invalid');
-        }
+    // Form validation before submit
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            const requiredFields = ['customer_name', 'email', 'phone_number', 'platform', 'project_type'];
+            
+            requiredFields.forEach(function(fieldName) {
+                const field = document.getElementById(fieldName);
+                if (field && !field.value.trim()) {
+                    field.classList.add('is-invalid');
+                    isValid = false;
+                } else if (field) {
+                    field.classList.remove('is-invalid');
+                }
+            });
+            
+            // Email format validation
+            const emailField = document.getElementById('email');
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (emailField && emailField.value && !emailPattern.test(emailField.value)) {
+                emailField.classList.add('is-invalid');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                // Find first invalid field and focus on it
+                const firstInvalidField = document.querySelector('.is-invalid');
+                if (firstInvalidField) {
+                    firstInvalidField.focus();
+                    firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                alert('Please fix the highlighted fields before submitting.');
+            }
+        });
+    }
+
+    // Clear validation errors when user starts typing
+    document.querySelectorAll('.form-control').forEach(function(field) {
+        field.addEventListener('input', function() {
+            this.classList.remove('is-invalid');
+        });
     });
-    
-    if (!isValid) {
-        e.preventDefault();
-        alert('Please fill in all required fields.');
-    }
 });
 </script>
 @endpush

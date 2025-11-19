@@ -218,32 +218,48 @@ class LeadController extends Controller
     {
         $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
-            'email' => 'required|email',
+            'email' => 'required|email|max:255',
             'phone_number' => 'required|string|max:20',
-            'platform' => 'required|string',
-            'project_type' => 'required|string',
-            'project_valuation' => 'nullable|numeric|min:0',
+            'platform' => 'required|string|max:100',
+            'project_type' => 'required|string|max:100',
+            'project_valuation' => 'nullable|numeric|min:0|max:99999999.99',
             'assigned_to' => 'nullable|exists:users,id',
-            'status' => 'required|string',
-            'remarks' => 'nullable|string',
+            'status' => 'required|string|in:pending,contacted,qualified,converted,rejected',
+            'remarks' => 'nullable|string|max:1000',
+        ], [
+            'customer_name.required' => 'Customer name is required.',
+            'email.required' => 'Email address is required.',
+            'email.email' => 'Please enter a valid email address.',
+            'phone_number.required' => 'Phone number is required.',
+            'platform.required' => 'Platform/Source is required.',
+            'project_type.required' => 'Project type is required.',
+            'status.in' => 'Please select a valid status.',
+            'assigned_to.exists' => 'Selected user does not exist.',
         ]);
 
-        Lead::create([
-            'type' => 'incoming',
-            'date' => now()->toDateString(),
-            'time' => now()->toTimeString(),
-            'platform' => $validated['platform'],
-            'customer_name' => $validated['customer_name'],
-            'phone_number' => $validated['phone_number'],
-            'email' => $validated['email'],
-            'project_type' => $validated['project_type'],
-            'project_valuation' => $validated['project_valuation'],
-            'remarks' => $validated['remarks'],
-            'status' => $validated['status'],
-            'assigned_to' => $validated['assigned_to'] ?? Auth::id(),
-        ]);
+        try {
+            Lead::create([
+                'type' => 'incoming',
+                'date' => now()->toDateString(),
+                'time' => now()->toTimeString(),
+                'platform' => $validated['platform'],
+                'customer_name' => $validated['customer_name'],
+                'phone_number' => $validated['phone_number'],
+                'email' => $validated['email'],
+                'project_type' => $validated['project_type'],
+                'project_valuation' => $validated['project_valuation'],
+                'remarks' => $validated['remarks'],
+                'status' => $validated['status'],
+                'assigned_to' => $validated['assigned_to'] ?? Auth::id(),
+            ]);
 
-        return redirect()->route('leads.incoming')->with('success', 'Lead added successfully!');
+            return redirect()->route('leads.incoming')->with('success', 'Lead added successfully!');
+        } catch (\Exception $e) {
+            Log::error('Error creating lead: ' . $e->getMessage());
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => 'There was an error saving the lead. Please try again.']);
+        }
     }
 
     public function update(Request $request, Lead $lead)

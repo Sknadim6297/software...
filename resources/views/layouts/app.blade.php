@@ -39,6 +39,32 @@
 			font-weight: normal !important;
 		}
 		
+		/* Fix dropdown positioning and width */
+		.dropdown-menu {
+			position: absolute !important;
+			z-index: 1050 !important;
+			min-width: 160px !important;
+			max-width: 200px !important;
+			width: auto !important;
+		}
+		
+		.dropdown-menu.show {
+			display: block !important;
+		}
+		
+		.table .dropdown {
+			position: relative;
+		}
+		
+		.table .dropdown-toggle {
+			white-space: nowrap;
+		}
+		
+		.dropdown-item {
+			white-space: nowrap;
+			padding: 0.5rem 1rem;
+		}
+		
 		/* Responsive logo sizing */
 		@media (max-width: 767px) {
 			.logo-konnectix {

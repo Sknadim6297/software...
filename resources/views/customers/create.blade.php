@@ -79,17 +79,17 @@
                             </div>
                             
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Project Type</label>
-                                <select class="form-control @error('project_type') is-invalid @enderror" name="project_type">
+                                <label class="form-label">Project Type <span class="text-danger">*</span></label>
+                                <select class="form-control @error('project_type') is-invalid @enderror" name="project_type" id="projectType" onchange="updateValuationRange()" required>
                                     <option value="">Select Project Type</option>
-                                    <option value="web_development" {{ old('project_type') == 'web_development' ? 'selected' : '' }}>Web Development</option>
-                                    <option value="mobile_app" {{ old('project_type') == 'mobile_app' ? 'selected' : '' }}>Mobile App</option>
-                                    <option value="ecommerce" {{ old('project_type') == 'ecommerce' ? 'selected' : '' }}>E-commerce</option>
-                                    <option value="software_development" {{ old('project_type') == 'software_development' ? 'selected' : '' }}>Software Development</option>
-                                    <option value="ui_ux_design" {{ old('project_type') == 'ui_ux_design' ? 'selected' : '' }}>UI/UX Design</option>
-                                    <option value="digital_marketing" {{ old('project_type') == 'digital_marketing' ? 'selected' : '' }}>Digital Marketing</option>
-                                    <option value="consultation" {{ old('project_type') == 'consultation' ? 'selected' : '' }}>Consultation</option>
-                                    <option value="other" {{ old('project_type') == 'other' ? 'selected' : '' }}>Other</option>
+                                    @php $projectTypes = App\Models\Customer::getProjectTypes(); @endphp
+                                    @foreach($projectTypes as $key => $type)
+                                        <option value="{{ $key }}" {{ old('project_type') == $key ? 'selected' : '' }}
+                                                data-min="{{ $type['default_valuation_range']['min'] }}"
+                                                data-max="{{ $type['default_valuation_range']['max'] }}">
+                                            {{ $type['name'] }}
+                                        </option>
+                                    @endforeach
                                 </select>
                                 @error('project_type')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -99,9 +99,11 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Project Valuation (₹)</label>
+                                <label class="form-label">Project Valuation (₹) <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control @error('project_valuation') is-invalid @enderror" 
-                                    name="project_valuation" value="{{ old('project_valuation') }}" placeholder="Enter project value" min="0" step="0.01">
+                                    name="project_valuation" id="projectValuation" value="{{ old('project_valuation') }}" 
+                                    placeholder="Enter project value" min="0" step="0.01" required>
+                                <div class="form-text" id="valuationRange">Select project type to see suggested range</div>
                                 @error('project_valuation')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -119,16 +121,9 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Payment Terms</label>
-                                <select class="form-control @error('payment_terms') is-invalid @enderror" name="payment_terms">
-                                    <option value="">Select Payment Terms</option>
-                                    <option value="advance_100" {{ old('payment_terms') == 'advance_100' ? 'selected' : '' }}>100% Advance</option>
-                                    <option value="advance_50_delivery_50" {{ old('payment_terms') == 'advance_50_delivery_50' ? 'selected' : '' }}>50% Advance, 50% on Delivery</option>
-                                    <option value="advance_30_milestone_40_delivery_30" {{ old('payment_terms') == 'advance_30_milestone_40_delivery_30' ? 'selected' : '' }}>30% Advance, 40% Milestone, 30% Delivery</option>
-                                    <option value="net_30" {{ old('payment_terms') == 'net_30' ? 'selected' : '' }}>Net 30 Days</option>
-                                    <option value="net_15" {{ old('payment_terms') == 'net_15' ? 'selected' : '' }}>Net 15 Days</option>
-                                    <option value="on_delivery" {{ old('payment_terms') == 'on_delivery' ? 'selected' : '' }}>Payment on Delivery</option>
-                                    <option value="custom" {{ old('payment_terms') == 'custom' ? 'selected' : '' }}>Custom Terms</option>
+                                <label class="form-label">Payment Terms <span class="text-danger">*</span></label>
+                                <select class="form-control @error('payment_terms') is-invalid @enderror" name="payment_terms" id="paymentTerms" required>
+                                    <option value="">Select Project Type First</option>
                                 </select>
                                 @error('payment_terms')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -222,3 +217,86 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    // Project types data from backend
+    const projectTypesData = @json(App\Models\Customer::getProjectTypes());
+    
+    function updateValuationRange() {
+        const projectType = document.getElementById('projectType').value;
+        const valuationInput = document.getElementById('projectValuation');
+        const valuationRange = document.getElementById('valuationRange');
+        const paymentTerms = document.getElementById('paymentTerms');
+        
+        if (projectType && projectTypesData[projectType]) {
+            const typeData = projectTypesData[projectType];
+            
+            // Update valuation range
+            const min = typeData.default_valuation_range.min;
+            const max = typeData.default_valuation_range.max;
+            valuationInput.min = min;
+            valuationInput.max = max;
+            valuationRange.innerHTML = `Suggested range: ₹${min.toLocaleString()} - ₹${max.toLocaleString()}`;
+            valuationRange.className = 'form-text text-info';
+            
+            // Update payment terms
+            paymentTerms.innerHTML = '<option value="">Select Payment Terms</option>';
+            typeData.payment_terms.forEach(term => {
+                const option = document.createElement('option');
+                option.value = term;
+                option.textContent = term;
+                paymentTerms.appendChild(option);
+            });
+            paymentTerms.disabled = false;
+            
+        } else {
+            valuationRange.innerHTML = 'Select project type to see suggested range';
+            valuationRange.className = 'form-text text-muted';
+            paymentTerms.innerHTML = '<option value="">Select Project Type First</option>';
+            paymentTerms.disabled = true;
+            valuationInput.min = 0;
+            valuationInput.max = '';
+        }
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        updateValuationRange();
+        
+        // If there's an old value for project type (validation error), trigger update
+        const oldProjectType = '{{ old("project_type") }}';
+        const oldPaymentTerms = '{{ old("payment_terms") }}';
+        
+        if (oldProjectType) {
+            updateValuationRange();
+            
+            // Set the old payment terms value if it exists
+            if (oldPaymentTerms) {
+                setTimeout(() => {
+                    const paymentSelect = document.getElementById('paymentTerms');
+                    paymentSelect.value = oldPaymentTerms;
+                }, 100);
+            }
+        }
+    });
+    
+    // Add validation for valuation range
+    document.getElementById('projectValuation').addEventListener('input', function() {
+        const value = parseFloat(this.value);
+        const min = parseFloat(this.min);
+        const max = parseFloat(this.max);
+        const rangeTip = document.getElementById('valuationRange');
+        
+        if (value && min && max) {
+            if (value < min || value > max) {
+                rangeTip.innerHTML = `⚠️ Value outside suggested range: ₹${min.toLocaleString()} - ₹${max.toLocaleString()}`;
+                rangeTip.className = 'form-text text-warning';
+            } else {
+                rangeTip.innerHTML = `✅ Within suggested range: ₹${min.toLocaleString()} - ₹${max.toLocaleString()}`;
+                rangeTip.className = 'form-text text-success';
+            }
+        }
+    });
+</script>
+@endpush
