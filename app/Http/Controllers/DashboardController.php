@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\Lead;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -76,6 +78,46 @@ class DashboardController extends Controller
                     ->count(),
             ];
         }
+
+        // Upcoming Work - Callbacks and Meetings
+        $currentUserId = Auth::id();
+        
+        // For callbacks - check both callback_scheduled status and leads with callback_time set
+        $upcomingCallbacks = Lead::where('assigned_to', $currentUserId)
+            ->where(function ($query) {
+                $query->where('status', 'callback_scheduled')
+                      ->orWhere(function ($q) {
+                          $q->whereNotNull('callback_time')
+                            ->where('callback_time', '>=', Carbon::now());
+                      });
+            })
+            ->whereNotNull('callback_time')
+            ->where('callback_time', '>=', Carbon::now())
+            ->orderBy('callback_time', 'asc')
+            ->take(10)
+            ->get();
+
+        // For meetings - include all leads with future meeting times
+        $upcomingMeetings = Lead::where('assigned_to', $currentUserId)
+            ->where(function ($query) {
+                $query->where('status', 'meeting_scheduled')
+                      ->orWhere(function ($q) {
+                          $q->whereNotNull('meeting_time')
+                            ->where('meeting_time', '>=', Carbon::now());
+                      });
+            })
+            ->whereNotNull('meeting_time')
+            ->where('meeting_time', '>=', Carbon::now())
+            ->orderBy('meeting_time', 'asc')
+            ->take(10)
+            ->get();
+
+        // Did Not Receive Call List
+        $didNotReceiveList = Lead::where('assigned_to', $currentUserId)
+            ->where('status', 'did_not_receive')
+            ->orderBy('updated_at', 'desc')
+            ->take(10)
+            ->get();
         
         return view('dashboard', compact(
             'monthlyAmount',
@@ -89,7 +131,10 @@ class DashboardController extends Controller
             'totalExpense',
             'recentInvoices',
             'recentCustomers',
-            'monthlyTrend'
+            'monthlyTrend',
+            'upcomingCallbacks',
+            'upcomingMeetings',
+            'didNotReceiveList'
         ));
     }
 }

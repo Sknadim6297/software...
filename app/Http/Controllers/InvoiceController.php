@@ -5,18 +5,47 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\Customer;
 use App\Models\InvoiceItem;
+use App\Exports\InvoicesExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class InvoiceController extends Controller
 {
     /**
      * Display a listing of the invoices.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $invoices = Invoice::with('customer')->latest()->paginate(15);
-        return view('invoices.index', compact('invoices'));
+        $query = Invoice::with('customer');
+
+        // Apply filters
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('invoice_type')) {
+            $query->where('invoice_type', $request->invoice_type);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('invoice_date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('invoice_date', '<=', $request->date_to);
+        }
+
+        $invoices = $query->latest()->paginate(15);
+        $customers = Customer::where('active', true)->orderBy('customer_name')->get();
+        
+        return view('invoices.index', compact('invoices', 'customers'));
     }
 
     /**
@@ -248,5 +277,86 @@ class InvoiceController extends Controller
 
         return redirect()->route('invoices.index')
             ->with('success', 'Invoice deleted successfully.');
+    }
+
+    /**
+     * Export invoices to Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        $filters = $request->only(['customer_id', 'status', 'invoice_type', 'date_from', 'date_to']);
+        
+        return Excel::download(new InvoicesExport($filters), 'invoices_' . date('Y-m-d') . '.xlsx');
+    }
+
+    /**
+     * Export invoices to PDF
+     */
+    public function exportPdf(Request $request)
+    {
+        $query = Invoice::with('customer');
+
+        // Apply same filters as Excel export
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('invoice_type')) {
+            $query->where('invoice_type', $request->invoice_type);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('invoice_date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('invoice_date', '<=', $request->date_to);
+        }
+
+        $invoices = $query->latest()->get();
+
+        $html = view('invoices.pdf', compact('invoices'))->render();
+        
+        $options = new Options();
+        $options->set('defaultFont', 'Arial');
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        
+        return response($dompdf->output(), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="invoices_' . date('Y-m-d') . '.pdf"');
+    }
+
+    /**
+     * Generate single invoice PDF
+     */
+    public function generatePdf(Invoice $invoice)
+    {
+        $invoice->load(['customer', 'items']);
+        
+        $html = view('invoices.single-pdf', compact('invoice'))->render();
+        
+        $options = new Options();
+        $options->set('defaultFont', 'Arial');
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        
+        return response($dompdf->output(), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="invoice_' . $invoice->invoice_number . '.pdf"');
     }
 }

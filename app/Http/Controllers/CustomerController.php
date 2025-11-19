@@ -29,24 +29,41 @@ class CustomerController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'company_name' => 'nullable|string|max:255',
-            'number' => 'required|string|max:20',
-            'alternate_number' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
-            'gst_number' => 'nullable|string|max:20',
-            'state_code' => 'nullable|string|max:10',
-            'state_name' => 'nullable|string|max:100',
-            'active' => 'boolean',
-        ]);
+        try {
+            $validated = $request->validate([
+                'customer_name' => 'required|string|max:255',
+                'company_name' => 'nullable|string|max:255',
+                'number' => 'required|string|max:20',
+                'alternate_number' => 'nullable|string|max:20',
+                'email' => 'nullable|email|max:255',
+                'project_type' => 'nullable|in:web_development,mobile_app,ecommerce,software_development,ui_ux_design,digital_marketing,consultation,other',
+                'project_valuation' => 'nullable|numeric|min:0',
+                'project_start_date' => 'nullable|date',
+                'payment_terms' => 'nullable|in:advance_100,advance_50_delivery_50,advance_30_milestone_40_delivery_30,net_30,net_15,on_delivery,custom',
+                'lead_source' => 'nullable|in:website,facebook,instagram,linkedin,google,justdial,referral,cold_call,email,other',
+                'address' => 'nullable|string',
+                'gst_number' => 'nullable|string|max:20',
+                'state_code' => 'nullable|string|max:10',
+                'state_name' => 'nullable|string|max:100',
+                'remarks' => 'nullable|string',
+                'active' => 'nullable|boolean',
+            ]);
 
-        $validated['active'] = $request->has('active');
+            $validated['active'] = $request->has('active') ? 1 : 0;
 
-        Customer::create($validated);
+            $customer = Customer::create($validated);
 
-        return redirect()->route('customers.index')
-            ->with('success', 'Customer created successfully.');
+            return redirect()->route('customers.index')
+                ->with('success', 'Customer created successfully with ID: ' . $customer->id);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->validator)
+                ->withInput();
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Error creating customer: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -75,14 +92,21 @@ class CustomerController extends Controller
             'company_name' => 'nullable|string|max:255',
             'number' => 'required|string|max:20',
             'alternate_number' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:255',
+            'project_type' => 'nullable|in:web_development,mobile_app,ecommerce,software_development,ui_ux_design,digital_marketing,consultation,other',
+            'project_valuation' => 'nullable|numeric|min:0',
+            'project_start_date' => 'nullable|date',
+            'payment_terms' => 'nullable|in:advance_100,advance_50_delivery_50,advance_30_milestone_40_delivery_30,net_30,net_15,on_delivery,custom',
+            'lead_source' => 'nullable|in:website,facebook,instagram,linkedin,google,justdial,referral,cold_call,email,other',
             'address' => 'nullable|string',
             'gst_number' => 'nullable|string|max:20',
             'state_code' => 'nullable|string|max:10',
             'state_name' => 'nullable|string|max:100',
-            'active' => 'boolean',
+            'remarks' => 'nullable|string',
+            'active' => 'nullable|boolean',
         ]);
 
-        $validated['active'] = $request->has('active');
+        $validated['active'] = $request->has('active') ? 1 : 0;
 
         $customer->update($validated);
 

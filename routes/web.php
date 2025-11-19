@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\LeadController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
@@ -26,7 +27,32 @@ Route::middleware(['auth'])->group(function () {
 
     // Customer Management Routes
     Route::resource('customers', CustomerController::class);
+    Route::get('/customers-debug', function () {
+        return view('customers.debug');
+    })->name('customers.debug');
+
+    // Leads Management Routes
+    Route::prefix('leads')->name('leads.')->group(function () {
+        Route::get('/', [LeadController::class, 'index'])->name('index');
+        Route::get('/incoming', [LeadController::class, 'incoming'])->name('incoming');
+        Route::get('/outgoing', [LeadController::class, 'outgoing'])->name('outgoing');
+        Route::get('/create', [LeadController::class, 'create'])->name('create');
+        Route::post('/store', [LeadController::class, 'store'])->name('store');
+        Route::get('/{lead}', [LeadController::class, 'show'])->name('show');
+        Route::get('/{lead}/edit', [LeadController::class, 'edit'])->name('edit');
+        Route::put('/{lead}', [LeadController::class, 'update'])->name('update');
+        Route::delete('/{lead}', [LeadController::class, 'destroy'])->name('destroy');
+        
+        // Lead Actions
+        Route::post('/{lead}/schedule-callback', [LeadController::class, 'scheduleCallback'])->name('schedule-callback');
+        Route::post('/{lead}/schedule-meeting', [LeadController::class, 'scheduleMeeting'])->name('schedule-meeting');
+        Route::post('/{lead}/update-status', [LeadController::class, 'updateStatus'])->name('update-status');
+        Route::post('/{lead}/convert-to-customer', [LeadController::class, 'convertToCustomer'])->name('convert-to-customer');
+    });
 
     // Invoice Management Routes
     Route::resource('invoices', InvoiceController::class);
+    Route::get('/invoices/export/excel', [InvoiceController::class, 'exportExcel'])->name('invoices.export.excel');
+    Route::get('/invoices/export/pdf', [InvoiceController::class, 'exportPdf'])->name('invoices.export.pdf');
+    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'generatePdf'])->name('invoices.pdf');
 });

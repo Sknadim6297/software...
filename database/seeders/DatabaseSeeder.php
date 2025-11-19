@@ -15,11 +15,23 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
+        // Create admin user
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Admin User',
+            'email' => 'admin@konnectix.com',
+            'password' => bcrypt('password'),
+        ]);
+
+        // Create BDM user
+        User::factory()->create([
+            'name' => 'BDM User',
+            'email' => 'bdm@konnectix.com', 
+            'password' => bcrypt('password'),
+        ]);
+
+        // Seed leads data
+        $this->call([
+            LeadSeeder::class,
         ]);
     }
 }

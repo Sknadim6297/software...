@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard - Konnectix')
+@section('title', 'BDM Dashboard - Konnectix')
 
-@section('page-title', 'Dashboard')
+@section('page-title', 'BDM Dashboard')
 
 @section('content')
 <!-- Statistics Cards -->
@@ -321,6 +321,154 @@
         </div>
     </div>
 </div>
+
+<!-- Upcoming Work Section -->
+<div class="row mt-4">
+    <!-- Upcoming Callbacks -->
+    <div class="col-xl-4">
+        <div class="card">
+            <div class="card-header border-0 pb-0">
+                <h4 class="card-title">
+                    <i class="fa fa-phone text-primary me-2"></i>
+                    Upcoming Callbacks
+                </h4>
+                <span class="badge badge-primary">{{ $upcomingCallbacks->count() }}</span>
+            </div>
+            <div class="card-body">
+                @if($upcomingCallbacks->count() > 0)
+                    <div class="upcoming-tasks">
+                        @foreach($upcomingCallbacks as $callback)
+                            <div class="task-item mb-3 p-3 border-start border-3 border-warning rounded">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1 text-primary">{{ $callback->customer_name }}</h6>
+                                        <p class="mb-1 text-muted">{{ $callback->phone_number }}</p>
+                                        <small class="text-warning">
+                                            <i class="fa fa-clock me-1"></i>
+                                            {{ \Carbon\Carbon::parse($callback->callback_time)->format('d M Y, g:i A') }}
+                                        </small>
+                                        @if($callback->call_notes)
+                                            <p class="text-muted small mt-1 mb-0">{{ $callback->call_notes }}</p>
+                                        @endif
+                                    </div>
+                                    <div class="d-flex flex-column gap-1">
+                                        <a href="tel:{{ $callback->phone_number }}" class="btn btn-sm btn-success">
+                                            <i class="fa fa-phone"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-primary" onclick="markCallbackComplete({{ $callback->id }})">
+                                            <i class="fa fa-check"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-4">
+                        <i class="fa fa-phone fa-2x text-muted mb-3"></i>
+                        <p class="text-muted">No upcoming callbacks</p>
+                        <a href="{{ route('leads.incoming') }}" class="btn btn-primary btn-sm">Manage Leads</a>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Meetings -->
+    <div class="col-xl-4">
+        <div class="card">
+            <div class="card-header border-0 pb-0">
+                <h4 class="card-title">
+                    <i class="fa fa-calendar text-success me-2"></i>
+                    Upcoming Meetings
+                </h4>
+                <span class="badge badge-success">{{ $upcomingMeetings->count() }}/3 Daily</span>
+            </div>
+            <div class="card-body">
+                @if($upcomingMeetings->count() > 0)
+                    <div class="upcoming-tasks">
+                        @foreach($upcomingMeetings as $meeting)
+                            <div class="task-item mb-3 p-3 border-start border-3 border-success rounded">
+                                <div>
+                                    <h6 class="mb-1 text-success">{{ $meeting->customer_name }}</h6>
+                                    <p class="mb-1 text-muted">{{ $meeting->meeting_person_name }}</p>
+                                    <small class="text-success d-block mb-2">
+                                        <i class="fa fa-calendar me-1"></i>
+                                        {{ \Carbon\Carbon::parse($meeting->meeting_time)->format('d M Y, g:i A') }}
+                                    </small>
+                                    <p class="text-muted small mb-1">
+                                        <i class="fa fa-map-marker-alt me-1"></i>{{ Str::limit($meeting->meeting_address, 50) }}
+                                    </p>
+                                    <div class="d-flex gap-2 mt-2">
+                                        <a href="tel:{{ $meeting->meeting_phone_number }}" class="btn btn-sm btn-success">
+                                            <i class="fa fa-phone"></i> Call
+                                        </a>
+                                        <a href="{{ route('leads.show', $meeting) }}" class="btn btn-sm btn-info">
+                                            <i class="fa fa-eye"></i> View
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-4">
+                        <i class="fa fa-calendar fa-2x text-muted mb-3"></i>
+                        <p class="text-muted">No upcoming meetings</p>
+                        <a href="{{ route('leads.incoming') }}" class="btn btn-success btn-sm">Schedule Meetings</a>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    <!-- Did Not Receive Call List -->
+    <div class="col-xl-4">
+        <div class="card">
+            <div class="card-header border-0 pb-0">
+                <h4 class="card-title">
+                    <i class="fa fa-phone-slash text-warning me-2"></i>
+                    Did Not Receive Call List
+                </h4>
+                <span class="badge badge-warning">{{ $didNotReceiveList->count() }}</span>
+            </div>
+            <div class="card-body">
+                @if($didNotReceiveList->count() > 0)
+                    <div class="upcoming-tasks">
+                        @foreach($didNotReceiveList as $lead)
+                            <div class="task-item mb-3 p-3 border-start border-3 border-warning rounded">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1 text-warning">{{ $lead->customer_name }}</h6>
+                                        <p class="mb-1 text-muted">{{ $lead->phone_number }}</p>
+                                        <small class="text-muted">
+                                            <i class="fa fa-clock me-1"></i>
+                                            Added: {{ $lead->updated_at->format('d M Y') }}
+                                        </small>
+                                        <p class="text-muted small mt-1 mb-0">{{ $lead->project_type }}</p>
+                                    </div>
+                                    <div class="d-flex flex-column gap-1">
+                                        <a href="tel:{{ $lead->phone_number }}" class="btn btn-sm btn-warning">
+                                            <i class="fa fa-phone"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-success" onclick="updateFinalResult({{ $lead->id }})">
+                                            <i class="fa fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-4">
+                        <i class="fa fa-phone-slash fa-2x text-muted mb-3"></i>
+                        <p class="text-muted">No pending calls</p>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -409,5 +557,67 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Mark callback as completed
+function markCallbackComplete(leadId) {
+    if (confirm('Mark this callback as completed?')) {
+        fetch(`/leads/${leadId}/update-status`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                status: 'contacted',
+                notes: 'Callback completed successfully'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Callback marked as completed!');
+                location.reload();
+            } else {
+                alert('Error updating status: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the status.');
+        });
+    }
+}
+
+// Update final result for did not receive calls
+function updateFinalResult(leadId) {
+    const result = prompt('Enter the final result after calling the customer:', 'Customer contacted successfully');
+    
+    if (result !== null && result.trim() !== '') {
+        fetch(`/leads/${leadId}/update-status`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                status: 'contacted',
+                notes: result
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Final result updated successfully!');
+                location.reload();
+            } else {
+                alert('Error updating result: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the result.');
+        });
+    }
+}
 </script>
 @endpush

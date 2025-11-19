@@ -14,15 +14,24 @@ class Customer extends Model
         'company_name',
         'number',
         'alternate_number',
+        'email',
+        'project_type',
+        'project_valuation',
+        'project_start_date',
+        'payment_terms',
+        'lead_source',
         'address',
         'gst_number',
         'state_code',
         'state_name',
+        'remarks',
         'active',
     ];
 
     protected $casts = [
         'active' => 'boolean',
+        'project_valuation' => 'decimal:2',
+        'project_start_date' => 'date',
     ];
 
     /**

@@ -11,15 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('customers', function (Blueprint $table) {
-            $table->id();
-            $table->string('customer_name');
-            $table->string('company_name')->nullable();
-            $table->string('number', 20);
-            $table->string('alternate_number', 20)->nullable();
-            $table->string('email')->nullable();
-            
-            // Project related fields
+        Schema::table('customers', function (Blueprint $table) {
+            // Update project_type enum to include all new values
             $table->enum('project_type', [
                 'web_development',
                 'mobile_app', 
@@ -29,11 +22,9 @@ return new class extends Migration
                 'digital_marketing',
                 'consultation',
                 'other'
-            ])->nullable();
-            $table->decimal('project_valuation', 12, 2)->nullable();
-            $table->date('project_start_date')->nullable();
+            ])->nullable()->change();
             
-            // Payment and business fields
+            // Update payment_terms enum to include all new values
             $table->enum('payment_terms', [
                 'advance_100',
                 'advance_50_delivery_50',
@@ -42,8 +33,9 @@ return new class extends Migration
                 'net_15',
                 'on_delivery',
                 'custom'
-            ])->nullable();
+            ])->nullable()->change();
             
+            // Update lead_source enum to include all new values
             $table->enum('lead_source', [
                 'website',
                 'facebook',
@@ -55,19 +47,7 @@ return new class extends Migration
                 'cold_call',
                 'email',
                 'other'
-            ])->nullable();
-            
-            // Address and additional info
-            $table->text('address')->nullable();
-            $table->text('remarks')->nullable();
-            
-            // GST and state info
-            $table->string('gst_number', 20)->nullable();
-            $table->string('state_code', 10)->nullable();
-            $table->string('state_name', 100)->nullable();
-            
-            $table->boolean('active')->default(true);
-            $table->timestamps();
+            ])->nullable()->change();
         });
     }
 
@@ -76,6 +56,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('customers');
+        Schema::table('customers', function (Blueprint $table) {
+            // Revert to original enum values if needed
+            $table->enum('project_type', ['web', 'mobile', 'other'])->nullable()->change();
+            $table->enum('payment_terms', ['advance', 'net_30', 'custom'])->nullable()->change();
+            $table->enum('lead_source', ['website', 'facebook', 'google', 'referral'])->nullable()->change();
+        });
     }
 };

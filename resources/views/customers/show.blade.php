@@ -47,8 +47,113 @@
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
+                            <label class="form-label text-muted">Alternate Number</label>
+                            <p class="form-control-static">
+                                @if($customer->alternate_number)
+                                    <i class="fa fa-phone text-secondary me-2"></i>
+                                    <a href="tel:{{ $customer->alternate_number }}" class="text-decoration-none">{{ $customer->alternate_number }}</a>
+                                @else
+                                    N/A
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Email Address</label>
+                            <p class="form-control-static">
+                                @if($customer->email)
+                                    <i class="fa fa-envelope text-info me-2"></i>
+                                    <a href="mailto:{{ $customer->email }}" class="text-decoration-none">{{ $customer->email }}</a>
+                                @else
+                                    N/A
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Project Type</label>
+                            <p class="form-control-static">
+                                @if($customer->project_type)
+                                    <span class="badge badge-info light">{{ ucwords(str_replace('_', ' ', $customer->project_type)) }}</span>
+                                @else
+                                    N/A
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Project Valuation</label>
+                            <p class="form-control-static">
+                                @if($customer->project_valuation)
+                                    <i class="fa fa-rupee-sign text-success me-2"></i>
+                                    ₹{{ number_format($customer->project_valuation, 2) }}
+                                @else
+                                    N/A
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Project Start Date</label>
+                            <p class="form-control-static">
+                                @if($customer->project_start_date)
+                                    <i class="fa fa-calendar text-primary me-2"></i>
+                                    {{ \Carbon\Carbon::parse($customer->project_start_date)->format('F d, Y') }}
+                                @else
+                                    N/A
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Payment Terms</label>
+                            <p class="form-control-static">
+                                @if($customer->payment_terms)
+                                    <span class="badge badge-warning light">{{ ucwords(str_replace('_', ' ', $customer->payment_terms)) }}</span>
+                                @else
+                                    N/A
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Lead Source</label>
+                            <p class="form-control-static">
+                                @if($customer->lead_source)
+                                    <span class="badge badge-primary light">{{ ucwords(str_replace('_', ' ', $customer->lead_source)) }}</span>
+                                @else
+                                    N/A
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
                             <label class="form-label text-muted">GST Number</label>
                             <p class="form-control-static">{{ $customer->gst_number ?? 'N/A' }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">State Code</label>
+                            <p class="form-control-static">{{ $customer->state_code ?? 'N/A' }}</p>
                         </div>
                     </div>
                 </div>
@@ -86,6 +191,17 @@
                         <div class="mb-3">
                             <label class="form-label text-muted">Address</label>
                             <p class="form-control-static">{{ $customer->address }}</p>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                @if($customer->remarks)
+                <div class="row">
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Remarks</label>
+                            <p class="form-control-static">{{ $customer->remarks }}</p>
                         </div>
                     </div>
                 </div>
