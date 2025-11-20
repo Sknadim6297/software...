@@ -108,8 +108,23 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
+                                <label class="form-label">Added On <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control @error('added_date') is-invalid @enderror" 
+                                    name="added_date" value="{{ old('added_date', $customer->added_date?->format('Y-m-d') ?? $customer->created_at?->format('Y-m-d')) }}" required>
+                                <div class="form-text text-muted">Date when this customer was added to system</div>
+                                @error('added_date')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <!-- Placeholder for future field -->
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Payment Terms</label>
-                                <select class="form-control @error('payment_terms') is-invalid @enderror" name="payment_terms">
+                                <select class="form-control @error('payment_terms') is-invalid @enderror" name="payment_terms" id="paymentTerms" onchange="toggleCustomPaymentTerms()">
                                     <option value="">Select Payment Terms</option>
                                     <option value="advance_100" {{ old('payment_terms', $customer->payment_terms) == 'advance_100' ? 'selected' : '' }}>100% Advance</option>
                                     <option value="advance_50_delivery_50" {{ old('payment_terms', $customer->payment_terms) == 'advance_50_delivery_50' ? 'selected' : '' }}>50% Advance, 50% on Delivery</option>
@@ -122,6 +137,18 @@
                                 @error('payment_terms')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
+                                
+                                <!-- Custom Payment Terms Input -->
+                                <div id="customPaymentTermsDiv" class="mt-2" style="{{ $customer->payment_terms == 'custom' ? 'display: block;' : 'display: none;' }}">
+                                    <label class="form-label">Custom Payment Terms <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control @error('custom_payment_terms') is-invalid @enderror" 
+                                        name="custom_payment_terms" id="customPaymentTerms" value="{{ old('custom_payment_terms', $customer->custom_payment_terms) }}" 
+                                        placeholder="e.g., 25% advance, 50% on milestone, 25% on completion">
+                                    <div class="form-text text-info">Enter your custom payment terms (e.g., percentage breakdowns, milestone payments)</div>
+                                    @error('custom_payment_terms')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
                             </div>
                             
                             <div class="col-md-6 mb-3">
@@ -211,3 +238,27 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    function toggleCustomPaymentTerms() {
+        const paymentTermsSelect = document.getElementById('paymentTerms');
+        const customDiv = document.getElementById('customPaymentTermsDiv');
+        const customInput = document.getElementById('customPaymentTerms');
+        
+        if (paymentTermsSelect.value === 'custom') {
+            customDiv.style.display = 'block';
+            customInput.required = true;
+        } else {
+            customDiv.style.display = 'none';
+            customInput.required = false;
+            customInput.value = '';
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleCustomPaymentTerms();
+    });
+</script>
+@endpush

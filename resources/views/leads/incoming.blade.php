@@ -76,6 +76,7 @@
                                 <th><strong>CUSTOMER NAME</strong></th>
                                 <th><strong>PROJECT TYPE</strong></th>
                                 <th><strong>PROJECT VALUATION</strong></th>
+                                <th><strong>STATUS</strong></th>
                                 <th><strong>REMARKS</strong></th>
                                 <th><strong>ACTIONS</strong></th>
                             </tr>
@@ -107,6 +108,29 @@
                                     @endif
                                 </td>
                                 <td>
+                                    @php
+                                        $statusColors = [
+                                            'new' => 'primary',
+                                            'contacted' => 'info',
+                                            'callback_scheduled' => 'warning',
+                                            'interested' => 'success',
+                                            'not_interested' => 'danger',
+                                            'meeting_scheduled' => 'success',
+                                            'did_not_receive' => 'warning',
+                                            'not_required' => 'secondary'
+                                        ];
+                                        $statusColor = $statusColors[$lead->status] ?? 'secondary';
+                                        $statusText = ucfirst(str_replace('_', ' ', $lead->status));
+                                    @endphp
+                                    <span class="badge badge-{{ $statusColor }}">{{ $statusText }}</span>
+                                    
+                                    @if($lead->status == 'callback_scheduled' && $lead->callback_time)
+                                        <br><small class="text-muted">📞 {{ \Carbon\Carbon::parse($lead->callback_time)->format('d M, h:i A') }}</small>
+                                    @elseif($lead->status == 'meeting_scheduled' && $lead->meeting_time)
+                                        <br><small class="text-success">📅 {{ \Carbon\Carbon::parse($lead->meeting_time)->format('d M, h:i A') }}</small>
+                                    @endif
+                                </td>
+                                <td>
                                     @if($lead->remarks)
                                         <span class="badge badge-light-secondary">{{ $lead->remarks }}</span>
                                     @else
@@ -115,25 +139,42 @@
                                 </td>
 
                                 <td>
-                                    <div class="btn-group" role="group">
-                                        <button type="button" class="btn btn-primary btn-sm" onclick="scheduleCallback({{ $lead->id }})">
-                                            <i class="fa fa-phone"></i> Call Back
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <!-- Show "Complete Callback" button if callback is scheduled -->
+                                        @if($lead->status === 'callback_scheduled')
+                                            <button class="btn btn-gradient-success btn-xs" onclick="completeCallback({{ $lead->id }})" title="Complete Callback">
+                                                <i class="fa fa-check-circle"></i>
+                                            </button>
+                                        @endif
+                                        
+                                        <!-- Action Buttons -->
+                                        <button class="btn btn-warning btn-xs" onclick="scheduleCallback({{ $lead->id }})" title="Call Back">
+                                            <i class="fa fa-phone"></i>
                                         </button>
-                                        <button type="button" class="btn btn-warning btn-sm" onclick="markDidNotReceive({{ $lead->id }})">
-                                            <i class="fa fa-phone-slash"></i> Did Not Receive
+                                        <button class="btn btn-info btn-xs" onclick="scheduleMeeting({{ $lead->id }})" title="Schedule Meeting">
+                                            <i class="fa fa-calendar"></i>
                                         </button>
-                                        <button type="button" class="btn btn-danger btn-sm" onclick="markNotRequired({{ $lead->id }})">
-                                            <i class="fa fa-times"></i> Not Required
+                                        <button class="btn btn-secondary btn-xs" onclick="markDidNotReceive({{ $lead->id }})" title="Did Not Receive">
+                                            <i class="fa fa-times-circle"></i>
                                         </button>
-                                        <button type="button" class="btn btn-success btn-sm" onclick="scheduleMeeting({{ $lead->id }})">
-                                            <i class="fa fa-calendar"></i> Meeting
+                                        <button class="btn btn-dark btn-xs" onclick="markNotRequired({{ $lead->id }})" title="Not Required">
+                                            <i class="fa fa-ban"></i>
+                                        </button>
+                                        <button class="btn btn-success btn-xs" onclick="markInterested({{ $lead->id }})" title="Interested">
+                                            <i class="fa fa-thumbs-up"></i>
+                                        </button>
+                                        <button class="btn btn-danger btn-xs" onclick="markNotInterested({{ $lead->id }})" title="Not Interested">
+                                            <i class="fa fa-thumbs-down"></i>
+                                        </button>
+                                        <button class="btn btn-primary btn-xs" onclick="viewDetails({{ $lead->id }})" title="View Details">
+                                            <i class="fa fa-eye"></i>
                                         </button>
                                     </div>
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="9" class="text-center py-4">
+                                <td colspan="10" class="text-center py-4">
                                     <div class="empty-state">
                                         <i class="fa fa-users fa-3x text-muted mb-3"></i>
                                         <h5 class="text-muted">No incoming leads found</h5>
@@ -291,7 +332,14 @@ function markDidNotReceive(leadId) {
                 status: 'did_not_receive'
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(text || 'Server error');
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 showAlert('success', 'Lead marked as "Did Not Receive" and added to your call list.');
@@ -302,7 +350,7 @@ function markDidNotReceive(leadId) {
         })
         .catch(error => {
             console.error('Error:', error);
-            showAlert('error', 'An error occurred while updating the status.');
+            showAlert('error', error.message || 'An error occurred while updating the status.');
         });
     }
 }
@@ -321,7 +369,14 @@ function markNotRequired(leadId) {
                 status: 'not_required'
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(text || 'Server error');
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 showAlert('success', 'Lead marked as "Not Required".');
@@ -332,9 +387,98 @@ function markNotRequired(leadId) {
         })
         .catch(error => {
             console.error('Error:', error);
-            showAlert('error', 'An error occurred while updating the status.');
+            showAlert('error', error.message || 'An error occurred while updating the status.');
         });
     }
+}
+
+function markInterested(leadId) {
+    console.log('Marking lead as interested:', leadId);
+    if (confirm('Mark this lead as "Interested"?')) {
+        fetch(`/leads/${leadId}/update-status`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': window.Laravel.csrfToken,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                status: 'interested'
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(text || 'Server error');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Lead marked as "Interested".');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', 'Error updating status: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', error.message || 'An error occurred while updating the status.');
+        });
+    }
+}
+
+function markNotInterested(leadId) {
+    console.log('Marking lead as not interested:', leadId);
+    if (confirm('Mark this lead as "Not Interested"?')) {
+        fetch(`/leads/${leadId}/update-status`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': window.Laravel.csrfToken,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                status: 'not_interested'
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(text || 'Server error');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Lead marked as "Not Interested".');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', 'Error updating status: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', error.message || 'An error occurred while updating the status.');
+        });
+    }
+}
+
+function completeCallback(leadId) {
+    console.log('Opening complete callback modal for lead:', leadId);
+    currentLeadId = leadId;
+    
+    // If you have a complete callback modal, show it here
+    // For now, we'll redirect to outgoing leads where the complete callback functionality exists
+    window.location.href = '/leads/outgoing';
+}
+
+function viewDetails(leadId) {
+    console.log('Viewing details for lead:', leadId);
+    // Redirect to lead details page or show modal
+    window.location.href = `/leads/${leadId}`;
 }
 
 function convertToCustomer(leadId) {
@@ -346,7 +490,14 @@ function convertToCustomer(leadId) {
                 'Content-Type': 'application/json',
             },
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(text || 'Server error');
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 showAlert('success', data.message);
@@ -357,7 +508,7 @@ function convertToCustomer(leadId) {
         })
         .catch(error => {
             console.error('Error:', error);
-            showAlert('error', 'An error occurred while converting the lead.');
+            showAlert('error', error.message || 'An error occurred while converting the lead.');
         });
     }
 }
@@ -423,10 +574,15 @@ $(document).ready(function() {
                 var filterValue = this.value;
                 table.column(3).search(filterValue).draw();
             });
+            
+            $('#filter_status').on('change', function() {
+                var filterValue = this.value;
+                table.column(7).search(filterValue).draw();
+            });
 
             $('#filter_remarks').on('change', function() {
                 var filterValue = this.value;
-                table.column(7).search(filterValue).draw();
+                table.column(8).search(filterValue).draw();
             });
         } catch (error) {
             console.error('Error initializing DataTables:', error);
@@ -457,7 +613,14 @@ $(document).ready(function() {
                 callback_notes: callbackNotes
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(text || 'Server error');
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 showAlert('success', data.message + ' This will appear in your dashboard under upcoming work.');
@@ -470,7 +633,7 @@ $(document).ready(function() {
         })
         .catch(error => {
             console.error('Error:', error);
-            showAlert('error', 'An error occurred while scheduling the callback.');
+            showAlert('error', error.message || 'An error occurred while scheduling the callback.');
         });
     });
 
@@ -505,7 +668,14 @@ $(document).ready(function() {
                 meeting_summary: summary
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(text || 'Server error');
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 showAlert('success', data.message + ' Email notifications have been sent.');
@@ -518,7 +688,7 @@ $(document).ready(function() {
         })
         .catch(error => {
             console.error('Error:', error);
-            showAlert('error', 'An error occurred while scheduling the meeting.');
+            showAlert('error', error.message || 'An error occurred while scheduling the meeting.');
         });
     });
     

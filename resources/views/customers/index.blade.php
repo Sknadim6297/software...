@@ -77,7 +77,7 @@
                                 </td>
                                 <td>
                                     <div>
-                                        <strong>{{ $customer->created_at->format('d M Y') }}</strong>
+                                        <strong>{{ $customer->added_date ? $customer->added_date->format('d M Y') : $customer->created_at->format('d M Y') }}</strong>
                                         <br><small class="text-muted">{{ $customer->created_at->format('H:i A') }}</small>
                                     </div>
                                 </td>

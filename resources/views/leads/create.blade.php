@@ -132,38 +132,6 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="assigned_to" class="form-label">Assign To</label>
-                                <select class="form-control @error('assigned_to') is-invalid @enderror" id="assigned_to" name="assigned_to">
-                                    <option value="">Select BDM</option>
-                                    @foreach($users as $user)
-                                        <option value="{{ $user->id }}" {{ (old('assigned_to') == $user->id || (!old('assigned_to') && $user->id == auth()->id())) ? 'selected' : '' }}>
-                                            {{ $user->name }} {{ $user->id == auth()->id() ? '(Me)' : '' }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('assigned_to')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="status" class="form-label">Initial Status</label>
-                                <select class="form-control @error('status') is-invalid @enderror" id="status" name="status">
-                                    <option value="pending" {{ old('status', 'pending') == 'pending' ? 'selected' : '' }}>Pending</option>
-                                    <option value="contacted" {{ old('status') == 'contacted' ? 'selected' : '' }}>Contacted</option>
-                                    <option value="qualified" {{ old('status') == 'qualified' ? 'selected' : '' }}>Qualified</option>
-                                </select>
-                                @error('status')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
                         <div class="col-12">
                             <div class="form-group mb-3">
                                 <label for="remarks" class="form-label">Remarks/Notes</label>

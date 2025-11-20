@@ -123,7 +123,12 @@
                             <label class="form-label text-muted">Payment Terms</label>
                             <p class="form-control-static">
                                 @if($customer->payment_terms)
-                                    <span class="badge badge-warning light">{{ ucwords(str_replace('_', ' ', $customer->payment_terms)) }}</span>
+                                    @if($customer->payment_terms === 'custom')
+                                        <span class="badge badge-info light">Custom Terms</span>
+                                        <br><small class="text-muted mt-1">{{ $customer->custom_payment_terms ?: 'Custom terms not specified' }}</small>
+                                    @else
+                                        <span class="badge badge-warning light">{{ ucwords(str_replace('_', ' ', $customer->payment_terms)) }}</span>
+                                    @endif
                                 @else
                                     N/A
                                 @endif
@@ -139,6 +144,27 @@
                                 @else
                                     N/A
                                 @endif
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Added On</label>
+                            <p class="form-control-static">
+                                <i class="fa fa-calendar text-success me-2"></i>
+                                {{ $customer->added_date ? $customer->added_date->format('d M, Y') : ($customer->created_at ? $customer->created_at->format('d M, Y') : 'N/A') }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Last Updated</label>
+                            <p class="form-control-static">
+                                <i class="fa fa-clock text-info me-2"></i>
+                                {{ $customer->updated_at ? $customer->updated_at->format('d M, Y \\a\\t h:i A') : 'N/A' }}
                             </p>
                         </div>
                     </div>

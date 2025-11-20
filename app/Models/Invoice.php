@@ -11,18 +11,23 @@ class Invoice extends Model
 
     protected $fillable = [
         'customer_id',
+        'proposal_id',
+        'contract_id',
         'invoice_number',
         'invoice_type', // 'regular', 'proforma'
         'invoice_date',
+        'due_date',
         'subtotal',
         'discount_amount',
         'tax_total',
         'grand_total',
+        'payment_status',
         'notes',
     ];
 
     protected $casts = [
         'invoice_date' => 'date',
+        'due_date' => 'date',
         'subtotal' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'tax_total' => 'decimal:2',
@@ -35,6 +40,22 @@ class Invoice extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * Get the proposal that owns this invoice
+     */
+    public function proposal()
+    {
+        return $this->belongsTo(Proposal::class);
+    }
+
+    /**
+     * Get the contract that owns this invoice
+     */
+    public function contract()
+    {
+        return $this->belongsTo(Contract::class);
     }
 
     /**

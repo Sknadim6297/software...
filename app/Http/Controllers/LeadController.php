@@ -78,7 +78,7 @@ class LeadController extends Controller
 
     public function outgoing(Request $request)
     {
-        $leads = Lead::with('assignedUser')->where('type', 'outgoing')->latest()->get();
+        $leads = Lead::with('assignedUser')->where('type', 'outgoing')->latest()->paginate(20);
         $bdms = User::all();
         
         // Statistics for outgoing leads
@@ -304,14 +304,15 @@ class LeadController extends Controller
     public function scheduleCallback(Request $request, Lead $lead)
     {
         $request->validate([
-            'callback_date' => 'required|date|after:now',
-            'callback_notes' => 'nullable|string|max:500'
+            'callback_time' => 'required|date|after:now',
+            'call_notes' => 'nullable|string|max:500'
         ]);
 
         $lead->update([
-            'callback_time' => $request->callback_date,
+            'callback_time' => $request->callback_time,
             'status' => 'callback_scheduled',
-            'call_notes' => $request->callback_notes
+            'call_notes' => $request->call_notes,
+            'callback_completed' => false
         ]);
 
         return response()->json([
@@ -323,7 +324,7 @@ class LeadController extends Controller
     public function scheduleMeeting(Request $request, Lead $lead)
     {
         $request->validate([
-            'meeting_date' => 'required|date|after:now',
+            'meeting_time' => 'required|date|after:now',
             'meeting_address' => 'required|string|max:255',
             'meeting_person_name' => 'required|string|max:100',
             'meeting_phone_number' => 'required|string|max:20',
@@ -331,7 +332,7 @@ class LeadController extends Controller
         ]);
 
         // Check if BDM already has 3 meetings scheduled for this date
-        $meetingDate = \Carbon\Carbon::parse($request->meeting_date)->format('Y-m-d');
+        $meetingDate = \Carbon\Carbon::parse($request->meeting_time)->format('Y-m-d');
         $existingMeetings = Lead::where('assigned_to', Auth::id())
             ->whereDate('meeting_time', $meetingDate)
             ->where('status', 'meeting_scheduled')
@@ -345,7 +346,7 @@ class LeadController extends Controller
         }
 
         $lead->update([
-            'meeting_time' => $request->meeting_date,
+            'meeting_time' => $request->meeting_time,
             'meeting_address' => $request->meeting_address,
             'meeting_person_name' => $request->meeting_person_name,
             'meeting_phone_number' => $request->meeting_phone_number,
@@ -360,12 +361,12 @@ class LeadController extends Controller
                 Mail::to($lead->email)->send(new MeetingScheduledNotification($lead, true));
             }
             
-            // Send email to BDM
+            // Send email to admin
             Mail::to('bdm.konnectixtech@gmail.com')->send(new MeetingScheduledNotification($lead, false));
 
             return response()->json([
                 'success' => true, 
-                'message' => 'Meeting scheduled successfully! Email notifications have been sent to customer and BDM.'
+                'message' => 'Meeting scheduled successfully! Email notifications have been sent to customer and admin.'
             ]);
         } catch (\Exception $e) {
             // Meeting was scheduled but email failed
@@ -378,14 +379,37 @@ class LeadController extends Controller
         }
     }
 
+    /**
+     * Check meeting limit for today
+     */
+    public function checkMeetingLimit()
+    {
+        $today = \Carbon\Carbon::today();
+        $count = Lead::where('assigned_to', Auth::id())
+            ->whereDate('meeting_time', $today)
+            ->where('status', 'meeting_scheduled')
+            ->count();
+
+        return response()->json([
+            'count' => $count,
+            'limit' => 3,
+            'remaining' => 3 - $count
+        ]);
+    }
+
     public function updateStatus(Request $request, Lead $lead)
     {
         $request->validate([
-            'status' => 'required|string|in:pending,callback_scheduled,did_not_receive,not_required,meeting_scheduled,not_interested,interested,converted',
+            'status' => 'required|string|in:pending,contacted,callback_scheduled,did_not_receive,not_required,meeting_scheduled,not_interested,interested,qualified,converted,rejected',
             'notes' => 'nullable|string|max:500'
         ]);
 
         $updateData = ['status' => $request->status];
+        
+        // If completing callback, mark it as completed
+        if ($lead->status === 'callback_scheduled') {
+            $updateData['callback_completed'] = true;
+        }
         
         // Update remarks/notes if provided
         if ($request->has('notes') && !empty($request->notes)) {
@@ -397,6 +421,97 @@ class LeadController extends Controller
         return response()->json([
             'success' => true, 
             'message' => 'Status updated successfully!'
+        ]);
+    }
+
+    /**
+     * Complete callback and update lead status
+     */
+    public function completeCallback(Request $request, Lead $lead)
+    {
+        $request->validate([
+            'new_status' => 'required|in:interested,not_interested,meeting_scheduled,did_not_receive,not_required,callback_scheduled',
+            'notes' => 'nullable|string|max:500',
+            // If scheduling another callback
+            'callback_time' => 'required_if:new_status,callback_scheduled|date|after:now',
+            // If scheduling meeting
+            'meeting_time' => 'required_if:new_status,meeting_scheduled|date|after:now',
+            'meeting_address' => 'required_if:new_status,meeting_scheduled|string|max:255',
+            'meeting_person_name' => 'required_if:new_status,meeting_scheduled|string|max:100',
+            'meeting_phone_number' => 'required_if:new_status,meeting_scheduled|string|max:20',
+            'meeting_summary' => 'required_if:new_status,meeting_scheduled|string|max:500',
+        ]);
+
+        // Mark current callback as completed
+        $updateData = [
+            'callback_completed' => true,
+            'status' => $request->new_status,
+        ];
+
+        // Add notes if provided
+        if ($request->notes) {
+            $updateData['call_notes'] = ($lead->call_notes ? $lead->call_notes . "\n\n" : '') . 
+                                        now()->format('Y-m-d H:i') . ': ' . $request->notes;
+        }
+
+        // Handle different status outcomes
+        switch ($request->new_status) {
+            case 'callback_scheduled':
+                $updateData['callback_time'] = $request->callback_time;
+                $updateData['callback_completed'] = false; // New callback pending
+                break;
+                
+            case 'meeting_scheduled':
+                // Check meeting limit
+                $todayMeetings = Lead::whereDate('meeting_time', now()->toDateString())->count();
+                if ($todayMeetings >= 3) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Meeting limit reached! Maximum 3 meetings per day.'
+                    ], 422);
+                }
+                
+                $updateData['meeting_time'] = $request->meeting_time;
+                $updateData['meeting_address'] = $request->meeting_address;
+                $updateData['meeting_person_name'] = $request->meeting_person_name;
+                $updateData['meeting_phone_number'] = $request->meeting_phone_number;
+                $updateData['meeting_summary'] = $request->meeting_summary;
+                break;
+        }
+
+        $lead->update($updateData);
+
+        // Send emails for meeting scheduled
+        if ($request->new_status === 'meeting_scheduled') {
+            try {
+                // Send to customer
+                Mail::send('emails.meeting-scheduled', ['lead' => $lead], function($message) use ($lead) {
+                    $message->to($lead->email)
+                        ->subject('Meeting Scheduled - Konnectix Technologies');
+                });
+                
+                // Send to admin
+                Mail::send('emails.meeting-scheduled-admin', ['lead' => $lead], function($message) use ($lead) {
+                    $message->to('bdm.konnectixtech@gmail.com')
+                        ->subject('New Meeting Scheduled with ' . $lead->customer_name);
+                });
+            } catch (\Exception $e) {
+                // Log error silently
+            }
+        }
+
+        $statusLabels = [
+            'interested' => 'Interested',
+            'not_interested' => 'Not Interested',
+            'meeting_scheduled' => 'Meeting Scheduled',
+            'did_not_receive' => 'Did Not Receive',
+            'not_required' => 'Not Required',
+            'callback_scheduled' => 'New Callback Scheduled'
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Callback completed and status updated to: ' . $statusLabels[$request->new_status]
         ]);
     }
 

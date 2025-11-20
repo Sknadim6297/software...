@@ -103,7 +103,7 @@
                                 <input type="number" class="form-control @error('project_valuation') is-invalid @enderror" 
                                     name="project_valuation" id="projectValuation" value="{{ old('project_valuation') }}" 
                                     placeholder="Enter project value" min="0" step="0.01" required>
-                                <div class="form-text" id="valuationRange">Select project type to see suggested range</div>
+                                <div class="form-text" id="valuationRange">Enter the project valuation amount</div>
                                 @error('project_valuation')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -121,13 +121,40 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
+                                <label class="form-label">Added On <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control @error('added_date') is-invalid @enderror" 
+                                    name="added_date" value="{{ old('added_date', date('Y-m-d')) }}" required>
+                                <div class="form-text text-muted">Date when this customer was added to system</div>
+                                @error('added_date')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <!-- Placeholder for future field -->
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Payment Terms <span class="text-danger">*</span></label>
-                                <select class="form-control @error('payment_terms') is-invalid @enderror" name="payment_terms" id="paymentTerms" required>
+                                <select class="form-control @error('payment_terms') is-invalid @enderror" name="payment_terms" id="paymentTerms" onchange="toggleCustomPaymentTerms()" required>
                                     <option value="">Select Project Type First</option>
                                 </select>
                                 @error('payment_terms')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
+                            </div>
+                                <!-- Custom Payment Terms Input (Hidden by default) -->
+                                <div id="customPaymentTermsDiv" class="mt-2" style="display: none;">
+                                    <label class="form-label">Custom Payment Terms <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control @error('custom_payment_terms') is-invalid @enderror" 
+                                        name="custom_payment_terms" id="customPaymentTerms" value="{{ old('custom_payment_terms') }}" 
+                                        placeholder="e.g., 25% advance, 50% on milestone, 25% on completion">
+                                    <div class="form-text text-info">Enter your custom payment terms (e.g., percentage breakdowns, milestone payments)</div>
+                                    @error('custom_payment_terms')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
                             </div>
                             
                             <div class="col-md-6 mb-3">
@@ -232,15 +259,11 @@
         if (projectType && projectTypesData[projectType]) {
             const typeData = projectTypesData[projectType];
             
-            // Update valuation range
-            const min = typeData.default_valuation_range.min;
-            const max = typeData.default_valuation_range.max;
-            valuationInput.min = min;
-            valuationInput.max = max;
-            valuationRange.innerHTML = `Suggested range: ₹${min.toLocaleString()} - ₹${max.toLocaleString()}`;
-            valuationRange.className = 'form-text text-info';
+            // Clear any previous range messages
+            valuationRange.innerHTML = '';
+            valuationRange.className = 'form-text text-muted';
             
-            // Update payment terms
+                    // Update payment terms
             paymentTerms.innerHTML = '<option value="">Select Payment Terms</option>';
             typeData.payment_terms.forEach(term => {
                 const option = document.createElement('option');
@@ -248,15 +271,37 @@
                 option.textContent = term;
                 paymentTerms.appendChild(option);
             });
+            
+            // Add custom option
+            const customOption = document.createElement('option');
+            customOption.value = 'custom';
+            customOption.textContent = 'Custom Payment Terms';
+            paymentTerms.appendChild(customOption);
+            
             paymentTerms.disabled = false;
             
         } else {
-            valuationRange.innerHTML = 'Select project type to see suggested range';
+            valuationRange.innerHTML = '';
             valuationRange.className = 'form-text text-muted';
             paymentTerms.innerHTML = '<option value="">Select Project Type First</option>';
             paymentTerms.disabled = true;
             valuationInput.min = 0;
             valuationInput.max = '';
+        }
+    }
+    
+    function toggleCustomPaymentTerms() {
+        const paymentTermsSelect = document.getElementById('paymentTerms');
+        const customDiv = document.getElementById('customPaymentTermsDiv');
+        const customInput = document.getElementById('customPaymentTerms');
+        
+        if (paymentTermsSelect.value === 'custom') {
+            customDiv.style.display = 'block';
+            customInput.required = true;
+        } else {
+            customDiv.style.display = 'none';
+            customInput.required = false;
+            customInput.value = '';
         }
     }
     
@@ -281,22 +326,6 @@
         }
     });
     
-    // Add validation for valuation range
-    document.getElementById('projectValuation').addEventListener('input', function() {
-        const value = parseFloat(this.value);
-        const min = parseFloat(this.min);
-        const max = parseFloat(this.max);
-        const rangeTip = document.getElementById('valuationRange');
-        
-        if (value && min && max) {
-            if (value < min || value > max) {
-                rangeTip.innerHTML = `⚠️ Value outside suggested range: ₹${min.toLocaleString()} - ₹${max.toLocaleString()}`;
-                rangeTip.className = 'form-text text-warning';
-            } else {
-                rangeTip.innerHTML = `✅ Within suggested range: ₹${min.toLocaleString()} - ₹${max.toLocaleString()}`;
-                rangeTip.className = 'form-text text-success';
-            }
-        }
-    });
+
 </script>
 @endpush

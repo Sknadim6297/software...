@@ -19,6 +19,8 @@ class Customer extends Model
         'project_valuation',
         'project_start_date',
         'payment_terms',
+        'custom_payment_terms',
+        'added_date',
         'lead_source',
         'address',
         'gst_number',
@@ -32,6 +34,7 @@ class Customer extends Model
         'active' => 'boolean',
         'project_valuation' => 'decimal:2',
         'project_start_date' => 'date',
+        'added_date' => 'date',
     ];
 
     /**
@@ -121,12 +124,23 @@ class Customer extends Model
     }
 
     /**
-     * Get payment terms for the current project type
+     * Get available payment terms for this customer's project type
      */
     public function getAvailablePaymentTerms()
     {
         $projectTypes = self::getProjectTypes();
         return $projectTypes[$this->project_type]['payment_terms'] ?? [];
+    }
+
+    /**
+     * Get the effective payment terms (custom or standard)
+     */
+    public function getEffectivePaymentTerms()
+    {
+        if ($this->payment_terms === 'custom' && $this->custom_payment_terms) {
+            return $this->custom_payment_terms;
+        }
+        return $this->payment_terms;
     }
 
     /**

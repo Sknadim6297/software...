@@ -230,6 +230,27 @@
                         </ul>
                     </li>
                     
+                    <li>
+                        <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
+                            <i class="flaticon-381-file-1"></i>
+                            <span class="nav-text">Proposals & Contracts</span>
+                        </a>
+                        <ul aria-expanded="false">
+                            <li><a href="{{ route('proposals.create') }}">
+                                <i class="flaticon-381-add text-success me-2"></i>Create Proposal
+                            </a></li>
+                            <li><a href="{{ route('proposals.index') }}">
+                                <i class="flaticon-381-list text-primary me-2"></i>All Proposals
+                            </a></li>
+                            <li><a href="{{ route('contracts.index') }}">
+                                <i class="flaticon-381-notebook-1 text-warning me-2"></i>All Contracts
+                            </a></li>
+                            <li><a href="{{ route('invoices.index') }}">
+                                <i class="flaticon-381-notepad text-info me-2"></i>All Invoices
+                            </a></li>
+                        </ul>
+                    </li>
+                    
                     {{-- Commented out for now as requested --}}
                     {{--
                     <li>

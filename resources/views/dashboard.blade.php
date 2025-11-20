@@ -566,24 +566,36 @@ function markCallbackComplete(leadId) {
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
                 status: 'contacted',
                 notes: 'Callback completed successfully'
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            // Check if response is ok
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Response is not JSON');
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 alert('Callback marked as completed!');
                 location.reload();
             } else {
-                alert('Error updating status: ' + data.message);
+                alert('Error updating status: ' + (data.message || 'Unknown error'));
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while updating the status.');
+            alert('An error occurred while updating the status: ' + error.message);
         });
     }
 }
