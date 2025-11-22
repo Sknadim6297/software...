@@ -35,10 +35,11 @@ Route::middleware(['auth'])->group(function () {
 
     // Leads Management Routes
     Route::prefix('leads')->name('leads.')->group(function () {
-        Route::get('/', [LeadController::class, 'index'])->name('index');
+        Route::get('/', [LeadController::class, 'allLeads'])->name('index');
+        Route::get('/all', [LeadController::class, 'allLeads'])->name('all');
         Route::get('/incoming', [LeadController::class, 'incoming'])->name('incoming');
         Route::get('/outgoing', [LeadController::class, 'outgoing'])->name('outgoing');
-        Route::get('/create', [LeadController::class, 'create'])->name('create');
+        Route::get('/create/{type?}', [LeadController::class, 'create'])->name('create');
         Route::post('/store', [LeadController::class, 'store'])->name('store');
         Route::get('/{lead}', [LeadController::class, 'show'])->name('show');
         Route::get('/{lead}/edit', [LeadController::class, 'edit'])->name('edit');

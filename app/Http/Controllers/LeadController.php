@@ -15,18 +15,73 @@ class LeadController extends Controller
 {
     public function index()
     {
-        $leads = Lead::with('assignedUser')->latest()->paginate(15);
+        return $this->allLeads();
+    }
+
+    public function allLeads()
+    {
+        $leads = Lead::with('assignedUser')->latest()->paginate(20);
+        $bdms = User::all();
         
-        // Get statistics for summary cards
+        // Get statistics for all leads
         $totalLeads = Lead::count();
+        $incomingLeads = Lead::where('type', 'incoming')->count();
+        $outgoingLeads = Lead::where('type', 'outgoing')->count();
         $pendingLeads = Lead::where('status', 'pending')->count();
+        $interestedLeads = Lead::where('status', 'interested')->count();
         $convertedLeads = Lead::where('status', 'converted')->count();
         $todayLeads = Lead::whereDate('created_at', today())->count();
         
-        return view('leads.index', compact(
-            'leads',
+        // Get unique customer names with phone numbers for dropdown
+        $customers = Lead::select('customer_name', 'phone_number')
+            ->distinct()
+            ->orderBy('customer_name')
+            ->get()
+            ->map(function($lead) {
+                return [
+                    'name' => $lead->customer_name,
+                    'phone' => $lead->phone_number,
+                    'display' => $lead->customer_name . ' - ' . $lead->phone_number
+                ];
+            });
+        
+        // Status options for all leads
+        $statusOptions = [
+            'new' => 'New',
+            'pending' => 'Pending',
+            'callback_scheduled' => 'Call Back',
+            'did_not_receive' => 'Did Not Receive', 
+            'not_required' => 'Not Required',
+            'meeting_scheduled' => 'Meeting',
+            'not_interested' => 'Not Interested',
+            'interested' => 'Interested',
+            'converted' => 'Converted'
+        ];
+        
+        // Remarks options for filtering
+        $remarksOptions = [
+            'Call Back',
+            'Did not receive',
+            'Not Required',
+            'Meeting',
+            'Not Interested',
+            'Interested',
+            'Follow up required',
+            'Hot lead',
+            'Cold lead'
+        ];
+        
+        return view('leads.all', compact(
+            'leads', 
+            'bdms', 
+            'customers', 
+            'statusOptions', 
+            'remarksOptions',
             'totalLeads',
-            'pendingLeads', 
+            'incomingLeads',
+            'outgoingLeads',
+            'pendingLeads',
+            'interestedLeads',
             'convertedLeads',
             'todayLeads'
         ));
@@ -217,6 +272,7 @@ class LeadController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'type' => 'required|string|in:incoming,outgoing',
             'customer_name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'phone_number' => 'required|string|max:20',
@@ -224,8 +280,17 @@ class LeadController extends Controller
             'project_type' => 'required|string|max:100',
             'project_valuation' => 'nullable|numeric|min:0|max:99999999.99',
             'assigned_to' => 'nullable|exists:users,id',
-            'status' => 'required|string|in:pending,contacted,qualified,converted,rejected',
+            'status' => 'required|string|in:new,pending,callback_scheduled,did_not_receive,not_required,meeting_scheduled,not_interested,interested,converted',
             'remarks' => 'nullable|string|max:1000',
+            // Callback fields
+            'callback_time' => 'nullable|required_if:status,callback_scheduled|date|after:now',
+            'call_notes' => 'nullable|string|max:500',
+            // Meeting fields
+            'meeting_time' => 'nullable|required_if:status,meeting_scheduled|date|after:now',
+            'meeting_address' => 'nullable|required_if:status,meeting_scheduled|string|max:255',
+            'meeting_person_name' => 'nullable|required_if:status,meeting_scheduled|string|max:100',
+            'meeting_phone_number' => 'nullable|required_if:status,meeting_scheduled|string|max:20',
+            'meeting_summary' => 'nullable|required_if:status,meeting_scheduled|string|max:500',
         ], [
             'customer_name.required' => 'Customer name is required.',
             'email.required' => 'Email address is required.',
@@ -233,13 +298,31 @@ class LeadController extends Controller
             'phone_number.required' => 'Phone number is required.',
             'platform.required' => 'Platform/Source is required.',
             'project_type.required' => 'Project type is required.',
+            'status.required' => 'Status is required.',
             'status.in' => 'Please select a valid status.',
-            'assigned_to.exists' => 'Selected user does not exist.',
+            'callback_time.required_if' => 'Callback date & time is required for Call Back status.',
+            'meeting_time.required_if' => 'Meeting date & time is required for Calendar status.',
+            'meeting_address.required_if' => 'Meeting address is required for Calendar status.',
+            'meeting_person_name.required_if' => 'Person name is required for Calendar status.',
+            'meeting_phone_number.required_if' => 'Phone number is required for Calendar status.',
+            'meeting_summary.required_if' => 'Meeting summary is required for Calendar status.',
         ]);
 
+        // Enforce meeting per-day limit if scheduling meeting now
+        if ($validated['status'] === 'meeting_scheduled') {
+            $meetingDate = \Carbon\Carbon::parse($validated['meeting_time'])->format('Y-m-d');
+            $existingMeetings = Lead::where('assigned_to', Auth::id())
+                ->whereDate('meeting_time', $meetingDate)
+                ->where('status', 'meeting_scheduled')
+                ->count();
+            if ($existingMeetings >= 3) {
+                return redirect()->back()->withInput()->withErrors(['meeting_time' => 'Maximum 3 meetings can be scheduled per day. Please choose a different date.']);
+            }
+        }
+
         try {
-            Lead::create([
-                'type' => 'incoming',
+            $leadData = [
+                'type' => $validated['type'],
                 'date' => now()->toDateString(),
                 'time' => now()->toTimeString(),
                 'platform' => $validated['platform'],
@@ -251,9 +334,41 @@ class LeadController extends Controller
                 'remarks' => $validated['remarks'],
                 'status' => $validated['status'],
                 'assigned_to' => $validated['assigned_to'] ?? Auth::id(),
-            ]);
+            ];
 
-            return redirect()->route('leads.incoming')->with('success', 'Lead added successfully!');
+            // Only add callback fields if status is callback_scheduled
+            if ($validated['status'] === 'callback_scheduled') {
+                $leadData['callback_time'] = $validated['callback_time'];
+                $leadData['call_notes'] = $validated['call_notes'];
+                $leadData['callback_completed'] = false;
+            }
+
+            // Only add meeting fields if status is meeting_scheduled
+            if ($validated['status'] === 'meeting_scheduled') {
+                $leadData['meeting_time'] = $validated['meeting_time'];
+                $leadData['meeting_address'] = $validated['meeting_address'];
+                $leadData['meeting_person_name'] = $validated['meeting_person_name'];
+                $leadData['meeting_phone_number'] = $validated['meeting_phone_number'];
+                $leadData['meeting_summary'] = $validated['meeting_summary'];
+            }
+
+            $lead = Lead::create($leadData);
+
+            // If meeting scheduled, attempt emails (re-use scheduleMeeting logic)
+            if ($validated['status'] === 'meeting_scheduled') {
+                try {
+                    if ($lead->email) {
+                        Mail::to($lead->email)->send(new MeetingScheduledNotification($lead, true));
+                    }
+                    Mail::to('bdm.konnectixtech@gmail.com')->send(new MeetingScheduledNotification($lead, false));
+                } catch (\Exception $e) {
+                    Log::error('Failed sending meeting creation emails: ' . $e->getMessage());
+                }
+            }
+
+            // Redirect to appropriate page based on lead type
+            $redirectRoute = $validated['type'] === 'incoming' ? 'leads.incoming' : 'leads.outgoing';
+            return redirect()->route($redirectRoute)->with('success', 'Lead added successfully!');
         } catch (\Exception $e) {
             Log::error('Error creating lead: ' . $e->getMessage());
             return redirect()->back()

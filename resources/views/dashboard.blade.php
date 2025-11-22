@@ -341,7 +341,14 @@
                             <div class="task-item mb-3 p-3 border-start border-3 border-warning rounded">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
-                                        <h6 class="mb-1 text-primary">{{ $callback->customer_name }}</h6>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <h6 class="mb-0 text-primary">{{ $callback->customer_name }}</h6>
+                                            @if($callback->type === 'incoming')
+                                                <span class="badge badge-info badge-sm"><i class="fa fa-arrow-down me-1"></i>Incoming</span>
+                                            @else
+                                                <span class="badge badge-warning badge-sm"><i class="fa fa-arrow-up me-1"></i>Outgoing</span>
+                                            @endif
+                                        </div>
                                         <p class="mb-1 text-muted">{{ $callback->phone_number }}</p>
                                         <small class="text-warning">
                                             <i class="fa fa-clock me-1"></i>
@@ -367,7 +374,7 @@
                     <div class="text-center py-4">
                         <i class="fa fa-phone fa-2x text-muted mb-3"></i>
                         <p class="text-muted">No upcoming callbacks</p>
-                        <a href="{{ route('leads.incoming') }}" class="btn btn-primary btn-sm">Manage Leads</a>
+                        <a href="{{ route('leads.all') }}" class="btn btn-primary btn-sm">Manage Leads</a>
                     </div>
                 @endif
             </div>
@@ -390,7 +397,14 @@
                         @foreach($upcomingMeetings as $meeting)
                             <div class="task-item mb-3 p-3 border-start border-3 border-success rounded">
                                 <div>
-                                    <h6 class="mb-1 text-success">{{ $meeting->customer_name }}</h6>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <h6 class="mb-0 text-success">{{ $meeting->customer_name }}</h6>
+                                        @if($meeting->type === 'incoming')
+                                            <span class="badge badge-info badge-sm"><i class="fa fa-arrow-down me-1"></i>Incoming</span>
+                                        @else
+                                            <span class="badge badge-warning badge-sm"><i class="fa fa-arrow-up me-1"></i>Outgoing</span>
+                                        @endif
+                                    </div>
                                     <p class="mb-1 text-muted">{{ $meeting->meeting_person_name }}</p>
                                     <small class="text-success d-block mb-2">
                                         <i class="fa fa-calendar me-1"></i>
@@ -415,7 +429,7 @@
                     <div class="text-center py-4">
                         <i class="fa fa-calendar fa-2x text-muted mb-3"></i>
                         <p class="text-muted">No upcoming meetings</p>
-                        <a href="{{ route('leads.incoming') }}" class="btn btn-success btn-sm">Schedule Meetings</a>
+                        <a href="{{ route('leads.all') }}" class="btn btn-success btn-sm">Schedule Meetings</a>
                     </div>
                 @endif
             </div>
@@ -439,7 +453,14 @@
                             <div class="task-item mb-3 p-3 border-start border-3 border-warning rounded">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
-                                        <h6 class="mb-1 text-warning">{{ $lead->customer_name }}</h6>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <h6 class="mb-0 text-warning">{{ $lead->customer_name }}</h6>
+                                            @if($lead->type === 'incoming')
+                                                <span class="badge badge-info badge-sm"><i class="fa fa-arrow-down me-1"></i>Incoming</span>
+                                            @else
+                                                <span class="badge badge-warning badge-sm"><i class="fa fa-arrow-up me-1"></i>Outgoing</span>
+                                            @endif
+                                        </div>
                                         <p class="mb-1 text-muted">{{ $lead->phone_number }}</p>
                                         <small class="text-muted">
                                             <i class="fa fa-clock me-1"></i>
@@ -632,4 +653,32 @@ function updateFinalResult(leadId) {
     }
 }
 </script>
+@endpush
+
+@push('styles')
+<style>
+.badge-sm {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+}
+
+.task-item {
+    transition: all 0.2s ease;
+}
+
+.task-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.badge-info {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.badge-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+</style>
 @endpush

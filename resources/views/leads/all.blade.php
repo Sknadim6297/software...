@@ -1,23 +1,97 @@
 @extends('layouts.app')
 
-@section('title', 'Incoming Leads - Konnectix BDM')
+@section('title', 'All Leads - Konnectix BDM')
 
-@section('page-title', 'BDM - Leads Management')
+@section('page-title', 'BDM - All Leads Management')
 
 @section('content')
 <div class="row">
     <div class="col-12">
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-lg-6 col-sm-6">
+                <div class="widget-stat card bg-primary">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-white">
+                                <p class="card-text">Total Leads</p>
+                                <h3 class="card-title">{{ $totalLeads }}</h3>
+                            </div>
+                            <i class="fa fa-users fa-2x text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-sm-6">
+                <div class="widget-stat card bg-info">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-white">
+                                <p class="card-text">Incoming</p>
+                                <h3 class="card-title">{{ $incomingLeads }}</h3>
+                            </div>
+                            <i class="fa fa-arrow-down fa-2x text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-sm-6">
+                <div class="widget-stat card bg-warning">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-white">
+                                <p class="card-text">Outgoing</p>
+                                <h3 class="card-title">{{ $outgoingLeads }}</h3>
+                            </div>
+                            <i class="fa fa-arrow-up fa-2x text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-sm-6">
+                <div class="widget-stat card bg-success">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-white">
+                                <p class="card-text">Interested</p>
+                                <h3 class="card-title">{{ $interestedLeads }}</h3>
+                            </div>
+                            <i class="fa fa-heart fa-2x text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card">
-            <div class="card-header">
-                <h4 class="card-title">BDM - Incoming Leads</h4>
-                <a href="{{ route('leads.create', 'incoming') }}" class="btn btn-primary btn-sm">
-                    <i class="fa fa-plus"></i> Add New Lead
-                </a>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="card-title">BDM - All Leads</h4>
+                <div class="dropdown">
+                    <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fa fa-plus"></i> Add New Lead
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ route('leads.create', 'incoming') }}">
+                            <i class="fa fa-arrow-down me-2"></i> Add Incoming Lead
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ route('leads.create', 'outgoing') }}">
+                            <i class="fa fa-arrow-up me-2"></i> Add Outgoing Lead
+                        </a></li>
+                    </ul>
+                </div>
             </div>
             <div class="card-body">
                 <!-- Filter Controls -->
                 <div class="row mb-3">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <label for="filter_type" class="form-label">Filter by Type</label>
+                        <select class="form-control" id="filter_type">
+                            <option value="">All Types</option>
+                            <option value="incoming">Incoming</option>
+                            <option value="outgoing">Outgoing</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
                         <label for="filter_customer" class="form-label">Filter by Customer</label>
                         <select class="form-control" id="filter_customer">
                             <option value="">All Customers</option>
@@ -26,7 +100,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="filter_platform" class="form-label">Filter by Platform</label>
                         <select class="form-control" id="filter_platform">
                             <option value="">All Platforms</option>
@@ -40,7 +114,7 @@
                             <option value="other">Other</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="filter_status" class="form-label">Filter by Status</label>
                         <select class="form-control" id="filter_status">
                             <option value="">All Statuses</option>
@@ -54,7 +128,7 @@
                             <option value="lost">Lost</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="filter_remarks" class="form-label">Filter by Remarks</label>
                         <select class="form-control" id="filter_remarks">
                             <option value="">All Remarks</option>
@@ -63,6 +137,11 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="clearAllFilters()">
+                            <i class="fa fa-refresh"></i> Clear Filters
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="table-responsive">
@@ -70,6 +149,7 @@
                         <thead>
                             <tr>
                                 <th style="width:50px;"><strong>S.NO</strong></th>
+                                <th><strong>TYPE</strong></th>
                                 <th><strong>DATE</strong></th>
                                 <th><strong>TIME</strong></th>
                                 <th><strong>PLATFORM</strong></th>
@@ -85,6 +165,13 @@
                             @forelse($leads as $index => $lead)
                             <tr>
                                 <td><strong>{{ $index + 1 }}</strong></td>
+                                <td>
+                                    @if($lead->type === 'incoming')
+                                        <span class="badge badge-info"><i class="fa fa-arrow-down me-1"></i>Incoming</span>
+                                    @else
+                                        <span class="badge badge-warning"><i class="fa fa-arrow-up me-1"></i>Outgoing</span>
+                                    @endif
+                                </td>
                                 <td>{{ $lead->date ? $lead->date->format('d M Y') : $lead->created_at->format('d M Y') }}</td>
                                 <td>{{ $lead->time ? $lead->time->format('H:i') : $lead->created_at->format('H:i') }}</td>
                                 <td>
@@ -139,23 +226,15 @@
                                 </td>
 
                                 <td>
-                                    <div class="d-flex flex-wrap gap-1">
-                                        <!-- Show "Complete Callback" button if callback is scheduled -->
-                                        @if($lead->status === 'callback_scheduled')
-                                            <button class="btn btn-gradient-success btn-xs" onclick="completeCallback({{ $lead->id }})" title="Complete Callback">
-                                                <i class="fa fa-check-circle"></i>
-                                            </button>
-                                        @endif
-                                        
-                                        <!-- Action Buttons - Hide buttons that are already completed -->
+                                    <div class="d-flex gap-1">
                                         @if($lead->status !== 'callback_scheduled')
-                                            <button class="btn btn-warning btn-xs" onclick="scheduleCallback({{ $lead->id }})" title="Call Back">
+                                            <button class="btn btn-info btn-xs" onclick="scheduleCallback({{ $lead->id }})" title="Schedule Callback">
                                                 <i class="fa fa-phone"></i>
                                             </button>
                                         @endif
                                         
                                         @if($lead->status !== 'meeting_scheduled')
-                                            <button class="btn btn-info btn-xs" onclick="scheduleMeeting({{ $lead->id }})" title="Schedule Meeting">
+                                            <button class="btn btn-warning btn-xs" onclick="scheduleMeeting({{ $lead->id }})" title="Schedule Meeting">
                                                 <i class="fa fa-calendar"></i>
                                             </button>
                                         @endif
@@ -193,14 +272,19 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="10" class="text-center py-4">
+                                <td colspan="11" class="text-center py-4">
                                     <div class="empty-state">
                                         <i class="fa fa-users fa-3x text-muted mb-3"></i>
-                                        <h5 class="text-muted">No incoming leads found</h5>
-                                        <p class="text-muted">Get started by adding your first incoming lead.</p>
-                                        <a href="{{ route('leads.create', 'incoming') }}" class="btn btn-primary">
-                                            <i class="fa fa-plus me-2"></i> Add Your First Lead
-                                        </a>
+                                        <h5 class="text-muted">No leads found</h5>
+                                        <p class="text-muted">Get started by adding your first lead.</p>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ route('leads.create', 'incoming') }}" class="btn btn-primary">
+                                                <i class="fa fa-arrow-down me-2"></i> Add Incoming Lead
+                                            </a>
+                                            <a href="{{ route('leads.create', 'outgoing') }}" class="btn btn-warning">
+                                                <i class="fa fa-arrow-up me-2"></i> Add Outgoing Lead
+                                            </a>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -208,6 +292,13 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Pagination -->
+                @if($leads->hasPages())
+                    <div class="mt-4">
+                        {{ $leads->links() }}
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -485,51 +576,10 @@ function markNotInterested(leadId) {
     }
 }
 
-function completeCallback(leadId) {
-    console.log('Opening complete callback modal for lead:', leadId);
-    currentLeadId = leadId;
-    
-    // If you have a complete callback modal, show it here
-    // For now, we'll redirect to outgoing leads where the complete callback functionality exists
-    window.location.href = '/leads/outgoing';
-}
-
 function viewDetails(leadId) {
     console.log('Viewing details for lead:', leadId);
     // Redirect to lead details page or show modal
     window.location.href = `/leads/${leadId}`;
-}
-
-function convertToCustomer(leadId) {
-    if (confirm('Are you sure you want to convert this lead to a customer? This action will move the details to Customer Management section.')) {
-        fetch(`/leads/${leadId}/convert-to-customer`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': window.Laravel.csrfToken,
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.text().then(text => {
-                    throw new Error(text || 'Server error');
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                showAlert('success', data.message);
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                showAlert('error', 'Error converting lead: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showAlert('error', error.message || 'An error occurred while converting the lead.');
-        });
-    }
 }
 
 function closeCallbackModal() {
@@ -542,6 +592,20 @@ function closeMeetingModal() {
     console.log('Closing meeting modal');
     $('#meetingModal').modal('hide');
     document.getElementById('meetingForm').reset();
+}
+
+function clearAllFilters() {
+    $('#filter_type').val('');
+    $('#filter_customer').val('');
+    $('#filter_platform').val('');
+    $('#filter_status').val('');
+    $('#filter_remarks').val('');
+    
+    // If DataTables is initialized, clear the filters
+    if (typeof $.fn.DataTable !== 'undefined' && $('#leadsTable').DataTable()) {
+        var table = $('#leadsTable').DataTable();
+        table.search('').columns().search('').draw();
+    }
 }
 
 function showAlert(type, message) {
@@ -572,53 +636,62 @@ $(document).ready(function() {
     if (typeof $.fn.DataTable !== 'undefined') {
         try {
             var table = $('#leadsTable').DataTable({
-                "order": [[ 1, "desc" ]],
+                "order": [[ 2, "desc" ]],
                 "pageLength": 25,
                 "responsive": true,
                 "dom": 'rtip'
             });
 
             // Custom filtering functions
+            $('#filter_type').on('change', function() {
+                var filterValue = this.value;
+                table.column(1).search(filterValue).draw();
+            });
+
             $('#filter_customer').on('change', function() {
                 var filterValue = this.value;
                 if (filterValue === '') {
-                    table.column(4).search('').draw();
+                    table.column(5).search('').draw();
                 } else {
                     var customerName = filterValue.split(' - ')[0];
-                    table.column(4).search(customerName).draw();
+                    table.column(5).search(customerName).draw();
                 }
             });
 
             $('#filter_platform').on('change', function() {
                 var filterValue = this.value;
-                table.column(3).search(filterValue).draw();
+                table.column(4).search(filterValue).draw();
             });
             
             $('#filter_status').on('change', function() {
                 var filterValue = this.value;
-                table.column(7).search(filterValue).draw();
+                table.column(8).search(filterValue).draw();
             });
 
             $('#filter_remarks').on('change', function() {
                 var filterValue = this.value;
-                table.column(8).search(filterValue).draw();
+                table.column(9).search(filterValue).draw();
             });
         } catch (error) {
-            console.error('Error initializing DataTables:', error);
+            console.log('DataTables initialization error:', error);
         }
     }
-    
+
     // Handle callback form submission
     $('#callbackForm').on('submit', function(e) {
         e.preventDefault();
         
-        const callbackDate = $('#callback_date').val();
-        const callbackNotes = $('#callback_notes').val();
-        
-        if (!callbackDate) {
-            showAlert('error', 'Callback date and time is required.');
+        if (!currentLeadId) {
+            showAlert('error', 'No lead selected');
             return;
         }
+        
+        const formData = {
+            callback_time: $('#callback_date').val(),
+            call_notes: $('#callback_notes').val()
+        };
+        
+        console.log('Submitting callback form for lead:', currentLeadId, formData);
         
         fetch(`/leads/${currentLeadId}/schedule-callback`, {
             method: 'POST',
@@ -627,10 +700,7 @@ $(document).ready(function() {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({
-                callback_time: callbackDate,
-                call_notes: callbackNotes
-            })
+            body: JSON.stringify(formData)
         })
         .then(response => {
             if (!response.ok) {
@@ -641,17 +711,17 @@ $(document).ready(function() {
             return response.json();
         })
         .then(data => {
+            closeCallbackModal();
             if (data.success) {
-                showAlert('success', data.message + ' This will appear in your dashboard under upcoming work.');
-                $('#callbackModal').modal('hide');
-                document.getElementById('callbackForm').reset();
+                showAlert('success', 'Callback scheduled successfully!');
                 setTimeout(() => location.reload(), 1500);
             } else {
                 showAlert('error', 'Error scheduling callback: ' + data.message);
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            closeCallbackModal();
+            console.error('Callback error:', error);
             showAlert('error', error.message || 'An error occurred while scheduling the callback.');
         });
     });
@@ -660,17 +730,20 @@ $(document).ready(function() {
     $('#meetingForm').on('submit', function(e) {
         e.preventDefault();
         
-        // Validate all required fields
-        const meetingDate = $('#meeting_date').val();
-        const meetingAddress = $('#meeting_address').val();
-        const personName = $('#meeting_person_name').val();
-        const phoneNumber = $('#meeting_phone_number').val();
-        const summary = $('#meeting_summary').val();
-        
-        if (!meetingDate || !meetingAddress || !personName || !phoneNumber || !summary) {
-            showAlert('error', 'All fields are required for scheduling a meeting.');
+        if (!currentLeadId) {
+            showAlert('error', 'No lead selected');
             return;
         }
+        
+        const formData = {
+            meeting_time: $('#meeting_date').val(),
+            meeting_person_name: $('#meeting_person_name').val(),
+            meeting_phone_number: $('#meeting_phone_number').val(),
+            meeting_address: $('#meeting_address').val(),
+            meeting_summary: $('#meeting_summary').val()
+        };
+        
+        console.log('Submitting meeting form for lead:', currentLeadId, formData);
         
         fetch(`/leads/${currentLeadId}/schedule-meeting`, {
             method: 'POST',
@@ -679,13 +752,7 @@ $(document).ready(function() {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({
-                meeting_time: meetingDate,
-                meeting_address: meetingAddress,
-                meeting_person_name: personName,
-                meeting_phone_number: phoneNumber,
-                meeting_summary: summary
-            })
+            body: JSON.stringify(formData)
         })
         .then(response => {
             if (!response.ok) {
@@ -696,50 +763,57 @@ $(document).ready(function() {
             return response.json();
         })
         .then(data => {
+            closeMeetingModal();
             if (data.success) {
-                showAlert('success', data.message + ' Email notifications have been sent.');
-                $('#meetingModal').modal('hide');
-                document.getElementById('meetingForm').reset();
+                showAlert('success', 'Meeting scheduled successfully! Email notifications sent.');
                 setTimeout(() => location.reload(), 1500);
             } else {
-                showAlert('error', data.message);
+                showAlert('error', 'Error scheduling meeting: ' + data.message);
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            closeMeetingModal();
+            console.error('Meeting error:', error);
             showAlert('error', error.message || 'An error occurred while scheduling the meeting.');
         });
     });
-    
-    // Additional modal close handlers
-    $('.modal .close, .modal .btn-secondary').on('click', function() {
-        var modalId = $(this).closest('.modal').attr('id');
-        console.log('Closing modal:', modalId);
-        $('#' + modalId).modal('hide');
-        
-        // Reset forms when closing
-        if (modalId === 'callbackModal') {
-            document.getElementById('callbackForm').reset();
-        } else if (modalId === 'meetingModal') {
-            document.getElementById('meetingForm').reset();
-        }
-    });
-    
-    // Handle modal backdrop click
-    $('.modal').on('click', function(e) {
-        if (e.target === this) {
-            $(this).modal('hide');
-            console.log('Modal closed by backdrop click');
-        }
-    });
-    
-    // Handle escape key to close modals
-    $(document).on('keydown', function(e) {
-        if (e.key === 'Escape') {
-            $('.modal.show').modal('hide');
-            console.log('Modal closed by escape key');
-        }
-    });
 });
 </script>
+@endpush
+
+@push('styles')
+<style>
+.border-left-primary { border-left: 4px solid #007bff; }
+.border-left-warning { border-left: 4px solid #ffc107; }
+.border-left-info { border-left: 4px solid #17a2b8; }
+.border-left-success { border-left: 4px solid #28a745; }
+.border-left-danger { border-left: 4px solid #dc3545; }
+.border-left-secondary { border-left: 4px solid #6c757d; }
+
+.btn-xs {
+    padding: 0.15rem 0.3rem;
+    font-size: 0.75rem;
+    border-radius: 0.15rem;
+}
+
+.gap-1 > * {
+    margin: 2px;
+}
+
+.table th {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.widget-stat .card-header {
+    padding: 1.5rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+}
+</style>
 @endpush

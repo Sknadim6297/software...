@@ -221,15 +221,21 @@
                             <span class="nav-text">Lead Management</span>
                         </a>
                         <ul aria-expanded="false">
+                            <li><a href="{{ route('leads.all') }}">
+                                <i class="flaticon-381-list text-info me-2"></i>All Leads
+                            </a></li>
                             <li><a href="{{ route('leads.incoming') }}">
                                 <i class="flaticon-381-download text-success me-2"></i>Incoming Leads
                             </a></li>
                             <li><a href="{{ route('leads.outgoing') }}">
                                 <i class="flaticon-381-upload text-primary me-2"></i>Outgoing Leads
                             </a></li>
+                           
                         </ul>
                     </li>
                     
+                    {{-- Commented out for now --}}
+                    {{--
                     <li>
                         <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
                             <i class="flaticon-381-file-1"></i>
@@ -250,6 +256,7 @@
                             </a></li>
                         </ul>
                     </li>
+                    --}}
                     
                     {{-- Commented out for now as requested --}}
                     {{--
@@ -286,8 +293,11 @@
 							<span class="nav-text">Leads Management</span>
 						</a>
                         <ul aria-expanded="false">
-                            <li><a href="#">All Leads</a></li>
-                            <li><a href="#">Add Lead</a></li>
+                            <li><a href="{{ route('leads.all') }}">All Leads</a></li>
+                            <li><a href="{{ route('leads.incoming') }}">Incoming Leads</a></li>
+                            <li><a href="{{ route('leads.outgoing') }}">Outgoing Leads</a></li>
+                            <li><a href="{{ route('leads.create', 'incoming') }}">Add Incoming Lead</a></li>
+                            <li><a href="{{ route('leads.create', 'outgoing') }}">Add Outgoing Lead</a></li>
                         </ul>
                     </li>
 
