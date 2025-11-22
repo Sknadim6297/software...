@@ -29,6 +29,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Customer Management Routes
     Route::resource('customers', CustomerController::class);
+    Route::get('/customers-history', [CustomerController::class, 'history'])->name('customers.history');
     Route::get('/customers-debug', function () {
         return view('customers.debug');
     })->name('customers.debug');

@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container-fluid">
-    <div class="row">
+    <div class="row mb-5 pb-4">
         <div class="col-xl-12">
             @if(session('success'))
                 <div class="alert alert-success alert-dismissible fade show">
@@ -27,7 +27,7 @@
 
                     <div class="row">
                         <div class="col-xl-4">
-                            <div class="card bg-light">
+                            <div class="card bg-light mb-3">
                                 <div class="card-header">
                                     <h5 class="card-title">Customer Details</h5>
                                 </div>
@@ -38,7 +38,7 @@
                                 </div>
                             </div>
 
-                            <div class="card bg-light">
+                            <div class="card bg-light mb-3">
                                 <div class="card-header">
                                     <h5 class="card-title">Contract Summary</h5>
                                 </div>
@@ -51,7 +51,7 @@
                             </div>
 
                             @if($contract->invoices->count() > 0)
-                                <div class="card bg-light">
+                                <div class="card bg-light mb-3">
                                     <div class="card-header">
                                         <h5 class="card-title">Related Invoices</h5>
                                     </div>
@@ -69,7 +69,7 @@
                         </div>
 
                         <div class="col-xl-8">
-                            <div class="card">
+                            <div class="card mb-4">
                                 <div class="card-header">
                                     <h5 class="card-title">Contract Content</h5>
                                 </div>

@@ -20,11 +20,15 @@
                         <div class="alert alert-warning">
                             <i class="flaticon-381-info-1 me-2"></i>
                             No eligible customers found in {{ $leadType }} leads. 
-                            <br><small>Only leads with "Meeting Scheduled" or "Interested" status are shown here.</small>
+                            <br><small>Only leads marked as <strong>"Interested"</strong> are shown here. Customer identification is based on mobile number.</small>
                         </div>
                         <div class="text-center mt-4">
                             <a href="{{ route('proposals.create') }}" class="btn btn-secondary">
                                 <i class="flaticon-381-back me-2"></i> Go Back
+                            </a>
+                            <a href="{{ route('leads.' . $leadType) }}" class="btn btn-primary ms-2">
+                                <i class="flaticon-381-{{ $leadType === 'incoming' ? 'download' : 'upload' }} me-2"></i> 
+                                View {{ ucfirst($leadType) }} Leads
                             </a>
                         </div>
                     @else
@@ -49,17 +53,10 @@
                                             <td>{{ $lead->email }}</td>
                                             <td>{{ $lead->phone_number }}</td>
                                             <td>
-                                                @if($lead->status === 'meeting_scheduled')
-                                                    <span class="badge badge-warning">
-                                                        <i class="flaticon-381-calendar-1 me-1"></i>
-                                                        Meeting Scheduled
-                                                    </span>
-                                                @elseif($lead->status === 'interested')
-                                                    <span class="badge badge-success">
-                                                        <i class="flaticon-381-like me-1"></i>
-                                                        Interested
-                                                    </span>
-                                                @endif
+                                                <span class="badge badge-success">
+                                                    <i class="flaticon-381-like me-1"></i>
+                                                    Interested
+                                                </span>
                                             </td>
                                             <td>
                                                 <small class="text-muted">

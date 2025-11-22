@@ -17,7 +17,7 @@
                             <div class="col-md-6">
                                 <div class="text-center mb-4">
                                     <h5>Where do you want to fetch customer details from?</h5>
-                                    <p class="text-muted">Only customers with meeting scheduled or marked as interested will be shown</p>
+                                    <p class="text-muted">Only customers marked as <strong>interested</strong> will be shown</p>
                                 </div>
                                 
                                 <div class="row g-3">

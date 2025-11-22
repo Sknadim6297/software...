@@ -41,13 +41,16 @@ class ProposalController extends Controller
     {
         $leadType = $request->input('lead_type');
         
-        // Get eligible leads (those with meeting scheduled or interested status)
-        $eligibleLeads = Lead::where(function($query) {
-            $query->where('status', 'meeting_scheduled')
-                  ->orWhere('status', 'interested');
-        })
-        ->orderBy('created_at', 'desc')
-        ->get();
+        // Validate lead type
+        if (!in_array($leadType, ['incoming', 'outgoing'])) {
+            return back()->with('error', 'Please select a valid lead type (Incoming or Outgoing).');
+        }
+        
+        // Get eligible leads (only those with interested status from the selected lead type)
+        $eligibleLeads = Lead::where('type', $leadType)
+            ->where('status', 'interested')
+            ->orderBy('created_at', 'desc')
+            ->get();
         
         return view('proposals.select-customer', compact('eligibleLeads', 'leadType'));
     }
@@ -263,9 +266,8 @@ class ProposalController extends Controller
             ]);
             
             // 2. Add customer to Customer Management Portal (if not exists)
-            $customer = Customer::where('email', $proposal->customer_email)
-                ->orWhere('number', $proposal->customer_phone)
-                ->first();
+            // Customer identification is based on mobile number (primary unique identifier)
+            $customer = Customer::where('number', $proposal->customer_phone)->first();
             
             if (!$customer) {
                 $customer = Customer::create([
@@ -296,13 +298,17 @@ class ProposalController extends Controller
             ]);
             
             // Add invoice item
+            $taxAmount = $validated['final_amount'] * 0.18;
             InvoiceItem::create([
                 'invoice_id' => $invoice->id,
-                'description' => $proposal->project_type . ' - ' . $proposal->project_description,
+                'product_description' => $proposal->project_type . ' - ' . $proposal->project_description,
                 'quantity' => 1,
-                'unit_price' => $validated['final_amount'],
-                'tax_rate' => 18,
-                'amount' => $validated['final_amount'],
+                'rate' => $validated['final_amount'],
+                'cgst_percentage' => 9,
+                'sgst_percentage' => 9,
+                'igst_percentage' => 0,
+                'tax_amount' => $taxAmount,
+                'total_amount' => $validated['final_amount'] + $taxAmount,
             ]);
             
             // 4. Send emails to customer and admin

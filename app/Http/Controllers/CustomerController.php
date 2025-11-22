@@ -128,4 +128,29 @@ class CustomerController extends Controller
         return redirect()->route('customers.index')
             ->with('success', 'Customer deleted successfully.');
     }
+
+    /**
+     * Display customer history - read-only view of all customers ever added
+     */
+    public function history(Request $request)
+    {
+        $query = Customer::withTrashed()->with(['invoices', 'contracts']);
+        
+        // Search functionality
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('customer_name', 'like', "%{$search}%")
+                  ->orWhere('company_name', 'like', "%{$search}%")
+                  ->orWhere('number', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('project_type', 'like', "%{$search}%");
+            });
+        }
+        
+        // Order by most recent first (showing complete history)
+        $customers = $query->orderBy('created_at', 'desc')->paginate(20);
+        
+        return view('customers.history', compact('customers'));
+    }
 }

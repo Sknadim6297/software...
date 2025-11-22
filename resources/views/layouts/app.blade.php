@@ -108,6 +108,25 @@
 				margin-right: 10px !important;
 			}
 		}
+		
+		/* Fix content body scrolling and footer positioning */
+		.content-body {
+			min-height: calc(100vh - 150px);
+			padding-bottom: 80px;
+		}
+		
+		.footer {
+			position: relative;
+			margin-top: auto;
+			clear: both;
+		}
+		
+		/* Ensure main wrapper has proper flex layout */
+		#main-wrapper {
+			display: flex;
+			flex-direction: column;
+			min-height: 100vh;
+		}
 	</style>
 	
 	@stack('styles')
@@ -209,10 +228,18 @@
                     </li>
                     
                     <li>
-                        <a class="ai-icon" href="{{ route('customers.index') }}" aria-expanded="false">
+                        <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
                             <i class="flaticon-381-user-7"></i>
                             <span class="nav-text">Customer Management</span>
                         </a>
+                        <ul aria-expanded="false">
+                            <li><a href="{{ route('customers.index') }}">
+                                <i class="flaticon-381-user text-primary me-2"></i>All Customers
+                            </a></li>
+                            {{-- <li><a href="{{ route('customers.history') }}">
+                                <i class="flaticon-381-back-1 text-info me-2"></i>Customer History
+                            </a></li> --}}
+                        </ul>
                     </li>
                     
                     <li>
@@ -233,10 +260,9 @@
                            
                         </ul>
                     </li>
-                    
-                    {{-- Commented out for now --}}
-                    {{--
-                    <li>
+                
+                 
+                    {{-- <li>
                         <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
                             <i class="flaticon-381-file-1"></i>
                             <span class="nav-text">Proposals & Contracts</span>
@@ -255,8 +281,8 @@
                                 <i class="flaticon-381-notepad text-info me-2"></i>All Invoices
                             </a></li>
                         </ul>
-                    </li>
-                    --}}
+                    </li> --}}
+
                     
                     {{-- Commented out for now as requested --}}
                     {{--
