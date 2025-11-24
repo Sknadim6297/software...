@@ -410,17 +410,23 @@
                         <label for="meeting_date">Meeting Date & Time</label>
                         <input type="datetime-local" class="form-control" id="meeting_date" name="meeting_date" required>
                     </div>
-                    <div class="form-group">
-                        <label for="meeting_type">Meeting Type</label>
-                        <select class="form-control" id="meeting_type" name="meeting_type" required>
-                            <option value="phone">Phone Call</option>
-                            <option value="video">Video Call</option>
-                            <option value="in_person">In Person</option>
-                        </select>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="meeting_person_name">Person Name</label>
+                            <input type="text" class="form-control" id="meeting_person_name" name="meeting_person_name" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="meeting_phone_number">Phone Number</label>
+                            <input type="text" class="form-control" id="meeting_phone_number" name="meeting_phone_number" required>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label for="meeting_agenda">Agenda</label>
-                        <textarea class="form-control" id="meeting_agenda" name="agenda" rows="3"></textarea>
+                        <label for="meeting_address">Meeting Address</label>
+                        <textarea class="form-control" id="meeting_address" name="meeting_address" rows="2" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="meeting_summary">Meeting Summary</label>
+                        <textarea class="form-control" id="meeting_summary" name="meeting_summary" rows="3" required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -476,15 +482,18 @@
 @section('scripts')
 <script>
 function scheduleCallback() {
-    $('#callbackModal').modal('show');
+    hideAllModals();
+    showModalById('callbackModal');
 }
 
 function scheduleMeeting() {
-    $('#meetingModal').modal('show');
+    hideAllModals();
+    showModalById('meetingModal');
 }
 
 function updateStatus() {
-    $('#statusModal').modal('show');
+    hideAllModals();
+    showModalById('statusModal');
 }
 
 function convertToCustomer() {
@@ -523,15 +532,16 @@ $('#callbackForm').on('submit', function(e) {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            callback_date: $('#callback_date').val(),
-            notes: $('#callback_notes').val()
+            callback_time: $('#callback_date').val(),
+            call_notes: $('#callback_notes').val()
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
             alert('Callback scheduled successfully!');
-            $('#callbackModal').modal('hide');
+            var inst = bootstrap.Modal.getInstance(document.getElementById('callbackModal')) || new bootstrap.Modal(document.getElementById('callbackModal'));
+            inst.hide();
             location.reload();
         } else {
             alert('Error scheduling callback: ' + data.message);
@@ -554,16 +564,19 @@ $('#meetingForm').on('submit', function(e) {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            meeting_date: $('#meeting_date').val(),
-            meeting_type: $('#meeting_type').val(),
-            agenda: $('#meeting_agenda').val()
+            meeting_time: $('#meeting_date').val(),
+            meeting_address: $('#meeting_address').val(),
+            meeting_person_name: $('#meeting_person_name').val(),
+            meeting_phone_number: $('#meeting_phone_number').val(),
+            meeting_summary: $('#meeting_summary').val()
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
             alert('Meeting scheduled successfully!');
-            $('#meetingModal').modal('hide');
+            var inst = bootstrap.Modal.getInstance(document.getElementById('meetingModal')) || new bootstrap.Modal(document.getElementById('meetingModal'));
+            inst.hide();
             location.reload();
         } else {
             alert('Error scheduling meeting: ' + data.message);
@@ -594,7 +607,8 @@ $('#statusForm').on('submit', function(e) {
     .then(data => {
         if (data.success) {
             alert('Status updated successfully!');
-            $('#statusModal').modal('hide');
+            var inst = bootstrap.Modal.getInstance(document.getElementById('statusModal')) || new bootstrap.Modal(document.getElementById('statusModal'));
+            inst.hide();
             location.reload();
         } else {
             alert('Error updating status: ' + data.message);
@@ -605,6 +619,24 @@ $('#statusForm').on('submit', function(e) {
         alert('An error occurred while updating the status.');
     });
 });
+
+// Bootstrap 5 modal helpers
+function showModalById(id) {
+    var modalEl = document.getElementById(id);
+    if (!modalEl) return;
+    if (modalEl.parentElement !== document.body) document.body.appendChild(modalEl);
+    var modal = new bootstrap.Modal(modalEl, { backdrop: true, keyboard: true });
+    modal.show();
+    return modal;
+}
+
+function hideAllModals() {
+    var openModals = document.querySelectorAll('.modal.show');
+    openModals.forEach(function(el) {
+        var inst = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
+        try { inst.hide(); } catch(e) { }
+    });
+}
 </script>
 
 <style>

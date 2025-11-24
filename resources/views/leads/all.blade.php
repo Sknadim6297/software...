@@ -5,6 +5,62 @@
 @section('page-title', 'BDM - All Leads Management')
 
 @section('content')
+<style>
+    /* Fix modal backdrop and z-index issues */
+    .modal-backdrop {
+        z-index: 1040 !important;
+        opacity: 0.5 !important;
+    }
+    
+    /* Remove ALL duplicate backdrops immediately */
+    body > .modal-backdrop ~ .modal-backdrop {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+    
+    /* Ensure only ONE backdrop exists */
+    body.modal-open > .modal-backdrop:not(:first-of-type) {
+        display: none !important;
+    }
+    
+    /* Modal must be above backdrop */
+    .modal {
+        z-index: 1055 !important;
+    }
+    
+    /* Modal dialog and content */
+    .modal-dialog {
+        z-index: 1056 !important;
+        position: relative;
+    }
+    
+    .modal-content {
+        z-index: 1057 !important;
+        position: relative;
+    }
+    
+    /* Ensure modal is visible when shown */
+    .modal.show {
+        display: block !important;
+    }
+    
+    /* Prevent body scroll when modal is open */
+    body.modal-open {
+        overflow: hidden !important;
+    }
+    
+    /* Fix for backdrop click to close */
+    .modal-backdrop.show {
+        opacity: 0.5 !important;
+    }
+    
+    /* Ensure modal is always on top */
+    .modal.show .modal-dialog {
+        transform: translate(0, 0) !important;
+    }
+</style>
 <div class="row">
     <div class="col-12">
         <!-- Statistics Cards -->
@@ -305,11 +361,11 @@
 </div>
 
 <!-- Schedule Callback Modal -->
-<div class="modal fade" id="callbackModal" tabindex="-1" role="dialog">
+<div class="modal fade" id="callbackModal" tabindex="-1" role="dialog" aria-labelledby="callbackModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Schedule Callback</h5>
+                <h5 class="modal-title" id="callbackModalLabel">Schedule Callback</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="closeCallbackModal()">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -336,11 +392,11 @@
 </div>
 
 <!-- Schedule Meeting Modal -->
-<div class="modal fade" id="meetingModal" tabindex="-1" role="dialog">
+<div class="modal fade" id="meetingModal" tabindex="-1" role="dialog" aria-labelledby="meetingModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Schedule Meeting</h5>
+                <h5 class="modal-title" id="meetingModalLabel">Schedule Meeting</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="closeMeetingModal()">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -399,33 +455,149 @@ let currentLeadId = null;
 window.Laravel = window.Laravel || {};
 window.Laravel.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
+// Expose modal helpers globally so onclick handlers (outside document.ready)
+// can call them before jQuery's document.ready runs.
+window.showModalById = function(id) {
+    var modalEl = document.getElementById(id);
+    if (!modalEl) return;
+    if (modalEl.parentElement !== document.body) document.body.appendChild(modalEl);
+    var modal = new bootstrap.Modal(modalEl, { backdrop: true, keyboard: true });
+    modal.show();
+    return modal;
+};
+
+window.hideAllModals = function() {
+    var openModals = document.querySelectorAll('.modal.show');
+    openModals.forEach(function(el) {
+        var inst = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
+        try { inst.hide(); } catch(e) { }
+    });
+};
+
+// Function to clean up modal backdrops - AGGRESSIVE CLEANUP
+function cleanupModalBackdrops() {
+    // Get all backdrops
+    var backdrops = $('.modal-backdrop');
+    
+    // If more than one, remove all except the first
+    if (backdrops.length > 1) {
+        backdrops.slice(1).remove();
+    }
+    
+    // Also check body children
+    $('body').children('.modal-backdrop:not(:first)').remove();
+    
+    // Remove modal-open class if no modals are showing
+    if ($('.modal.show').length === 0) {
+        $('body').removeClass('modal-open');
+        $('body').css('padding-right', '');
+        // Remove any remaining backdrops
+        $('.modal-backdrop').remove();
+    }
+}
+
+// Function to ensure only one backdrop exists
+function ensureSingleBackdrop() {
+    var backdrops = $('.modal-backdrop');
+    if (backdrops.length > 1) {
+        // Keep only the last one (most recently added)
+        backdrops.slice(0, -1).remove();
+    }
+    
+    // Also remove from body children
+    var bodyBackdrops = $('body').children('.modal-backdrop');
+    if (bodyBackdrops.length > 1) {
+        bodyBackdrops.slice(0, -1).remove();
+    }
+}
+
+// IMMEDIATE FIX: Override Bootstrap modal backdrop behavior
+(function() {
+    // Store original modal show method
+    var originalModalShow = $.fn.modal.Constructor.prototype.show;
+    
+    // Override the show method
+    $.fn.modal.Constructor.prototype.show = function() {
+        // Remove all existing backdrops before showing
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        $('body').css('padding-right', '');
+        
+        // Call original show method
+        originalModalShow.apply(this, arguments);
+        
+        // After showing, ensure only one backdrop exists
+        var self = this;
+        setTimeout(function() {
+            var backdrops = $('.modal-backdrop');
+            if (backdrops.length > 1) {
+                backdrops.slice(0, -1).remove();
+            }
+        }, 50);
+    };
+})();
+
 // Global functions for onclick handlers
 function scheduleCallback(leadId) {
     console.log('Scheduling callback for lead:', leadId);
     currentLeadId = leadId;
     
-    // Reset form and set minimum date
-    document.getElementById('callbackForm').reset();
-    const now = new Date();
-    const minDateTime = now.toISOString().slice(0, 16);
-    document.getElementById('callback_date').min = minDateTime;
+    // Clean up any existing modals and backdrops first
+    hideAllModals();
+    cleanupModalBackdrops();
     
-    // Show modal
-    $('#callbackModal').modal('show');
+    // Wait for cleanup to complete
+    setTimeout(function() {
+        // Ensure all backdrops are removed
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        $('body').css('padding-right', '');
+        
+        // Reset form and set minimum date
+        document.getElementById('callbackForm').reset();
+        const now = new Date();
+        const minDateTime = now.toISOString().slice(0, 16);
+        document.getElementById('callback_date').min = minDateTime;
+        
+        // Show modal using helper
+        showModalById('callbackModal');
+        
+        // After modal shows, ensure only one backdrop
+        setTimeout(function() {
+            ensureSingleBackdrop();
+        }, 100);
+    }, 200);
 }
 
 function scheduleMeeting(leadId) {
     console.log('Scheduling meeting for lead:', leadId);
     currentLeadId = leadId;
     
-    // Reset form and set minimum date
-    document.getElementById('meetingForm').reset();
-    const now = new Date();
-    const minDateTime = now.toISOString().slice(0, 16);
-    document.getElementById('meeting_date').min = minDateTime;
+    // Clean up any existing modals and backdrops first
+    hideAllModals();
+    cleanupModalBackdrops();
     
-    // Show modal
-    $('#meetingModal').modal('show');
+    // Wait for cleanup to complete
+    setTimeout(function() {
+        // Ensure all backdrops are removed
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        $('body').css('padding-right', '');
+        
+        // Reset form and set minimum date
+        document.getElementById('meetingForm').reset();
+        const now = new Date();
+        const minDateTime = now.toISOString().slice(0, 16);
+        document.getElementById('meeting_date').min = minDateTime;
+        
+        // Show modal using helper
+        showModalById('meetingModal');
+        
+        // After modal shows, ensure only one backdrop
+        setTimeout(function() {
+            ensureSingleBackdrop();
+        }, 100);
+    }, 200);
 }
 
 function markDidNotReceive(leadId) {
@@ -584,14 +756,24 @@ function viewDetails(leadId) {
 
 function closeCallbackModal() {
     console.log('Closing callback modal');
-    $('#callbackModal').modal('hide');
+    var modalInstance = bootstrap.Modal.getInstance(document.getElementById('callbackModal'));
+    if (modalInstance) modalInstance.hide();
     document.getElementById('callbackForm').reset();
+    // Clean up backdrop after modal closes
+    setTimeout(function() {
+        cleanupModalBackdrops();
+    }, 300);
 }
 
 function closeMeetingModal() {
     console.log('Closing meeting modal');
-    $('#meetingModal').modal('hide');
+    var modalInstance = bootstrap.Modal.getInstance(document.getElementById('meetingModal'));
+    if (modalInstance) modalInstance.hide();
     document.getElementById('meetingForm').reset();
+    // Clean up backdrop after modal closes
+    setTimeout(function() {
+        cleanupModalBackdrops();
+    }, 300);
 }
 
 function clearAllFilters() {
@@ -631,6 +813,87 @@ function showAlert(type, message) {
 
 // Document ready initialization
 $(document).ready(function() {
+    
+    // CRITICAL: Prevent multiple modal backdrops
+    $(document).on('show.bs.modal', '.modal', function() {
+        // Remove any existing backdrops BEFORE showing
+        $('.modal-backdrop').remove();
+        ensureSingleBackdrop();
+    });
+    
+    $(document).on('shown.bs.modal', '.modal', function() {
+        // After modal is shown, ensure only one backdrop exists
+        ensureSingleBackdrop();
+        
+        // Remove any duplicates that might have been created
+        var backdrops = $('.modal-backdrop');
+        if (backdrops.length > 1) {
+            backdrops.slice(0, -1).remove();
+        }
+    });
+    
+    $(document).on('hide.bs.modal', '.modal', function() {
+        // Clean up duplicates when hiding
+        ensureSingleBackdrop();
+    });
+    
+    $(document).on('hidden.bs.modal', '.modal', function() {
+        // Complete cleanup after modal is fully hidden
+        cleanupModalBackdrops();
+    });
+    
+    // Watch for backdrop creation and remove duplicates immediately
+    var observer = new MutationObserver(function(mutations) {
+        var backdrops = $('.modal-backdrop');
+        if (backdrops.length > 1) {
+            console.log('MutationObserver: Removing', backdrops.length - 1, 'duplicate backdrop(s)');
+            backdrops.slice(0, -1).remove();
+        }
+        
+        // Ensure body only has one backdrop child
+        var bodyBackdrops = $('body').children('.modal-backdrop');
+        if (bodyBackdrops.length > 1) {
+            bodyBackdrops.slice(0, -1).remove();
+        }
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+    
+    // Also run periodic cleanup when modals are open
+    var backdropCleanupInterval = setInterval(function() {
+        if ($('.modal.show').length > 0) {
+            var backdrops = $('.modal-backdrop');
+            if (backdrops.length > 1) {
+                console.log('Interval cleanup: Removing', backdrops.length - 1, 'duplicate backdrop(s)');
+                backdrops.slice(0, -1).remove();
+            }
+        } else {
+            // Stop interval when no modals are open
+            clearInterval(backdropCleanupInterval);
+        }
+    }, 200);
+
+    // Helper to show modal via Bootstrap 5 and ensure it's appended to body
+    function showModalById(id) {
+        var modalEl = document.getElementById(id);
+        if (!modalEl) return;
+        if (modalEl.parentElement !== document.body) document.body.appendChild(modalEl);
+        var modal = new bootstrap.Modal(modalEl, { backdrop: true, keyboard: true });
+        modal.show();
+        return modal;
+    }
+
+    // Helper to hide all open modals using Bootstrap 5
+    function hideAllModals() {
+        var openModals = document.querySelectorAll('.modal.show');
+        openModals.forEach(function(el) {
+            var inst = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
+            try { inst.hide(); } catch(e) { }
+        });
+    }
     
     // Initialize DataTables if available
     if (typeof $.fn.DataTable !== 'undefined') {
@@ -712,6 +975,7 @@ $(document).ready(function() {
         })
         .then(data => {
             closeCallbackModal();
+            cleanupModalBackdrops();
             if (data.success) {
                 showAlert('success', 'Callback scheduled successfully!');
                 setTimeout(() => location.reload(), 1500);
@@ -764,6 +1028,7 @@ $(document).ready(function() {
         })
         .then(data => {
             closeMeetingModal();
+            cleanupModalBackdrops();
             if (data.success) {
                 showAlert('success', 'Meeting scheduled successfully! Email notifications sent.');
                 setTimeout(() => location.reload(), 1500);

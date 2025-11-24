@@ -20,6 +20,11 @@
     <link href="{{ asset('template/css/style.css') }}" rel="stylesheet">
     
     <style>
+        html, body {
+            overflow: hidden;
+            height: 100%;
+        }
+        
         * {
             font-family: "Momo Trust Display", sans-serif;
         }
