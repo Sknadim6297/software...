@@ -30,9 +30,9 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="email">Email *</label>
-                                        <input type="email" class="form-control @error('email') is-invalid @enderror" 
-                                               id="email" name="email" value="{{ old('email', $lead->email) }}" required>
+                                             <label for="email">Email</label>
+                                             <input type="email" class="form-control @error('email') is-invalid @enderror" 
+                                                 id="email" name="email" value="{{ old('email', $lead->email) }}">
                                         @error('email')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -66,19 +66,29 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="lead_source">Lead Source *</label>
-                                        <select class="form-control @error('lead_source') is-invalid @enderror" 
-                                                id="lead_source" name="lead_source" required>
-                                            <option value="">Select Source</option>
-                                            <option value="website" {{ old('lead_source', $lead->lead_source) === 'website' ? 'selected' : '' }}>Website</option>
-                                            <option value="referral" {{ old('lead_source', $lead->lead_source) === 'referral' ? 'selected' : '' }}>Referral</option>
-                                            <option value="social_media" {{ old('lead_source', $lead->lead_source) === 'social_media' ? 'selected' : '' }}>Social Media</option>
-                                            <option value="cold_call" {{ old('lead_source', $lead->lead_source) === 'cold_call' ? 'selected' : '' }}>Cold Call</option>
-                                            <option value="email_campaign" {{ old('lead_source', $lead->lead_source) === 'email_campaign' ? 'selected' : '' }}>Email Campaign</option>
-                                            <option value="trade_show" {{ old('lead_source', $lead->lead_source) === 'trade_show' ? 'selected' : '' }}>Trade Show</option>
-                                            <option value="other" {{ old('lead_source', $lead->lead_source) === 'other' ? 'selected' : '' }}>Other</option>
+                                        <label for="platform">Platform / Source Type *</label>
+                                        <select class="form-control @error('platform') is-invalid @enderror" 
+                                                id="platform" name="platform" required>
+                                            <option value="">Select Platform / Source</option>
+                                            <option value="facebook" {{ old('platform', $lead->platform ?? '') === 'facebook' ? 'selected' : '' }}>Facebook</option>
+                                            <option value="instagram" {{ old('platform', $lead->platform ?? '') === 'instagram' ? 'selected' : '' }}>Instagram</option>
+                                            <option value="website" {{ old('platform', $lead->platform ?? '') === 'website' ? 'selected' : '' }}>Website</option>
+                                            <option value="google" {{ old('platform', $lead->platform ?? '') === 'google' ? 'selected' : '' }}>Google</option>
+                                            <option value="justdial" {{ old('platform', $lead->platform ?? '') === 'justdial' ? 'selected' : '' }}>Just Dial</option>
+                                            <option value="other" {{ old('platform', $lead->platform ?? '') === 'other' ? 'selected' : '' }}>Other</option>
                                         </select>
-                                        @error('lead_source')
+                                        @error('platform')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6" id="platform_other_group" style="display: none;">
+                                    <div class="form-group">
+                                        <label for="platform_other">Please specify the source</label>
+                                        <input type="text" class="form-control @error('platform_other') is-invalid @enderror" 
+                                               id="platform_other" name="platform_other" placeholder="Please specify the source" 
+                                               value="{{ old('platform_other', $lead->platform_custom ?? '') }}">
+                                        @error('platform_other')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -344,6 +354,29 @@
 
 @section('scripts')
 <script>
+// Toggle Other source input in Edit form
+document.addEventListener('DOMContentLoaded', function() {
+    var platformSelect = document.getElementById('platform');
+    var otherGroup = document.getElementById('platform_other_group');
+    var otherInput = document.getElementById('platform_other');
+    function toggleOther() {
+        if (!platformSelect) return;
+        if (platformSelect.value === 'other') {
+            otherGroup.style.display = 'block';
+            if (otherInput) otherInput.setAttribute('required', 'required');
+        } else {
+            otherGroup.style.display = 'none';
+            if (otherInput) {
+                otherInput.removeAttribute('required');
+            }
+        }
+    }
+    if (platformSelect) {
+        platformSelect.addEventListener('change', toggleOther);
+        toggleOther();
+    }
+});
+
 function convertToCustomer() {
     if (confirm('Are you sure you want to convert this lead to a customer?')) {
         fetch(`/leads/{{ $lead->id }}/convert-to-customer`, {

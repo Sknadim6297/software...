@@ -51,6 +51,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/{lead}/schedule-callback', [LeadController::class, 'scheduleCallback'])->name('schedule-callback');
         Route::post('/{lead}/complete-callback', [LeadController::class, 'completeCallback'])->name('complete-callback');
         Route::post('/{lead}/schedule-meeting', [LeadController::class, 'scheduleMeeting'])->name('schedule-meeting');
+        Route::post('/{lead}/complete-meeting', [LeadController::class, 'completeMeeting'])->name('complete-meeting');
+        
+        // Additional Lead Actions
         Route::post('/{lead}/update-status', [LeadController::class, 'updateStatus'])->name('update-status');
         Route::post('/{lead}/convert-to-customer', [LeadController::class, 'convertToCustomer'])->name('convert-to-customer');
     });

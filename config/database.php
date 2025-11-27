@@ -126,10 +126,8 @@ return [
     |
     */
 
-    'migrations' => [
-        'table' => 'migrations',
-        'update_date_on_publish' => true,
-    ],
+    // Migration repository table name (string as required by Laravel)
+    'migrations' => env('DB_MIGRATIONS_TABLE', 'migrations'),
 
     /*
     |--------------------------------------------------------------------------

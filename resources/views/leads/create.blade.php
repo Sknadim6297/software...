@@ -52,10 +52,10 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group mb-3">
-                                <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
-                                <input type="email" class="form-control @error('email') is-invalid @enderror" 
-                                       id="email" name="email" value="{{ old('email') }}" 
-                                       placeholder="customer@example.com" required>
+                                    <label for="email" class="form-label">Email Address</label>
+                                    <input type="email" class="form-control @error('email') is-invalid @enderror" 
+                                        id="email" name="email" value="{{ old('email') }}" 
+                                        placeholder="customer@example.com">
                                 @error('email')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -77,19 +77,29 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group mb-3">
-                                <label for="platform" class="form-label">Platform/Source <span class="text-danger">*</span></label>
+                                <label for="platform" class="form-label">Platform / Source Type <span class="text-danger">*</span></label>
                                 <select class="form-control @error('platform') is-invalid @enderror" id="platform" name="platform" required>
-                                    <option value="">Select Platform</option>
-                                    <option value="website" {{ old('platform') == 'website' ? 'selected' : '' }}>Website</option>
+                                    <option value="">Select Platform / Source</option>
                                     <option value="facebook" {{ old('platform') == 'facebook' ? 'selected' : '' }}>Facebook</option>
                                     <option value="instagram" {{ old('platform') == 'instagram' ? 'selected' : '' }}>Instagram</option>
-                                    <option value="linkedin" {{ old('platform') == 'linkedin' ? 'selected' : '' }}>LinkedIn</option>
-                                    <option value="referral" {{ old('platform') == 'referral' ? 'selected' : '' }}>Referral</option>
-                                    <option value="cold_call" {{ old('platform') == 'cold_call' ? 'selected' : '' }}>Cold Call</option>
-                                    <option value="email" {{ old('platform') == 'email' ? 'selected' : '' }}>Email</option>
+                                    <option value="website" {{ old('platform') == 'website' ? 'selected' : '' }}>Website</option>
+                                    <option value="google" {{ old('platform') == 'google' ? 'selected' : '' }}>Google</option>
+                                    <option value="justdial" {{ old('platform') == 'justdial' ? 'selected' : '' }}>Just Dial</option>
                                     <option value="other" {{ old('platform') == 'other' ? 'selected' : '' }}>Other</option>
                                 </select>
                                 @error('platform')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row" id="platform_other_group" style="display: none;">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="platform_other" class="form-label">Please specify the source</label>
+                                <input type="text" class="form-control @error('platform_other') is-invalid @enderror" id="platform_other" name="platform_other" placeholder="Please specify the source" value="{{ old('platform_other') }}">
+                                @error('platform_other')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -200,6 +210,29 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+        // Platform / Source "Other" handling
+        const platformSelect = document.getElementById('platform');
+        const platformOtherGroup = document.getElementById('platform_other_group');
+        const platformOtherInput = document.getElementById('platform_other');
+
+        function togglePlatformOther() {
+            if (!platformSelect) return;
+            if (platformSelect.value === 'other') {
+                platformOtherGroup.style.display = 'block';
+                if (platformOtherInput) platformOtherInput.setAttribute('required', 'required');
+            } else {
+                platformOtherGroup.style.display = 'none';
+                if (platformOtherInput) {
+                    platformOtherInput.removeAttribute('required');
+                    platformOtherInput.value = '';
+                }
+            }
+        }
+        if (platformSelect) {
+            platformSelect.addEventListener('change', togglePlatformOther);
+            // Initialize on load (in case of old input)
+            togglePlatformOther();
+        }
     // Auto-format phone number
     const phoneField = document.getElementById('phone_number');
     if (phoneField) {
@@ -257,7 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (form) {
         form.addEventListener('submit', function(e) {
             let isValid = true;
-            const requiredFields = ['customer_name', 'email', 'phone_number', 'platform', 'project_type'];
+            const requiredFields = ['customer_name', 'phone_number', 'platform', 'project_type'];
             
             requiredFields.forEach(function(fieldName) {
                 const field = document.getElementById(fieldName);

@@ -91,7 +91,7 @@
                                     </td>
                                     <td>{{ $lead->project_type }}</td>
                                     <td>
-                                        <span class="badge badge-info">{{ ucfirst($lead->platform) }}</span>
+                                        <span class="badge badge-info">{{ ucfirst($lead->platform_custom ?? $lead->platform) }}</span>
                                     </td>
                                     <td>
                                         @switch($lead->status)

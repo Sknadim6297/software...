@@ -274,9 +274,10 @@ class LeadController extends Controller
         $validated = $request->validate([
             'type' => 'required|string|in:incoming,outgoing',
             'customer_name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
+            'email' => 'nullable|email|max:255',
             'phone_number' => 'required|string|max:20',
-            'platform' => 'required|string|max:100',
+            'platform' => 'required|string|in:facebook,instagram,website,google,justdial,other',
+            'platform_other' => 'nullable|required_if:platform,other|string|max:100',
             'project_type' => 'required|string|max:100',
             'project_valuation' => 'nullable|numeric|min:0|max:99999999.99',
             'assigned_to' => 'nullable|exists:users,id',
@@ -293,10 +294,11 @@ class LeadController extends Controller
             'meeting_summary' => 'nullable|required_if:status,meeting_scheduled|string|max:500',
         ], [
             'customer_name.required' => 'Customer name is required.',
-            'email.required' => 'Email address is required.',
             'email.email' => 'Please enter a valid email address.',
             'phone_number.required' => 'Phone number is required.',
-            'platform.required' => 'Platform/Source is required.',
+            'platform.required' => 'Platform / Source Type is required.',
+            'platform.in' => 'Please select a valid Platform / Source Type.',
+            'platform_other.required_if' => 'Please specify the source when selecting Other.',
             'project_type.required' => 'Project type is required.',
             'status.required' => 'Status is required.',
             'status.in' => 'Please select a valid status.',
@@ -321,11 +323,19 @@ class LeadController extends Controller
         }
 
         try {
+            // Resolve platform value and custom text
+            $platformValue = $validated['platform'];
+            $platformCustom = null;
+            if ($platformValue === 'other') {
+                $platformCustom = trim($validated['platform_other'] ?? '');
+            }
+
             $leadData = [
                 'type' => $validated['type'],
                 'date' => now()->toDateString(),
                 'time' => now()->toTimeString(),
-                'platform' => $validated['platform'],
+                'platform' => $platformValue,
+                'platform_custom' => $platformCustom,
                 'customer_name' => $validated['customer_name'],
                 'phone_number' => $validated['phone_number'],
                 'email' => $validated['email'],
@@ -381,9 +391,10 @@ class LeadController extends Controller
     {
         $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
-            'email' => 'required|email',
+            'email' => 'nullable|email',
             'phone_number' => 'required|string|max:20',
-            'platform' => 'required|string',
+            'platform' => 'required|string|in:facebook,instagram,website,google,justdial,other',
+            'platform_other' => 'nullable|required_if:platform,other|string|max:100',
             'project_type' => 'required|string',
             'project_valuation' => 'nullable|numeric|min:0',
             'assigned_to' => 'nullable|exists:users,id',
@@ -393,11 +404,18 @@ class LeadController extends Controller
             'remarks' => 'nullable|string',
         ]);
 
+        $platformValue = $validated['platform'];
+        $platformCustom = null;
+        if ($platformValue === 'other') {
+            $platformCustom = trim($validated['platform_other'] ?? '');
+        }
+
         $lead->update([
             'customer_name' => $validated['customer_name'],
             'phone_number' => $validated['phone_number'],
             'email' => $validated['email'],
-            'platform' => $validated['platform'],
+            'platform' => $platformValue,
+            'platform_custom' => $platformCustom,
             'project_type' => $validated['project_type'],
             'project_valuation' => $validated['project_valuation'],
             'assigned_to' => $validated['assigned_to'],
@@ -439,15 +457,25 @@ class LeadController extends Controller
     public function scheduleMeeting(Request $request, Lead $lead)
     {
         $request->validate([
-            'meeting_time' => 'required|date|after:now',
+            'meeting_time' => 'required|date',
             'meeting_address' => 'required|string|max:255',
             'meeting_person_name' => 'required|string|max:100',
             'meeting_phone_number' => 'required|string|max:20',
             'meeting_summary' => 'required|string|max:500'
         ]);
 
+        $meetingDt = \Carbon\Carbon::parse($request->meeting_time);
+        $meetingDate = $meetingDt->format('Y-m-d');
+
+        // If selected date is today, only restrict time to be in the future
+        if ($meetingDt->isToday() && $meetingDt->lessThanOrEqualTo(now())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please select a meeting time in the future for today.'
+            ]);
+        }
+
         // Check if BDM already has 3 meetings scheduled for this date
-        $meetingDate = \Carbon\Carbon::parse($request->meeting_time)->format('Y-m-d');
         $existingMeetings = Lead::where('assigned_to', Auth::id())
             ->whereDate('meeting_time', $meetingDate)
             ->where('status', 'meeting_scheduled')
@@ -492,6 +520,26 @@ class LeadController extends Controller
                 'message' => 'Meeting scheduled successfully! (Note: Email notifications may have failed)'
             ]);
         }
+    }
+
+    /**
+     * Mark meeting as completed with summary
+     */
+    public function completeMeeting(Request $request, Lead $lead)
+    {
+        $request->validate([
+            'summary' => 'required|string|max:1000'
+        ]);
+
+        $lead->update([
+            'meeting_completed' => true,
+            'meeting_completed_summary' => $request->summary,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Meeting marked as completed and summary saved.'
+        ]);
     }
 
     /**

@@ -144,7 +144,7 @@
                                 <td>{{ $lead->date ? $lead->date->format('d M Y') : $lead->created_at->format('d M Y') }}</td>
                                 <td>{{ $lead->time ? $lead->time->format('H:i') : $lead->created_at->format('H:i') }}</td>
                                 <td>
-                                    <span class="badge badge-primary">{{ ucfirst($lead->platform) }}</span>
+                                    <span class="badge badge-primary">{{ ucfirst($lead->platform_custom ?? $lead->platform) }}</span>
                                 </td>
                                 <td>
                                     <div>
@@ -214,6 +214,12 @@
                                             <button class="btn btn-info btn-xs" onclick="scheduleMeeting({{ $lead->id }})" title="Schedule Meeting">
                                                 <i class="fa fa-calendar"></i>
                                             </button>
+                                        @else
+                                            @if(!$lead->meeting_completed)
+                                            <button class="btn btn-success btn-xs" onclick="openCompleteMeetingModal({{ $lead->id }})" title="Mark as Completed">
+                                                <i class="fa fa-check"></i>
+                                            </button>
+                                            @endif
                                         @endif
                                         
                                         @if($lead->status !== 'did_not_receive')
@@ -265,6 +271,31 @@
                     </table>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Complete Meeting Modal -->
+<div class="modal fade" id="completeMeetingModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">✅ Complete Meeting - What Happened?</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="completeMeetingForm">
+                <input type="hidden" id="complete_meeting_lead_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Meeting Summary</label>
+                        <textarea class="form-control" id="meeting_completed_summary" rows="4" placeholder="Brief notes on what happened" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Save Summary</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -884,6 +915,46 @@ $(document).ready(function() {
         });
     });
     
+    // Complete meeting flow
+    window.openCompleteMeetingModal = function(leadId) {
+        currentLeadId = leadId;
+        document.getElementById('complete_meeting_lead_id').value = leadId;
+        showModalById('completeMeetingModal');
+    };
+
+    $('#completeMeetingForm').on('submit', function(e) {
+        e.preventDefault();
+        const summary = $('#meeting_completed_summary').val().trim();
+        if (!summary) {
+            showAlert('error', 'Please enter a brief meeting summary.');
+            return;
+        }
+        fetch(`/leads/${currentLeadId}/complete-meeting`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': window.Laravel.csrfToken,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ summary })
+        }).then(r => {
+            if (!r.ok) return r.text().then(t => { throw new Error(t || 'Server error'); });
+            return r.json();
+        }).then(data => {
+            if (data.success) {
+                showAlert('success', data.message);
+                hideAllModals();
+                cleanupModalBackdrops();
+                setTimeout(() => location.reload(), 1200);
+            } else {
+                showAlert('error', data.message || 'Could not complete meeting.');
+            }
+        }).catch(err => {
+            console.error(err);
+            showAlert('error', err.message || 'An error occurred.');
+        });
+    });
+
     // Additional modal close handlers (use Bootstrap 5 instances)
     $('.modal .close, .modal .btn-secondary').on('click', function() {
         var modalEl = $(this).closest('.modal')[0];

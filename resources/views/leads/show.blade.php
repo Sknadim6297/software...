@@ -61,7 +61,7 @@
                         <div class="form-group mb-3">
                             <label class="form-label text-muted">Platform/Source</label>
                             <div>
-                                <span class="badge badge-primary">{{ ucfirst($lead->platform) }}</span>
+                                    <span class="badge badge-primary">{{ ucfirst($lead->platform_custom ?? $lead->platform) }}</span>
                             </div>
                         </div>
                     </div>

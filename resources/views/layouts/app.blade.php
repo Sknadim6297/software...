@@ -262,7 +262,7 @@
                     </li>
                 
                  
-                    {{-- <li>
+                 <li>
                         <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
                             <i class="flaticon-381-file-1"></i>
                             <span class="nav-text">Proposals & Contracts</span>
@@ -281,9 +281,7 @@
                                 <i class="flaticon-381-notepad text-info me-2"></i>All Invoices
                             </a></li>
                         </ul>
-                    </li> --}}
-
-                    
+                    </li>
                     {{-- Commented out for now as requested --}}
                     {{--
                     <li>
