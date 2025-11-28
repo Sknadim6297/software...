@@ -543,6 +543,46 @@ class LeadController extends Controller
     }
 
     /**
+     * Cancel scheduled callback
+     */
+    public function cancelCallback(Lead $lead)
+    {
+        $lead->update([
+            'callback_time' => null,
+            'call_notes' => null,
+            'callback_completed' => false,
+            'status' => 'contacted' // Reset to contacted status
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Callback cancelled successfully.'
+        ]);
+    }
+
+    /**
+     * Cancel scheduled meeting
+     */
+    public function cancelMeeting(Lead $lead)
+    {
+        $lead->update([
+            'meeting_time' => null,
+            'meeting_address' => null,
+            'meeting_person_name' => null,
+            'meeting_phone_number' => null,
+            'meeting_summary' => null,
+            'meeting_completed' => false,
+            'meeting_completed_summary' => null,
+            'status' => 'contacted' // Reset to contacted status
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Meeting cancelled successfully.'
+        ]);
+    }
+
+    /**
      * Check meeting limit for today
      */
     public function checkMeetingLimit()

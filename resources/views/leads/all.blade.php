@@ -284,10 +284,53 @@
                                 <td>
                                     <div class="d-flex flex-wrap gap-1">
                                         <!-- Show "Complete Callback" button if callback is scheduled -->
-                                        @if($lead->status === 'callback_scheduled')
-                                            <button class="btn btn-gradient-success btn-xs" onclick="completeCallback({{ $lead->id }})" title="Complete Callback">
-                                                <i class="fa fa-check-circle"></i>
-                                            </button>
+                                        @if($lead->status === 'callback_scheduled' && $lead->callback_time)
+                                            <div class="btn-group">
+                                                <button class="btn btn-gradient-success btn-xs" onclick="completeCallback({{ $lead->id }})" title="Complete Callback">
+                                                    <i class="fa fa-check-circle"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-success btn-xs dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown">
+                                                    <span class="sr-only">Toggle Dropdown</span>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="editCallbackInList({{ $lead->id }}, '{{ $lead->callback_time }}', '{{ addslashes($lead->call_notes ?? '') }}')">
+                                                        <i class="fa fa-edit text-primary"></i> Edit Callback
+                                                    </a></li>
+                                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="postponeCallbackInList({{ $lead->id }}, '{{ $lead->callback_time }}')">
+                                                        <i class="fa fa-clock text-warning"></i> Postpone
+                                                    </a></li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="cancelCallback({{ $lead->id }})">
+                                                        <i class="fa fa-times"></i> Cancel
+                                                    </a></li>
+                                                </ul>
+                                            </div>
+                                        @endif
+                                        
+                                        <!-- Show Complete Meeting button if meeting is scheduled -->
+                                        @if($lead->status === 'meeting_scheduled' && $lead->meeting_time)
+                                            <div class="btn-group">
+                                                @if(!$lead->meeting_completed)
+                                                <button class="btn btn-success btn-xs" onclick="openCompleteMeetingModal({{ $lead->id }})" title="Complete Meeting">
+                                                    <i class="fa fa-check"></i>
+                                                </button>
+                                                @endif
+                                                <button type="button" class="btn btn-info btn-xs dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown">
+                                                    <span class="sr-only">Toggle Dropdown</span>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="editMeetingInList({{ $lead->id }}, '{{ $lead->meeting_time }}', '{{ addslashes($lead->meeting_address ?? '') }}', '{{ addslashes($lead->meeting_person_name ?? '') }}', '{{ addslashes($lead->meeting_phone_number ?? '') }}', '{{ addslashes($lead->meeting_summary ?? '') }}')">
+                                                        <i class="fa fa-edit text-primary"></i> Edit Meeting
+                                                    </a></li>
+                                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="postponeMeetingInList({{ $lead->id }}, '{{ $lead->meeting_time }}')">
+                                                        <i class="fa fa-clock text-warning"></i> Postpone
+                                                    </a></li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="cancelMeeting({{ $lead->id }})">
+                                                        <i class="fa fa-times"></i> Cancel
+                                                    </a></li>
+                                                </ul>
+                                            </div>
                                         @endif
                                         
                                         <!-- Action Buttons - Hide buttons that are already completed -->
@@ -301,12 +344,6 @@
                                             <button class="btn btn-info btn-xs" onclick="scheduleMeeting({{ $lead->id }})" title="Schedule Meeting">
                                                 <i class="fa fa-calendar"></i>
                                             </button>
-                                        @else
-                                            @if(!$lead->meeting_completed)
-                                            <button class="btn btn-success btn-xs" onclick="openCompleteMeetingModal({{ $lead->id }})" title="Mark as Completed">
-                                                <i class="fa fa-check"></i>
-                                            </button>
-                                            @endif
                                         @endif
                                         
                                         @if($lead->status !== 'did_not_receive')
@@ -392,7 +429,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-success" id="submitCompleteMeetingBtn">Save Summary</button>
+                    <button type="submit" class="btn btn-success">Save Summary</button>
                 </div>
             </form>
         </div>
@@ -409,7 +446,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="callbackForm">
+            <form id="callbackForm" action="javascript:void(0);" onsubmit="return false;">
                 <div class="modal-body">
                     <div class="form-group mb-3">
                         <label for="callback_date">Callback Date & Time <span class="text-danger">*</span></label>
@@ -423,7 +460,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="closeCallbackModal()">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="submitCallbackBtn">Schedule Callback</button>
+                    <button type="submit" class="btn btn-primary">Schedule Callback</button>
                 </div>
             </form>
         </div>
@@ -440,7 +477,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="meetingForm">
+            <form id="meetingForm" action="javascript:void(0);" onsubmit="return false;">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6">
@@ -479,7 +516,142 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="closeMeetingModal()">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="submitMeetingBtn">Schedule Meeting</button>
+                    <button type="submit" class="btn btn-primary">Schedule Meeting</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Callback Modal -->
+<div class="modal fade" id="editCallbackModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title"><i class="fa fa-edit"></i> Edit Callback</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editCallbackForm">
+                <input type="hidden" id="edit_callback_lead_id">
+                <div class="modal-body">
+                    <div class="form-group mb-3">
+                        <label for="edit_callback_date">Callback Date & Time <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="edit_callback_date" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="edit_callback_notes">Notes</label>
+                        <textarea class="form-control" id="edit_callback_notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Update Callback</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Meeting Modal -->
+<div class="modal fade" id="editMeetingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="fa fa-edit"></i> Edit Meeting</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editMeetingForm">
+                <input type="hidden" id="edit_meeting_lead_id">
+                <div class="modal-body">
+                    <div class="form-group mb-3">
+                        <label for="edit_meeting_date">Meeting Date & Time <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="edit_meeting_date" required>
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-md-6 mb-3">
+                            <label for="edit_meeting_person_name">Person Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="edit_meeting_person_name" required>
+                        </div>
+                        <div class="form-group col-md-6 mb-3">
+                            <label for="edit_meeting_phone_number">Phone Number <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="edit_meeting_phone_number" required>
+                        </div>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="edit_meeting_address">Meeting Address <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="edit_meeting_address" rows="2" required></textarea>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="edit_meeting_summary">Meeting Summary <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="edit_meeting_summary" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info">Update Meeting</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Postpone Callback Modal -->
+<div class="modal fade" id="postponeCallbackModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title"><i class="fa fa-clock"></i> Postpone Callback</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="postponeCallbackForm">
+                <input type="hidden" id="postpone_callback_lead_id">
+                <div class="modal-body">
+                    <div class="alert alert-info" id="postpone_callback_current"></div>
+                    <div class="form-group mb-3">
+                        <label for="postpone_callback_date">New Callback Date & Time <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="postpone_callback_date" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="postpone_callback_reason">Reason for Postponing <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="postpone_callback_reason" rows="3" required placeholder="Why is this callback being postponed?"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Postpone Callback</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Postpone Meeting Modal -->
+<div class="modal fade" id="postponeMeetingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title"><i class="fa fa-clock"></i> Postpone Meeting</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="postponeMeetingForm">
+                <input type="hidden" id="postpone_meeting_lead_id">
+                <input type="hidden" id="postpone_meeting_address">
+                <input type="hidden" id="postpone_meeting_person">
+                <input type="hidden" id="postpone_meeting_phone">
+                <div class="modal-body">
+                    <div class="alert alert-info" id="postpone_meeting_current"></div>
+                    <div class="form-group mb-3">
+                        <label for="postpone_meeting_date">New Meeting Date & Time <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="postpone_meeting_date" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="postpone_meeting_reason">Reason for Postponing <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="postpone_meeting_reason" rows="3" required placeholder="Why is this meeting being postponed?"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Postpone Meeting</button>
                 </div>
             </form>
         </div>
@@ -550,32 +722,6 @@ function ensureSingleBackdrop() {
     }
 }
 
-// IMMEDIATE FIX: Override Bootstrap modal backdrop behavior
-(function() {
-    // Store original modal show method
-    var originalModalShow = $.fn.modal.Constructor.prototype.show;
-    
-    // Override the show method
-    $.fn.modal.Constructor.prototype.show = function() {
-        // Remove all existing backdrops before showing
-        $('.modal-backdrop').remove();
-        $('body').removeClass('modal-open');
-        $('body').css('padding-right', '');
-        
-        // Call original show method
-        originalModalShow.apply(this, arguments);
-        
-        // After showing, ensure only one backdrop exists
-        var self = this;
-        setTimeout(function() {
-            var backdrops = $('.modal-backdrop');
-            if (backdrops.length > 1) {
-                backdrops.slice(0, -1).remove();
-            }
-        }, 50);
-    };
-})();
-
 // Global functions for onclick handlers
 function scheduleCallback(leadId) {
     console.log('Scheduling callback for lead:', leadId);
@@ -637,6 +783,99 @@ function scheduleMeeting(leadId) {
             ensureSingleBackdrop();
         }, 100);
     }, 200);
+}
+
+// Edit Callback from list
+function editCallbackInList(leadId, callbackTime, notes) {
+    currentLeadId = leadId;
+    document.getElementById('edit_callback_lead_id').value = leadId;
+    document.getElementById('edit_callback_date').value = new Date(callbackTime).toISOString().slice(0, 16);
+    document.getElementById('edit_callback_notes').value = notes || '';
+    showModalById('editCallbackModal');
+}
+
+// Edit Meeting from list
+function editMeetingInList(leadId, meetingTime, address, personName, phoneNumber, summary) {
+    currentLeadId = leadId;
+    document.getElementById('edit_meeting_lead_id').value = leadId;
+    document.getElementById('edit_meeting_date').value = new Date(meetingTime).toISOString().slice(0, 16);
+    document.getElementById('edit_meeting_address').value = address || '';
+    document.getElementById('edit_meeting_person_name').value = personName || '';
+    document.getElementById('edit_meeting_phone_number').value = phoneNumber || '';
+    document.getElementById('edit_meeting_summary').value = summary || '';
+    showModalById('editMeetingModal');
+}
+
+// Postpone Callback from list
+function postponeCallbackInList(leadId, currentTime) {
+    currentLeadId = leadId;
+    document.getElementById('postpone_callback_lead_id').value = leadId;
+    document.getElementById('postpone_callback_current').innerHTML = `<i class="fa fa-info-circle"></i> Current callback: <strong>${new Date(currentTime).toLocaleString()}</strong>`;
+    const now = new Date();
+    document.getElementById('postpone_callback_date').min = now.toISOString().slice(0, 16);
+    showModalById('postponeCallbackModal');
+}
+
+// Postpone Meeting from list
+function postponeMeetingInList(leadId, currentTime) {
+    currentLeadId = leadId;
+    document.getElementById('postpone_meeting_lead_id').value = leadId;
+    document.getElementById('postpone_meeting_current').innerHTML = `<i class="fa fa-info-circle"></i> Current meeting: <strong>${new Date(currentTime).toLocaleString()}</strong>`;
+    const now = new Date();
+    document.getElementById('postpone_meeting_date').min = now.toISOString().slice(0, 16);
+    showModalById('postponeMeetingModal');
+}
+
+// Cancel Callback
+function cancelCallback(leadId) {
+    if (confirm('Are you sure you want to cancel this callback? This action cannot be undone.')) {
+        fetch(`/leads/${leadId}/cancel-callback`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': window.Laravel.csrfToken,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Callback cancelled successfully!');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', 'Error cancelling callback: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'An error occurred while cancelling the callback.');
+        });
+    }
+}
+
+// Cancel Meeting
+function cancelMeeting(leadId) {
+    if (confirm('Are you sure you want to cancel this meeting? This action cannot be undone.')) {
+        fetch(`/leads/${leadId}/cancel-meeting`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': window.Laravel.csrfToken,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Meeting cancelled successfully!');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', 'Error cancelling meeting: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'An error occurred while cancelling the meeting.');
+        });
+    }
 }
 
 function markDidNotReceive(leadId) {
@@ -980,27 +1219,15 @@ $(document).ready(function() {
     }
 
     // Handle callback form submission
-    $(document).on('click', '#submitCallbackBtn', function(e) {
+    $('#callbackForm').off('submit').on('submit', function(e) {
         e.preventDefault();
-        console.log('Callback button clicked, currentLeadId:', currentLeadId);
         
         if (!currentLeadId) {
             showAlert('error', 'No lead selected');
             return;
         }
         
-        const callbackTime = $('#callback_date').val();
-        if (!callbackTime) {
-            showAlert('error', 'Please select callback date and time');
-            return;
-        }
-        
-        const formData = {
-            callback_time: callbackTime,
-            call_notes: $('#callback_notes').val()
-        };
-        
-        console.log('Submitting callback form for lead:', currentLeadId, formData);
+        console.log('Submitting callback form for lead:', currentLeadId);
         
         fetch(`/leads/${currentLeadId}/schedule-callback`, {
             method: 'POST',
@@ -1009,7 +1236,10 @@ $(document).ready(function() {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify(formData)
+            body: JSON.stringify({
+                callback_time: callbackDate,
+                call_notes: callbackNotes
+            })
         })
         .then(response => {
             if (!response.ok) {
@@ -1020,52 +1250,46 @@ $(document).ready(function() {
             return response.json();
         })
         .then(data => {
-            closeCallbackModal();
-            cleanupModalBackdrops();
             if (data.success) {
-                showAlert('success', 'Callback scheduled successfully!');
+                showAlert('success', data.message + ' This will appear in your dashboard under upcoming work.');
+                var inst = bootstrap.Modal.getInstance(document.getElementById('callbackModal')) || new bootstrap.Modal(document.getElementById('callbackModal'));
+                inst.hide();
+                cleanupModalBackdrops();
+                document.getElementById('callbackForm').reset();
                 setTimeout(() => location.reload(), 1500);
             } else {
                 showAlert('error', 'Error scheduling callback: ' + data.message);
             }
         })
         .catch(error => {
-            closeCallbackModal();
             console.error('Callback error:', error);
             showAlert('error', error.message || 'An error occurred while scheduling the callback.');
         });
     });
 
     // Handle meeting form submission
-    $(document).on('click', '#submitMeetingBtn', function(e) {
+    $('#meetingForm').off('submit').on('submit', function(e) {
         e.preventDefault();
-        console.log('Meeting button clicked, currentLeadId:', currentLeadId);
+        e.stopPropagation();
         
         if (!currentLeadId) {
             showAlert('error', 'No lead selected');
             return;
         }
         
-        const meetingTime = $('#meeting_date').val();
+        // Validate all required fields
+        const meetingDate = $('#meeting_date').val();
+        const meetingAddress = $('#meeting_address').val();
         const personName = $('#meeting_person_name').val();
         const phoneNumber = $('#meeting_phone_number').val();
-        const address = $('#meeting_address').val();
         const summary = $('#meeting_summary').val();
         
-        if (!meetingTime || !personName || !phoneNumber || !address || !summary) {
-            showAlert('error', 'Please fill all required fields');
+        if (!meetingDate || !meetingAddress || !personName || !phoneNumber || !summary) {
+            showAlert('error', 'All fields are required for scheduling a meeting.');
             return;
         }
         
-        const formData = {
-            meeting_time: meetingTime,
-            meeting_person_name: personName,
-            meeting_phone_number: phoneNumber,
-            meeting_address: address,
-            meeting_summary: summary
-        };
-        
-        console.log('Submitting meeting form for lead:', currentLeadId, formData);
+        console.log('Submitting meeting form for lead:', currentLeadId);
         
         fetch(`/leads/${currentLeadId}/schedule-meeting`, {
             method: 'POST',
@@ -1074,7 +1298,13 @@ $(document).ready(function() {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify(formData)
+            body: JSON.stringify({
+                meeting_time: meetingDate,
+                meeting_address: meetingAddress,
+                meeting_person_name: personName,
+                meeting_phone_number: phoneNumber,
+                meeting_summary: summary
+            })
         })
         .then(response => {
             if (!response.ok) {
@@ -1085,17 +1315,18 @@ $(document).ready(function() {
             return response.json();
         })
         .then(data => {
-            closeMeetingModal();
-            cleanupModalBackdrops();
             if (data.success) {
-                showAlert('success', 'Meeting scheduled successfully! Email notifications sent.');
+                showAlert('success', data.message + ' Email notifications have been sent.');
+                var inst = bootstrap.Modal.getInstance(document.getElementById('meetingModal')) || new bootstrap.Modal(document.getElementById('meetingModal'));
+                inst.hide();
+                cleanupModalBackdrops();
+                document.getElementById('meetingForm').reset();
                 setTimeout(() => location.reload(), 1500);
             } else {
-                showAlert('error', 'Error scheduling meeting: ' + data.message);
+                showAlert('error', data.message);
             }
         })
         .catch(error => {
-            closeMeetingModal();
             console.error('Meeting error:', error);
             showAlert('error', error.message || 'An error occurred while scheduling the meeting.');
         });
@@ -1108,9 +1339,8 @@ $(document).ready(function() {
         showModalById('completeMeetingModal');
     };
 
-    $(document).on('click', '#submitCompleteMeetingBtn', function(e) {
+    $('#completeMeetingForm').on('submit', function(e) {
         e.preventDefault();
-        console.log('Complete meeting button clicked, currentLeadId:', currentLeadId);
         const summary = $('#meeting_completed_summary').val().trim();
         if (!summary) {
             showAlert('error', 'Please enter a brief meeting summary.');
@@ -1139,6 +1369,145 @@ $(document).ready(function() {
         }).catch(err => {
             console.error(err);
             showAlert('error', err.message || 'An error occurred.');
+        });
+    });
+
+    // Handle edit callback form submission
+    $('#editCallbackForm').on('submit', function(e) {
+        e.preventDefault();
+        const leadId = document.getElementById('edit_callback_lead_id').value;
+        
+        fetch(`/leads/${leadId}/schedule-callback`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': window.Laravel.csrfToken,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                callback_time: $('#edit_callback_date').val(),
+                call_notes: $('#edit_callback_notes').val()
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Callback updated successfully!');
+                hideAllModals();
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', 'Error updating callback: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'An error occurred while updating the callback.');
+        });
+    });
+
+    // Handle edit meeting form submission
+    $('#editMeetingForm').on('submit', function(e) {
+        e.preventDefault();
+        const leadId = document.getElementById('edit_meeting_lead_id').value;
+        
+        fetch(`/leads/${leadId}/schedule-meeting`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': window.Laravel.csrfToken,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                meeting_time: $('#edit_meeting_date').val(),
+                meeting_address: $('#edit_meeting_address').val(),
+                meeting_person_name: $('#edit_meeting_person_name').val(),
+                meeting_phone_number: $('#edit_meeting_phone_number').val(),
+                meeting_summary: $('#edit_meeting_summary').val()
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Meeting updated successfully!');
+                hideAllModals();
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', 'Error updating meeting: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'An error occurred while updating the meeting.');
+        });
+    });
+
+    // Handle postpone callback form submission
+    $('#postponeCallbackForm').on('submit', function(e) {
+        e.preventDefault();
+        const leadId = document.getElementById('postpone_callback_lead_id').value;
+        
+        fetch(`/leads/${leadId}/schedule-callback`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': window.Laravel.csrfToken,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                callback_time: $('#postpone_callback_date').val(),
+                call_notes: 'Postponed: ' + $('#postpone_callback_reason').val()
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Callback postponed successfully!');
+                hideAllModals();
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', 'Error postponing callback: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'An error occurred while postponing the callback.');
+        });
+    });
+
+    // Handle postpone meeting form submission
+    $('#postponeMeetingForm').on('submit', function(e) {
+        e.preventDefault();
+        const leadId = document.getElementById('postpone_meeting_lead_id').value;
+        
+        // Get existing meeting details from hidden fields or form
+        const address = document.getElementById('postpone_meeting_address').value || $('#edit_meeting_address').val();
+        const personName = document.getElementById('postpone_meeting_person').value || $('#edit_meeting_person_name').val();
+        const phoneNumber = document.getElementById('postpone_meeting_phone').value || $('#edit_meeting_phone_number').val();
+        
+        fetch(`/leads/${leadId}/schedule-meeting`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': window.Laravel.csrfToken,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                meeting_time: $('#postpone_meeting_date').val(),
+                meeting_address: address,
+                meeting_person_name: personName,
+                meeting_phone_number: phoneNumber,
+                meeting_summary: 'Postponed: ' + $('#postpone_meeting_reason').val()
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Meeting postponed successfully!');
+                hideAllModals();
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', 'Error postponing meeting: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'An error occurred while postponing the meeting.');
         });
     });
 });

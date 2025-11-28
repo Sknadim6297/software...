@@ -50,8 +50,10 @@ Route::middleware(['auth'])->group(function () {
         // Lead Actions
         Route::post('/{lead}/schedule-callback', [LeadController::class, 'scheduleCallback'])->name('schedule-callback');
         Route::post('/{lead}/complete-callback', [LeadController::class, 'completeCallback'])->name('complete-callback');
+        Route::post('/{lead}/cancel-callback', [LeadController::class, 'cancelCallback'])->name('cancel-callback');
         Route::post('/{lead}/schedule-meeting', [LeadController::class, 'scheduleMeeting'])->name('schedule-meeting');
         Route::post('/{lead}/complete-meeting', [LeadController::class, 'completeMeeting'])->name('complete-meeting');
+        Route::post('/{lead}/cancel-meeting', [LeadController::class, 'cancelMeeting'])->name('cancel-meeting');
         
         // Additional Lead Actions
         Route::post('/{lead}/update-status', [LeadController::class, 'updateStatus'])->name('update-status');

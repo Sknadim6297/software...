@@ -300,7 +300,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-success" id="submitCompleteMeetingBtn">Save Summary</button>
+                    <button type="submit" class="btn btn-success">Save Summary</button>
                 </div>
             </form>
         </div>
@@ -317,7 +317,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="callbackForm">
+            <form id="callbackForm" action="javascript:void(0);" onsubmit="return false;">
                 <div class="modal-body">
                     <div class="form-group mb-3">
                         <label for="callback_date">Callback Date & Time <span class="text-danger">*</span></label>
@@ -331,7 +331,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="closeCallbackModal()">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="submitCallbackBtn">Schedule Callback</button>
+                    <button type="submit" class="btn btn-primary">Schedule Callback</button>
                 </div>
             </form>
         </div>
@@ -348,7 +348,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="meetingForm">
+            <form id="meetingForm" action="javascript:void(0);" onsubmit="return false;">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6">
@@ -387,7 +387,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="closeMeetingModal()">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="submitMeetingBtn">Schedule Meeting</button>
+                    <button type="submit" class="btn btn-primary">Schedule Meeting</button>
                 </div>
             </form>
         </div>
@@ -567,32 +567,6 @@ function ensureSingleBackdrop() {
         bodyBackdrops.slice(0, -1).remove();
     }
 }
-
-// IMMEDIATE FIX: Override Bootstrap modal backdrop behavior
-(function() {
-    // Store original modal show method
-    var originalModalShow = $.fn.modal.Constructor.prototype.show;
-    
-    // Override the show method
-    $.fn.modal.Constructor.prototype.show = function() {
-        // Remove all existing backdrops before showing
-        $('.modal-backdrop').remove();
-        $('body').removeClass('modal-open');
-        $('body').css('padding-right', '');
-        
-        // Call original show method
-        originalModalShow.apply(this, arguments);
-        
-        // After showing, ensure only one backdrop exists
-        var self = this;
-        setTimeout(function() {
-            var backdrops = $('.modal-backdrop');
-            if (backdrops.length > 1) {
-                backdrops.slice(0, -1).remove();
-            }
-        }, 50);
-    };
-})();
 
 // Global functions for onclick handlers
 function scheduleCallback(leadId) {
@@ -1010,7 +984,7 @@ $(document).ready(function() {
                 table.column(7).search(filterValue).draw();
             });
 
-            $('#filter_remarks').on('keyup change', function() {
+            $('#filter_remarks').on('change', function() {
                 var filterValue = this.value;
                 table.column(8).search(filterValue).draw();
             });
@@ -1020,27 +994,24 @@ $(document).ready(function() {
     }
 
     // Handle callback form submission
-    $(document).on('click', '#submitCallbackBtn', function(e) {
+    $('#callbackForm').off('submit').on('submit', function(e) {
         e.preventDefault();
-        console.log('Callback button clicked, currentLeadId:', currentLeadId);
+        e.stopPropagation();
         
         if (!currentLeadId) {
             showAlert('error', 'No lead selected');
             return;
         }
         
-        const callbackTime = $('#callback_date').val();
-        if (!callbackTime) {
-            showAlert('error', 'Please select callback date and time');
+        const callbackDate = $('#callback_date').val();
+        const callbackNotes = $('#callback_notes').val();
+        
+        if (!callbackDate) {
+            showAlert('error', 'Callback date and time is required.');
             return;
         }
         
-        const formData = {
-            callback_time: callbackTime,
-            call_notes: $('#callback_notes').val()
-        };
-        
-        console.log('Submitting callback form for lead:', currentLeadId, formData);
+        console.log('Submitting callback form for lead:', currentLeadId);
         
         fetch(`/leads/${currentLeadId}/schedule-callback`, {
             method: 'POST',
@@ -1049,7 +1020,10 @@ $(document).ready(function() {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify(formData)
+            body: JSON.stringify({
+                callback_time: callbackDate,
+                call_notes: callbackNotes
+            })
         })
         .then(response => {
             if (!response.ok) {
@@ -1060,52 +1034,46 @@ $(document).ready(function() {
             return response.json();
         })
         .then(data => {
-            closeCallbackModal();
-            cleanupModalBackdrops();
             if (data.success) {
-                showAlert('success', 'Callback scheduled successfully!');
+                showAlert('success', data.message + ' This will appear in your dashboard under upcoming work.');
+                var inst = bootstrap.Modal.getInstance(document.getElementById('callbackModal')) || new bootstrap.Modal(document.getElementById('callbackModal'));
+                inst.hide();
+                cleanupModalBackdrops();
+                document.getElementById('callbackForm').reset();
                 setTimeout(() => location.reload(), 1500);
             } else {
                 showAlert('error', 'Error scheduling callback: ' + data.message);
             }
         })
         .catch(error => {
-            closeCallbackModal();
             console.error('Callback error:', error);
             showAlert('error', error.message || 'An error occurred while scheduling the callback.');
         });
     });
 
     // Handle meeting form submission
-    $(document).on('click', '#submitMeetingBtn', function(e) {
+    $('#meetingForm').off('submit').on('submit', function(e) {
         e.preventDefault();
-        console.log('Meeting button clicked, currentLeadId:', currentLeadId);
+        e.stopPropagation();
         
         if (!currentLeadId) {
             showAlert('error', 'No lead selected');
             return;
         }
         
-        const meetingTime = $('#meeting_date').val();
+        // Validate all required fields
+        const meetingDate = $('#meeting_date').val();
+        const meetingAddress = $('#meeting_address').val();
         const personName = $('#meeting_person_name').val();
         const phoneNumber = $('#meeting_phone_number').val();
-        const address = $('#meeting_address').val();
         const summary = $('#meeting_summary').val();
         
-        if (!meetingTime || !personName || !phoneNumber || !address || !summary) {
-            showAlert('error', 'Please fill all required fields');
+        if (!meetingDate || !meetingAddress || !personName || !phoneNumber || !summary) {
+            showAlert('error', 'All fields are required for scheduling a meeting.');
             return;
         }
         
-        const formData = {
-            meeting_time: meetingTime,
-            meeting_person_name: personName,
-            meeting_phone_number: phoneNumber,
-            meeting_address: address,
-            meeting_summary: summary
-        };
-        
-        console.log('Submitting meeting form for lead:', currentLeadId, formData);
+        console.log('Submitting meeting form for lead:', currentLeadId);
         
         fetch(`/leads/${currentLeadId}/schedule-meeting`, {
             method: 'POST',
@@ -1114,7 +1082,13 @@ $(document).ready(function() {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify(formData)
+            body: JSON.stringify({
+                meeting_time: meetingDate,
+                meeting_address: meetingAddress,
+                meeting_person_name: personName,
+                meeting_phone_number: phoneNumber,
+                meeting_summary: summary
+            })
         })
         .then(response => {
             if (!response.ok) {
@@ -1125,17 +1099,18 @@ $(document).ready(function() {
             return response.json();
         })
         .then(data => {
-            closeMeetingModal();
-            cleanupModalBackdrops();
             if (data.success) {
-                showAlert('success', 'Meeting scheduled successfully! Email notifications sent.');
+                showAlert('success', data.message + ' Email notifications have been sent.');
+                var inst = bootstrap.Modal.getInstance(document.getElementById('meetingModal')) || new bootstrap.Modal(document.getElementById('meetingModal'));
+                inst.hide();
+                cleanupModalBackdrops();
+                document.getElementById('meetingForm').reset();
                 setTimeout(() => location.reload(), 1500);
             } else {
-                showAlert('error', 'Error scheduling meeting: ' + data.message);
+                showAlert('error', data.message);
             }
         })
         .catch(error => {
-            closeMeetingModal();
             console.error('Meeting error:', error);
             showAlert('error', error.message || 'An error occurred while scheduling the meeting.');
         });
@@ -1148,9 +1123,8 @@ $(document).ready(function() {
         showModalById('completeMeetingModal');
     };
 
-    $(document).on('click', '#submitCompleteMeetingBtn', function(e) {
+    $('#completeMeetingForm').on('submit', function(e) {
         e.preventDefault();
-        console.log('Complete meeting button clicked, currentLeadId:', currentLeadId);
         const summary = $('#meeting_completed_summary').val().trim();
         if (!summary) {
             showAlert('error', 'Please enter a brief meeting summary.');
