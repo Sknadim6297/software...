@@ -389,7 +389,9 @@
                     <i class="fa fa-calendar text-success me-2"></i>
                     Upcoming Meetings
                 </h4>
-                <span class="badge badge-success">{{ $upcomingMeetings->count() }}/3 Daily</span>
+                <small class="text-muted d-block">
+                    Today: {{ $todayMeetingsCount }} | Tomorrow: {{ $tomorrowMeetingsCount }}
+                </small>
             </div>
             <div class="card-body">
                 @if($upcomingMeetings->count() > 0)

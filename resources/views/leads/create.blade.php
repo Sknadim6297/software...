@@ -281,6 +281,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.target.classList.add('is-invalid');
             } else {
                 e.target.classList.remove('is-invalid');
+                // Check for duplicates
+                checkDuplicateContact('phone', e.target.value);
+            }
+        });
+    }
+
+    // Email duplicate check
+    if (emailField) {
+        const originalBlurHandler = emailField.onblur;
+        emailField.addEventListener('blur', function(e) {
+            if (originalBlurHandler) originalBlurHandler.call(this, e);
+            if (e.target.value && !e.target.classList.contains('is-invalid')) {
+                checkDuplicateContact('email', e.target.value);
             }
         });
     }
@@ -455,6 +468,59 @@ document.addEventListener('DOMContentLoaded', function() {
                 statusSummary.classList.remove('d-none');
                 statusSummary.innerHTML = '<strong>Meeting Scheduled:</strong> ' + new Date(document.getElementById('meeting_time').value).toLocaleString();
         }
+
+        // Functions for duplicate contact checking
+        window.checkDuplicateContact = function(type, value) {
+            if (!value) return;
+            
+            fetch('/api/check-duplicate-contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    type: type,
+                    value: value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearContactAlert(type);
+                if (data.exists) {
+                    showContactAlert(type, data);
+                }
+            })
+            .catch(error => {
+                console.error('Error checking duplicate contact:', error);
+            });
+        };
+
+        window.showContactAlert = function(type, data) {
+            const fieldId = type === 'phone' ? 'phone_number' : 'email';
+            const field = document.getElementById(fieldId);
+            const fieldGroup = field.closest('.form-group');
+            
+            const alertHtml = `
+                <div class="alert alert-warning mt-2" id="${type}-duplicate-alert">
+                    <small><i class="fa fa-exclamation-triangle"></i> 
+                    This ${type} already exists: <strong>${data.customer_name}</strong> 
+                    (Added: ${data.created_date})
+                    ${data.lead_id ? `<a href="/leads/${data.lead_id}" target="_blank" class="alert-link">View Lead</a>` : ''}
+                    ${data.customer_id ? `<a href="/customers/${data.customer_id}" target="_blank" class="alert-link">View Customer</a>` : ''}
+                    </small>
+                </div>
+            `;
+            
+            fieldGroup.insertAdjacentHTML('beforeend', alertHtml);
+        };
+
+        window.clearContactAlert = function(type) {
+            const existingAlert = document.getElementById(`${type}-duplicate-alert`);
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+        };
 });
 </script>
 

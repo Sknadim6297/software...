@@ -686,7 +686,7 @@ window.hideAllModals = function() {
 };
 
 // Function to clean up modal backdrops - AGGRESSIVE CLEANUP
-function cleanupModalBackdrops() {
+window.cleanupModalBackdrops = function() {
     // Get all backdrops
     var backdrops = $('.modal-backdrop');
     
@@ -708,7 +708,7 @@ function cleanupModalBackdrops() {
 }
 
 // Function to ensure only one backdrop exists
-function ensureSingleBackdrop() {
+window.ensureSingleBackdrop = function() {
     var backdrops = $('.modal-backdrop');
     if (backdrops.length > 1) {
         // Keep only the last one (most recently added)
@@ -723,7 +723,7 @@ function ensureSingleBackdrop() {
 }
 
 // Global functions for onclick handlers
-function scheduleCallback(leadId) {
+window.scheduleCallback = function(leadId) {
     console.log('Scheduling callback for lead:', leadId);
     currentLeadId = leadId;
     
@@ -754,7 +754,7 @@ function scheduleCallback(leadId) {
     }, 200);
 }
 
-function scheduleMeeting(leadId) {
+window.scheduleMeeting = function(leadId) {
     console.log('Scheduling meeting for lead:', leadId);
     currentLeadId = leadId;
     
@@ -786,7 +786,7 @@ function scheduleMeeting(leadId) {
 }
 
 // Edit Callback from list
-function editCallbackInList(leadId, callbackTime, notes) {
+window.editCallbackInList = function(leadId, callbackTime, notes) {
     currentLeadId = leadId;
     document.getElementById('edit_callback_lead_id').value = leadId;
     document.getElementById('edit_callback_date').value = new Date(callbackTime).toISOString().slice(0, 16);
@@ -795,7 +795,7 @@ function editCallbackInList(leadId, callbackTime, notes) {
 }
 
 // Edit Meeting from list
-function editMeetingInList(leadId, meetingTime, address, personName, phoneNumber, summary) {
+window.editMeetingInList = function(leadId, meetingTime, address, personName, phoneNumber, summary) {
     currentLeadId = leadId;
     document.getElementById('edit_meeting_lead_id').value = leadId;
     document.getElementById('edit_meeting_date').value = new Date(meetingTime).toISOString().slice(0, 16);
@@ -807,7 +807,7 @@ function editMeetingInList(leadId, meetingTime, address, personName, phoneNumber
 }
 
 // Postpone Callback from list
-function postponeCallbackInList(leadId, currentTime) {
+window.postponeCallbackInList = function(leadId, currentTime) {
     currentLeadId = leadId;
     document.getElementById('postpone_callback_lead_id').value = leadId;
     document.getElementById('postpone_callback_current').innerHTML = `<i class="fa fa-info-circle"></i> Current callback: <strong>${new Date(currentTime).toLocaleString()}</strong>`;
@@ -817,7 +817,7 @@ function postponeCallbackInList(leadId, currentTime) {
 }
 
 // Postpone Meeting from list
-function postponeMeetingInList(leadId, currentTime) {
+window.postponeMeetingInList = function(leadId, currentTime) {
     currentLeadId = leadId;
     document.getElementById('postpone_meeting_lead_id').value = leadId;
     document.getElementById('postpone_meeting_current').innerHTML = `<i class="fa fa-info-circle"></i> Current meeting: <strong>${new Date(currentTime).toLocaleString()}</strong>`;
@@ -827,7 +827,7 @@ function postponeMeetingInList(leadId, currentTime) {
 }
 
 // Cancel Callback
-function cancelCallback(leadId) {
+window.cancelCallback = function(leadId) {
     if (confirm('Are you sure you want to cancel this callback? This action cannot be undone.')) {
         fetch(`/leads/${leadId}/cancel-callback`, {
             method: 'POST',
@@ -853,7 +853,7 @@ function cancelCallback(leadId) {
 }
 
 // Cancel Meeting
-function cancelMeeting(leadId) {
+window.cancelMeeting = function(leadId) {
     if (confirm('Are you sure you want to cancel this meeting? This action cannot be undone.')) {
         fetch(`/leads/${leadId}/cancel-meeting`, {
             method: 'POST',
@@ -878,7 +878,7 @@ function cancelMeeting(leadId) {
     }
 }
 
-function markDidNotReceive(leadId) {
+window.markDidNotReceive = function(leadId) {
     console.log('Marking lead as did not receive:', leadId);
     if (confirm('Mark this lead as "Did Not Receive"? This will be added to your Did Not Receive Call List.')) {
         fetch(`/leads/${leadId}/update-status`, {
@@ -915,7 +915,7 @@ function markDidNotReceive(leadId) {
     }
 }
 
-function markNotRequired(leadId) {
+window.markNotRequired = function(leadId) {
     console.log('Marking lead as not required:', leadId);
     if (confirm('Mark this lead as "Not Required"? This means the customer does not need the service.')) {
         fetch(`/leads/${leadId}/update-status`, {
@@ -952,7 +952,7 @@ function markNotRequired(leadId) {
     }
 }
 
-function markInterested(leadId) {
+window.markInterested = function(leadId) {
     console.log('Marking lead as interested:', leadId);
     if (confirm('Mark this lead as "Interested"?')) {
         fetch(`/leads/${leadId}/update-status`, {
@@ -989,7 +989,7 @@ function markInterested(leadId) {
     }
 }
 
-function markNotInterested(leadId) {
+window.markNotInterested = function(leadId) {
     console.log('Marking lead as not interested:', leadId);
     if (confirm('Mark this lead as "Not Interested"?')) {
         fetch(`/leads/${leadId}/update-status`, {
@@ -1026,13 +1026,13 @@ function markNotInterested(leadId) {
     }
 }
 
-function viewDetails(leadId) {
+window.viewDetails = function(leadId) {
     console.log('Viewing details for lead:', leadId);
     // Redirect to lead details page or show modal
     window.location.href = `/leads/${leadId}`;
 }
 
-function closeCallbackModal() {
+window.closeCallbackModal = function() {
     console.log('Closing callback modal');
     var modalInstance = bootstrap.Modal.getInstance(document.getElementById('callbackModal'));
     if (modalInstance) modalInstance.hide();
@@ -1043,7 +1043,7 @@ function closeCallbackModal() {
     }, 300);
 }
 
-function closeMeetingModal() {
+window.closeMeetingModal = function() {
     console.log('Closing meeting modal');
     var modalInstance = bootstrap.Modal.getInstance(document.getElementById('meetingModal'));
     if (modalInstance) modalInstance.hide();
@@ -1054,7 +1054,7 @@ function closeMeetingModal() {
     }, 300);
 }
 
-function clearAllFilters() {
+window.clearAllFilters = function() {
     $('#filter_type').val('');
     $('#filter_customer').val('');
     $('#filter_platform').val('');
@@ -1068,7 +1068,7 @@ function clearAllFilters() {
     }
 }
 
-function showAlert(type, message) {
+window.showAlert = function(type, message) {
     const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
     const alertHtml = `
         <div class="alert ${alertClass} alert-dismissible fade show" role="alert">

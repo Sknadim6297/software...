@@ -63,6 +63,8 @@ Route::middleware(['auth'])->group(function () {
     // API Routes for AJAX
     Route::prefix('api')->group(function () {
         Route::get('/check-meeting-limit', [LeadController::class, 'checkMeetingLimit']);
+        Route::post('/check-meeting-availability', [LeadController::class, 'checkMeetingAvailability']);
+        Route::post('/check-duplicate-contact', [LeadController::class, 'checkDuplicateContact']);
     });
 
     // Proposal Management Routes

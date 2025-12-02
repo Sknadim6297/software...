@@ -310,6 +310,40 @@ class LeadController extends Controller
             'meeting_summary.required_if' => 'Meeting summary is required for Calendar status.',
         ]);
 
+        // Check for duplicate phone number
+        $existingLead = Lead::where('phone_number', $validated['phone_number'])->first();
+        $existingCustomer = Customer::where('number', $validated['phone_number'])->first();
+        
+        if ($existingLead) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['phone_number' => "This phone number already exists in the system: {$existingLead->customer_name} (Added: {$existingLead->created_at->format('d M Y')})"]);
+        }
+        
+        if ($existingCustomer) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['phone_number' => "This phone number already exists in customers: {$existingCustomer->customer_name} (Added: {$existingCustomer->created_at->format('d M Y')})"]);
+        }
+
+        // Check for duplicate email if provided
+        if (!empty($validated['email'])) {
+            $existingLeadEmail = Lead::where('email', $validated['email'])->first();
+            $existingCustomerEmail = Customer::where('email', $validated['email'])->first();
+            
+            if ($existingLeadEmail) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['email' => "This email already exists in the system: {$existingLeadEmail->customer_name} (Added: {$existingLeadEmail->created_at->format('d M Y')})"]);
+            }
+            
+            if ($existingCustomerEmail) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['email' => "This email already exists in customers: {$existingCustomerEmail->customer_name} (Added: {$existingCustomerEmail->created_at->format('d M Y')})"]);
+            }
+        }
+
         // Enforce meeting per-day limit if scheduling meeting now
         if ($validated['status'] === 'meeting_scheduled') {
             $meetingDate = \Carbon\Carbon::parse($validated['meeting_time'])->format('Y-m-d');
@@ -391,38 +425,102 @@ class LeadController extends Controller
     {
         $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
-            'email' => 'nullable|email',
-            'phone_number' => 'required|string|max:20',
-            'platform' => 'required|string|in:facebook,instagram,website,google,justdial,other',
-            'platform_other' => 'nullable|required_if:platform,other|string|max:100',
+            'customer_email' => 'nullable|email',
+            'customer_phone' => 'required|string|max:20',
+            'source' => 'required|string|in:facebook,instagram,website,google,justdial,other',
+            'source_other' => 'nullable|required_if:source,other|string|max:100',
             'project_type' => 'required|string',
-            'project_valuation' => 'nullable|numeric|min:0',
-            'assigned_to' => 'nullable|exists:users,id',
+            'budget_range' => 'nullable|string|max:100',
+            'bdm_id' => 'nullable|exists:users,id',
             'status' => 'required|string',
+            'priority' => 'nullable|string|in:low,medium,high,urgent',
+            'requirements' => 'nullable|string',
+            'notes' => 'nullable|string',
             'callback_time' => 'nullable|date',
             'meeting_time' => 'nullable|date',
-            'remarks' => 'nullable|string',
+            'meeting_type' => 'nullable|string|in:phone,video,in_person',
+            'meeting_summary' => 'nullable|string|max:500',
         ]);
 
-        $platformValue = $validated['platform'];
-        $platformCustom = null;
-        if ($platformValue === 'other') {
-            $platformCustom = trim($validated['platform_other'] ?? '');
+        // Check for duplicate phone number
+        if ($validated['customer_phone'] !== $lead->customer_phone) {
+            $existingLead = Lead::where('customer_phone', $validated['customer_phone'])
+                ->where('id', '!=', $lead->id)
+                ->first();
+            $existingCustomer = Customer::where('number', $validated['customer_phone'])->first();
+            
+            if ($existingLead) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['customer_phone' => "This phone number already exists in the system: {$existingLead->customer_name} (Added: {$existingLead->created_at->format('d M Y')})"]);
+            }
+            
+            if ($existingCustomer) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['customer_phone' => "This phone number already exists in customers: {$existingCustomer->customer_name} (Added: {$existingCustomer->created_at->format('d M Y')})"]);
+            }
+        }
+
+        // Check for duplicate email
+        if ($validated['customer_email'] && $validated['customer_email'] !== $lead->customer_email) {
+            $existingLead = Lead::where('customer_email', $validated['customer_email'])
+                ->where('id', '!=', $lead->id)
+                ->first();
+            $existingCustomer = Customer::where('email', $validated['customer_email'])->first();
+            
+            if ($existingLead) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['customer_email' => "This email already exists in the system: {$existingLead->customer_name} (Added: {$existingLead->created_at->format('d M Y')})"]);
+            }
+            
+            if ($existingCustomer) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['customer_email' => "This email already exists in customers: {$existingCustomer->customer_name} (Added: {$existingCustomer->created_at->format('d M Y')})"]);
+            }
+        }
+
+        // Check meeting limit if scheduling meeting 
+        if ($validated['meeting_time'] && $validated['meeting_time'] !== $lead->meeting_time) {
+            $meetingDate = \Carbon\Carbon::parse($validated['meeting_time'])->format('Y-m-d');
+            $existingMeetings = Lead::where('assigned_to', $validated['bdm_id'] ?? Auth::id())
+                ->whereDate('meeting_time', $meetingDate)
+                ->where('status', 'meeting_scheduled')
+                ->where('id', '!=', $lead->id) // Exclude current lead
+                ->count();
+                
+            if ($existingMeetings >= 3) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['meeting_time' => 'Maximum 3 meetings can be scheduled per day for this BDM. Please choose a different date.']);
+            }
+        }
+
+        $sourceValue = $validated['source'];
+        $sourceCustom = null;
+        if ($sourceValue === 'other') {
+            $sourceCustom = trim($validated['source_other'] ?? '');
         }
 
         $lead->update([
             'customer_name' => $validated['customer_name'],
-            'phone_number' => $validated['phone_number'],
-            'email' => $validated['email'],
-            'platform' => $platformValue,
-            'platform_custom' => $platformCustom,
+            'customer_phone' => $validated['customer_phone'],
+            'customer_email' => $validated['customer_email'],
+            'source' => $sourceValue,
+            'source_custom' => $sourceCustom,
             'project_type' => $validated['project_type'],
-            'project_valuation' => $validated['project_valuation'],
-            'assigned_to' => $validated['assigned_to'],
+            'budget_range' => $validated['budget_range'],
+            'assigned_to' => $validated['bdm_id'],
             'status' => $validated['status'],
+            'priority' => $validated['priority'] ?? 'medium',
+            'requirements' => $validated['requirements'],
+            'notes' => $validated['notes'],
             'callback_time' => $validated['callback_time'],
             'meeting_time' => $validated['meeting_time'],
-            'remarks' => $validated['remarks'],
+            'meeting_type' => $validated['meeting_type'],
+            'meeting_summary' => $validated['meeting_summary'],
         ]);
 
         return redirect()->route('leads.show', $lead)->with('success', 'Lead updated successfully!');
@@ -598,6 +696,96 @@ class LeadController extends Controller
             'limit' => 3,
             'remaining' => 3 - $count
         ]);
+    }
+
+    /**
+     * Check meeting availability for specific date and BDM
+     */
+    public function checkMeetingAvailability(Request $request)
+    {
+        $request->validate([
+            'date' => 'required|date_format:Y-m-d',
+            'bdm_id' => 'required|exists:users,id',
+            'exclude_lead_id' => 'nullable|exists:leads,id'
+        ]);
+
+        $query = Lead::where('assigned_to', $request->bdm_id)
+            ->whereDate('meeting_time', $request->date)
+            ->where('status', 'meeting_scheduled');
+            
+        // Exclude current lead if editing
+        if ($request->exclude_lead_id) {
+            $query->where('id', '!=', $request->exclude_lead_id);
+        }
+        
+        $count = $query->count();
+        $isAvailable = $count < 3;
+
+        return response()->json([
+            'available' => $isAvailable,
+            'count' => $count,
+            'limit' => 3,
+            'remaining' => 3 - $count,
+            'message' => $isAvailable 
+                ? "Available: {$count}/3 meetings scheduled for this date" 
+                : "Date Full: Maximum 3 meetings per day limit reached"
+        ]);
+    }
+
+    /**
+     * Check for duplicate contact information (phone/email)
+     */
+    public function checkDuplicateContact(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|in:phone,email',
+            'value' => 'required|string',
+            'exclude_lead_id' => 'nullable|exists:leads,id'
+        ]);
+
+        $type = $request->type;
+        $value = $request->value;
+        $excludeId = $request->exclude_lead_id;
+
+        // Check in leads table
+        $leadQuery = Lead::where($type === 'phone' ? 'customer_phone' : 'customer_email', $value);
+        if ($excludeId) {
+            $leadQuery->where('id', '!=', $excludeId);
+        }
+        $existingLead = $leadQuery->first();
+
+        // Check in customers table
+        $customerQuery = Customer::where($type === 'phone' ? 'number' : 'email', $value);
+        $existingCustomer = $customerQuery->first();
+
+        $exists = false;
+        $responseData = [];
+
+        if ($existingLead) {
+            $exists = true;
+            $responseData = [
+                'exists' => true,
+                'customer_name' => $existingLead->customer_name,
+                'created_date' => $existingLead->created_at->format('d M Y'),
+                'lead_id' => $existingLead->id,
+                'type' => 'lead'
+            ];
+        } elseif ($existingCustomer) {
+            $exists = true;
+            $responseData = [
+                'exists' => true,
+                'customer_name' => $existingCustomer->customer_name,
+                'created_date' => $existingCustomer->created_at->format('d M Y'),
+                'customer_id' => $existingCustomer->id,
+                'type' => 'customer'
+            ];
+        }
+
+        if (!$exists) {
+            $responseData = ['exists' => false];
+        }
+
+        return response()->json($responseData);
     }
 
     public function updateStatus(Request $request, Lead $lead)
