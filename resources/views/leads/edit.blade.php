@@ -116,6 +116,21 @@
                                 </div>
                             </div>
 
+                            <div class="row" id="project_type_other_group" style="display: none;">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="project_type_other">Please specify the project type</label>
+                                        <input type="text" class="form-control @error('project_type_other') is-invalid @enderror" 
+                                               id="project_type_other" name="project_type_other" 
+                                               value="{{ old('project_type_other', $lead->project_type_other ?? '') }}" 
+                                               placeholder="Please specify the project type">
+                                        @error('project_type_other')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
@@ -374,6 +389,28 @@ document.addEventListener('DOMContentLoaded', function() {
     if (sourceSelect) {
         sourceSelect.addEventListener('change', toggleOther);
         toggleOther();
+    }
+
+    // Project Type "Other" handling
+    var projectTypeSelect = document.getElementById('project_type');
+    var projectTypeOtherGroup = document.getElementById('project_type_other_group');
+    var projectTypeOtherInput = document.getElementById('project_type_other');
+    
+    function toggleProjectTypeOther() {
+        if (!projectTypeSelect) return;
+        if (projectTypeSelect.value === 'other') {
+            projectTypeOtherGroup.style.display = 'block';
+            if (projectTypeOtherInput) projectTypeOtherInput.setAttribute('required', 'required');
+        } else {
+            projectTypeOtherGroup.style.display = 'none';
+            if (projectTypeOtherInput) {
+                projectTypeOtherInput.removeAttribute('required');
+            }
+        }
+    }
+    if (projectTypeSelect) {
+        projectTypeSelect.addEventListener('change', toggleProjectTypeOther);
+        toggleProjectTypeOther();
     }
 });
 

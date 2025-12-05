@@ -160,28 +160,18 @@
                         <label for="filter_platform" class="form-label">Filter by Platform</label>
                         <select class="form-control" id="filter_platform">
                             <option value="">All Platforms</option>
-                            <option value="website">Website</option>
-                            <option value="facebook">Facebook</option>
-                            <option value="instagram">Instagram</option>
-                            <option value="linkedin">LinkedIn</option>
-                            <option value="referral">Referral</option>
-                            <option value="cold_call">Cold Call</option>
-                            <option value="email">Email</option>
-                            <option value="other">Other</option>
+                            @foreach($platformOptions as $platform)
+                                <option value="{{ $platform }}">{{ ucfirst(str_replace('_', ' ', $platform)) }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-md-2">
                         <label for="filter_status" class="form-label">Filter by Status</label>
                         <select class="form-control" id="filter_status">
                             <option value="">All Statuses</option>
-                            <option value="new">New</option>
-                            <option value="contacted">Contacted</option>
-                            <option value="qualified">Qualified</option>
-                            <option value="meeting_scheduled">Meeting Scheduled</option>
-                            <option value="proposal_sent">Proposal Sent</option>
-                            <option value="negotiation">Negotiation</option>
-                            <option value="won">Won</option>
-                            <option value="lost">Lost</option>
+                            @foreach($statusOptions as $status)
+                                <option value="{{ $status }}">{{ ucfirst(str_replace('_', ' ', $status)) }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -193,9 +183,12 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2 d-flex align-items-end">
+                    <div class="col-md-2 d-flex align-items-end gap-2">
+                        <button type="button" class="btn btn-primary btn-sm" onclick="applyFilters()">
+                            <i class="fa fa-search"></i> Search
+                        </button>
                         <button type="button" class="btn btn-secondary btn-sm" onclick="clearAllFilters()">
-                            <i class="fa fa-refresh"></i> Clear Filters
+                            <i class="fa fa-refresh"></i> Clear
                         </button>
                     </div>
                 </div>
@@ -657,6 +650,79 @@
         </div>
     </div>
 </div>
+
+<!-- Interested/GST Modal -->
+<div class="modal fade" id="interestedGstModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Customer Interest & GST Information</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="interestedGstForm">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fa fa-info-circle"></i> Please collect the following information since the customer is interested:
+                    </div>
+                    
+                    <!-- Email Confirmation -->
+                    <div class="mb-3">
+                        <label class="form-label">Please confirm customer's email address <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="confirmed_email" name="confirmed_email" required>
+                        <small class="text-muted">This is required for all interested customers</small>
+                    </div>
+
+                    <!-- GST Question 1 -->
+                    <div class="mb-3">
+                        <label class="form-label">Does the person have a GST number? <span class="text-danger">*</span></label>
+                        <div>
+                            <input type="radio" class="form-check-input" id="has_gst_yes" name="has_gst" value="yes" required>
+                            <label class="form-check-label me-3" for="has_gst_yes">YES</label>
+                            <input type="radio" class="form-check-input" id="has_gst_no" name="has_gst" value="no" required>
+                            <label class="form-check-label" for="has_gst_no">NO</label>
+                        </div>
+                    </div>
+
+                    <!-- GST Number (if has GST) -->
+                    <div class="mb-3" id="gst_number_group" style="display: none;">
+                        <label class="form-label">GST Number <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="gst_number" name="gst_number" placeholder="22AAAAA0000A1Z5">
+                        <small class="text-muted">Format: 15 characters (e.g., 22AAAAA0000A1Z5)</small>
+                    </div>
+
+                    <!-- GST Question 2 -->
+                    <div class="mb-3">
+                        <label class="form-label">Does the customer want to pay GST? <span class="text-danger">*</span></label>
+                        <div>
+                            <input type="radio" class="form-check-input" id="wants_gst_yes" name="wants_gst" value="yes" required>
+                            <label class="form-check-label me-3" for="wants_gst_yes">YES</label>
+                            <input type="radio" class="form-check-input" id="wants_gst_no" name="wants_gst" value="no" required>
+                            <label class="form-check-label" for="wants_gst_no">NO</label>
+                        </div>
+                    </div>
+
+                    <!-- GST Details for payment (if wants GST) -->
+                    <div class="mb-3" id="gst_payment_group" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">GST Number for Invoice <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="invoice_gst_number" name="invoice_gst_number" placeholder="22AAAAA0000A1Z5">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email for GST Invoice <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="gst_email" name="gst_email" placeholder="accounts@company.com">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Mark as Interested & Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -829,7 +895,7 @@ window.postponeMeetingInList = function(leadId, currentTime) {
 // Cancel Callback
 window.cancelCallback = function(leadId) {
     if (confirm('Are you sure you want to cancel this callback? This action cannot be undone.')) {
-        fetch(`/leads/${leadId}/cancel-callback`, {
+        fetch(`{{ url('/') }}/leads/${leadId}/cancel-callback`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': window.Laravel.csrfToken,
@@ -855,7 +921,7 @@ window.cancelCallback = function(leadId) {
 // Cancel Meeting
 window.cancelMeeting = function(leadId) {
     if (confirm('Are you sure you want to cancel this meeting? This action cannot be undone.')) {
-        fetch(`/leads/${leadId}/cancel-meeting`, {
+        fetch(`{{ url('/') }}/leads/${leadId}/cancel-meeting`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': window.Laravel.csrfToken,
@@ -953,40 +1019,15 @@ window.markNotRequired = function(leadId) {
 }
 
 window.markInterested = function(leadId) {
-    console.log('Marking lead as interested:', leadId);
-    if (confirm('Mark this lead as "Interested"?')) {
-        fetch(`/leads/${leadId}/update-status`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': window.Laravel.csrfToken,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                status: 'interested'
-            })
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.text().then(text => {
-                    throw new Error(text || 'Server error');
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                showAlert('success', 'Lead marked as "Interested".');
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                showAlert('error', 'Error updating status: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showAlert('error', error.message || 'An error occurred while updating the status.');
-        });
-    }
+    console.log('Opening interested/GST modal for lead:', leadId);
+    currentLeadId = leadId;
+    
+    // Reset form
+    document.getElementById('interestedGstForm').reset();
+    
+    // Show modal
+    var modal = new bootstrap.Modal(document.getElementById('interestedGstModal'));
+    modal.show();
 }
 
 window.markNotInterested = function(leadId) {
@@ -1054,6 +1095,49 @@ window.closeMeetingModal = function() {
     }, 300);
 }
 
+// Apply filters when search button is clicked
+window.applyFilters = function() {
+    if (!window.leadsTable) {
+        console.log('Table not found');
+        return;
+    }
+    
+    var typeFilter = $('#filter_type').val().toLowerCase();
+    var customerFilter = $('#filter_customer').val().toLowerCase();
+    var platformFilter = $('#filter_platform').val().toLowerCase();
+    var statusFilter = $('#filter_status').val().toLowerCase();
+    var remarksFilter = $('#filter_remarks').val().toLowerCase();
+    
+    var rows = window.leadsTable.querySelectorAll('tbody tr');
+    
+    rows.forEach(function(row) {
+        var cells = row.querySelectorAll('td');
+        if (cells.length < 10) return;
+        
+        var typeText = cells[1].textContent.toLowerCase().trim();
+        var platformText = cells[4].textContent.toLowerCase().trim();
+        var customerText = cells[5].textContent.toLowerCase().trim();
+        var statusText = cells[8].textContent.toLowerCase().trim();
+        var remarksText = cells[9].textContent.toLowerCase().trim();
+        
+        // Extract customer name from "Name - Phone" format
+        var customerName = customerFilter ? customerFilter.split(' - ')[0].toLowerCase() : '';
+        
+        // Convert status filter from underscore to space format for matching
+        var statusFilterFormatted = statusFilter ? statusFilter.replace(/_/g, ' ') : '';
+        
+        var showRow = true;
+        
+        if (typeFilter && !typeText.includes(typeFilter)) showRow = false;
+        if (customerFilter && !customerText.includes(customerName)) showRow = false;
+        if (platformFilter && !platformText.includes(platformFilter)) showRow = false;
+        if (statusFilter && !statusText.includes(statusFilterFormatted)) showRow = false;
+        if (remarksFilter && !remarksText.includes(remarksFilter)) showRow = false;
+        
+        row.style.display = showRow ? '' : 'none';
+    });
+}
+
 window.clearAllFilters = function() {
     $('#filter_type').val('');
     $('#filter_customer').val('');
@@ -1061,10 +1145,12 @@ window.clearAllFilters = function() {
     $('#filter_status').val('');
     $('#filter_remarks').val('');
     
-    // If DataTables is initialized, clear the filters
-    if (typeof $.fn.DataTable !== 'undefined' && $('#leadsTable').DataTable()) {
-        var table = $('#leadsTable').DataTable();
-        table.search('').columns().search('').draw();
+    // Show all rows
+    if (window.leadsTable) {
+        var rows = window.leadsTable.querySelectorAll('tbody tr');
+        rows.forEach(function(row) {
+            row.style.display = '';
+        });
     }
 }
 
@@ -1173,50 +1259,9 @@ $(document).ready(function() {
         });
     }
     
-    // Initialize DataTables if available
-    if (typeof $.fn.DataTable !== 'undefined') {
-        try {
-            var table = $('#leadsTable').DataTable({
-                "order": [[ 2, "desc" ]],
-                "pageLength": 25,
-                "responsive": true,
-                "dom": 'rtip'
-            });
-
-            // Custom filtering functions
-            $('#filter_type').on('change', function() {
-                var filterValue = this.value;
-                table.column(1).search(filterValue).draw();
-            });
-
-            $('#filter_customer').on('change', function() {
-                var filterValue = this.value;
-                if (filterValue === '') {
-                    table.column(5).search('').draw();
-                } else {
-                    var customerName = filterValue.split(' - ')[0];
-                    table.column(5).search(customerName).draw();
-                }
-            });
-
-            $('#filter_platform').on('change', function() {
-                var filterValue = this.value;
-                table.column(4).search(filterValue).draw();
-            });
-            
-            $('#filter_status').on('change', function() {
-                var filterValue = this.value;
-                table.column(8).search(filterValue).draw();
-            });
-
-            $('#filter_remarks').on('change', function() {
-                var filterValue = this.value;
-                table.column(9).search(filterValue).draw();
-            });
-        } catch (error) {
-            console.log('DataTables initialization error:', error);
-        }
-    }
+    // Simple table filtering without DataTables
+    window.leadsTable = document.getElementById('leadsTable');
+    console.log('Table initialized for filtering');
 
     // Handle callback form submission
     $('#callbackForm').off('submit').on('submit', function(e) {
@@ -1229,7 +1274,7 @@ $(document).ready(function() {
         
         console.log('Submitting callback form for lead:', currentLeadId);
         
-        fetch(`/leads/${currentLeadId}/schedule-callback`, {
+        fetch(`{{ url('/') }}/leads/${currentLeadId}/schedule-callback`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': window.Laravel.csrfToken,
@@ -1291,7 +1336,7 @@ $(document).ready(function() {
         
         console.log('Submitting meeting form for lead:', currentLeadId);
         
-        fetch(`/leads/${currentLeadId}/schedule-meeting`, {
+        fetch(`{{ url('/') }}/leads/${currentLeadId}/schedule-meeting`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': window.Laravel.csrfToken,
@@ -1346,7 +1391,7 @@ $(document).ready(function() {
             showAlert('error', 'Please enter a brief meeting summary.');
             return;
         }
-        fetch(`/leads/${currentLeadId}/complete-meeting`, {
+        fetch(`{{ url('/') }}/leads/${currentLeadId}/complete-meeting`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': window.Laravel.csrfToken,
@@ -1377,7 +1422,7 @@ $(document).ready(function() {
         e.preventDefault();
         const leadId = document.getElementById('edit_callback_lead_id').value;
         
-        fetch(`/leads/${leadId}/schedule-callback`, {
+        fetch(`{{ url('/') }}/leads/${leadId}/schedule-callback`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': window.Laravel.csrfToken,
@@ -1409,7 +1454,7 @@ $(document).ready(function() {
         e.preventDefault();
         const leadId = document.getElementById('edit_meeting_lead_id').value;
         
-        fetch(`/leads/${leadId}/schedule-meeting`, {
+        fetch(`{{ url('/') }}/leads/${leadId}/schedule-meeting`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': window.Laravel.csrfToken,
@@ -1444,7 +1489,7 @@ $(document).ready(function() {
         e.preventDefault();
         const leadId = document.getElementById('postpone_callback_lead_id').value;
         
-        fetch(`/leads/${leadId}/schedule-callback`, {
+        fetch(`{{ url('/') }}/leads/${leadId}/schedule-callback`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': window.Laravel.csrfToken,
@@ -1481,7 +1526,7 @@ $(document).ready(function() {
         const personName = document.getElementById('postpone_meeting_person').value || $('#edit_meeting_person_name').val();
         const phoneNumber = document.getElementById('postpone_meeting_phone').value || $('#edit_meeting_phone_number').val();
         
-        fetch(`/leads/${leadId}/schedule-meeting`, {
+        fetch(`{{ url('/') }}/leads/${leadId}/schedule-meeting`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': window.Laravel.csrfToken,
@@ -1508,6 +1553,82 @@ $(document).ready(function() {
         .catch(error => {
             console.error('Error:', error);
             showAlert('error', 'An error occurred while postponing the meeting.');
+        });
+    });
+
+    // GST Modal Logic
+    $(document).on('change', 'input[name="has_gst"]', function() {
+        if (this.value === 'yes') {
+            $('#gst_number_group').show();
+            $('#gst_number').attr('required', true);
+        } else {
+            $('#gst_number_group').hide();
+            $('#gst_number').attr('required', false).val('');
+        }
+    });
+
+    $(document).on('change', 'input[name="wants_gst"]', function() {
+        if (this.value === 'yes') {
+            $('#gst_payment_group').show();
+            $('#invoice_gst_number').attr('required', true);
+            $('#gst_email').attr('required', true);
+        } else {
+            $('#gst_payment_group').hide();
+            $('#invoice_gst_number').attr('required', false).val('');
+            $('#gst_email').attr('required', false).val('');
+        }
+    });
+
+    // Handle Interested/GST form submission
+    $('#interestedGstForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        if (!currentLeadId) {
+            showAlert('error', 'No lead selected');
+            return;
+        }
+
+        // Collect form data
+        const formData = new FormData(this);
+        const gstData = {
+            status: 'interested',
+            confirmed_email: formData.get('confirmed_email'),
+            has_gst: formData.get('has_gst'),
+            gst_number: formData.get('gst_number'),
+            wants_gst: formData.get('wants_gst'),
+            invoice_gst_number: formData.get('invoice_gst_number'),
+            gst_email: formData.get('gst_email')
+        };
+
+        fetch(`{{ url('/') }}/leads/${currentLeadId}/update-interested-status`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': window.Laravel.csrfToken,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(gstData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(text || 'Server error');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Lead marked as interested with GST details saved!');
+                hideAllModals();
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', 'Error updating status: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', error.message || 'An error occurred while updating the status.');
         });
     });
 });

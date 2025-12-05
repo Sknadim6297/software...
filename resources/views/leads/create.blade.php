@@ -138,6 +138,7 @@
                                     <option value="software_development" {{ old('project_type') == 'software_development' ? 'selected' : '' }}>Software Development</option>
                                     <option value="ui_ux_design" {{ old('project_type') == 'ui_ux_design' ? 'selected' : '' }}>UI/UX Design</option>
                                     <option value="digital_marketing" {{ old('project_type') == 'digital_marketing' ? 'selected' : '' }}>Digital Marketing</option>
+                                    <option value="social_media_marketing" {{ old('project_type') == 'social_media_marketing' ? 'selected' : '' }}>Social Media Marketing</option>
                                     <option value="consultation" {{ old('project_type') == 'consultation' ? 'selected' : '' }}>Consultation</option>
                                     <option value="other" {{ old('project_type') == 'other' ? 'selected' : '' }}>Other</option>
                                 </select>
@@ -146,6 +147,21 @@
                                 @enderror
                             </div>
                         </div>
+                    </div>
+
+                    <div class="row" id="project_type_other_group" style="display: none;">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="project_type_other" class="form-label">Please specify the project type</label>
+                                <input type="text" class="form-control @error('project_type_other') is-invalid @enderror" id="project_type_other" name="project_type_other" placeholder="Please specify the project type" value="{{ old('project_type_other') }}">
+                                @error('project_type_other')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group mb-3">
                                 <label for="project_valuation" class="form-label">Project Valuation (₹)</label>
@@ -153,7 +169,7 @@
                                     <span class="input-group-text">₹</span>
                                     <input type="number" class="form-control @error('project_valuation') is-invalid @enderror" 
                                            id="project_valuation" name="project_valuation" value="{{ old('project_valuation') }}" 
-                                           placeholder="50000" min="0" step="1000">
+                                           placeholder="50000" min="0" step="1">
                                 </div>
                                 @error('project_valuation')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -233,6 +249,30 @@ document.addEventListener('DOMContentLoaded', function() {
             // Initialize on load (in case of old input)
             togglePlatformOther();
         }
+
+        // Project Type "Other" handling
+        const projectTypeSelect = document.getElementById('project_type');
+        const projectTypeOtherGroup = document.getElementById('project_type_other_group');
+        const projectTypeOtherInput = document.getElementById('project_type_other');
+
+        function toggleProjectTypeOther() {
+            if (!projectTypeSelect) return;
+            if (projectTypeSelect.value === 'other') {
+                projectTypeOtherGroup.style.display = 'block';
+                if (projectTypeOtherInput) projectTypeOtherInput.setAttribute('required', 'required');
+            } else {
+                projectTypeOtherGroup.style.display = 'none';
+                if (projectTypeOtherInput) {
+                    projectTypeOtherInput.removeAttribute('required');
+                    projectTypeOtherInput.value = '';
+                }
+            }
+        }
+        if (projectTypeSelect) {
+            projectTypeSelect.addEventListener('change', toggleProjectTypeOther);
+            // Initialize on load (in case of old input)
+            toggleProjectTypeOther();
+        }
     // Auto-format phone number
     const phoneField = document.getElementById('phone_number');
     if (phoneField) {
@@ -247,16 +287,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Auto-format project valuation
+    // Auto-format project valuation - Allow any amount
     const valuationField = document.getElementById('project_valuation');
     if (valuationField) {
         valuationField.addEventListener('input', function(e) {
-            let value = parseInt(e.target.value);
-            if (value && value < 1000) {
-                e.target.step = '100';
-            } else if (value && value >= 1000) {
-                e.target.step = '1000';
-            }
+            // Remove any step restrictions to allow any number
+            e.target.step = '1';
         });
     }
 

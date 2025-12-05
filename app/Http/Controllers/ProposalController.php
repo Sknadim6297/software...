@@ -65,7 +65,12 @@ class ProposalController extends Controller
         
         $lead = Lead::findOrFail($leadId);
         
-        // Project types
+        // Check if this is a Social Media Marketing project
+        if ($lead->project_type === 'social_media_marketing') {
+            return view('proposals.social-media-form', compact('lead', 'leadType'));
+        }
+        
+        // Project types for other projects
         $projectTypes = [
             'Website Development',
             'Software Development',
@@ -110,6 +115,177 @@ class ProposalController extends Controller
         
         return redirect()->route('proposals.show', $proposal->id)
             ->with('success', 'Proposal created successfully! You can now review and send it.');
+    }
+
+    /**
+     * Store a social media marketing proposal
+     */
+    public function storeSocialMedia(Request $request)
+    {
+        $validated = $request->validate([
+            'lead_id' => 'required|exists:leads,id',
+            'lead_type' => 'required|in:incoming,outgoing',
+            'project_type' => 'required|string',
+            'company_name' => 'required|string|max:255',
+            'monthly_charges' => 'required|numeric|min:1000',
+            'platforms' => 'required|array|min:1',
+            'platforms.*' => 'string',
+            'target_audience' => 'required|string',
+            'posters_per_month' => 'required|integer|min:1',
+            'reels_per_week' => 'required|integer|min:0',
+            'includes_video_editing' => 'nullable|boolean',
+            'services' => 'nullable|array',
+            'services.*' => 'string',
+            'payment_mode' => 'required|string',
+            'gst_applicable' => 'required|string',
+            'additional_notes' => 'nullable|string|max:1000'
+        ]);
+
+        $lead = Lead::findOrFail($request->lead_id);
+        
+        // Generate professional proposal content
+        $proposalContent = $this->generateSocialMediaProposalContent($validated, $lead);
+        
+        // Create proposal record
+        $proposal = Proposal::create([
+            'lead_id' => $request->lead_id,
+            'lead_type' => $request->lead_type,
+            'customer_name' => $lead->customer_name,
+            'customer_email' => $lead->email,
+            'customer_phone' => $lead->phone_number,
+            'project_type' => 'Social Media Marketing',
+            'project_description' => "Social Media Marketing services for {$validated['company_name']}",
+            'proposal_content' => $proposalContent,
+            'proposed_amount' => $validated['monthly_charges'],
+            'currency' => 'INR',
+            'estimated_days' => 30, // Monthly service
+            'deliverables' => $this->generateDeliverablesText($validated),
+            'payment_terms' => $this->generatePaymentTerms($validated),
+            'status' => 'draft',
+            'metadata' => json_encode($validated) // Store all form data for future reference
+        ]);
+        
+        return redirect()->route('proposals.show', $proposal->id)
+            ->with('success', 'Social Media Marketing proposal created successfully! You can now review and send it.');
+    }
+
+    /**
+     * Generate professional social media proposal content
+     */
+    private function generateSocialMediaProposalContent($data, $lead)
+    {
+        $platforms = implode(' & ', $data['platforms']);
+        $services = isset($data['services']) ? $data['services'] : [];
+        
+        $content = "
+# Social Media Marketing Proposal
+
+## Scope of Work & Marketing Strategy
+**For: {$data['company_name']}**  
+**Submitted by: Konnectix Technologies Pvt. Ltd.**
+
+---
+
+## Platform Management
+- Page/Profile optimization on all platforms
+- Daily posting and engaging caption writing  
+- Hashtag research and implementation
+- Profile highlights and story management
+
+## Lead Generation
+- Use of Meta Lead Forms and Landing Pages
+- Capturing inquiries from {$data['target_audience']}
+- Weekly lead reports with follow-up tracking support
+
+## Paid Ad Management
+Strategic ad campaigns for:
+- Lead Generation (targeting {$data['target_audience']})
+- Page Likes & Followers Growth
+- A/B Testing of creatives & audience targeting  
+- Real-time ad monitoring and optimization for ROI
+
+**Platforms Covered: {$platforms}**
+
+## Content Creation & Posting
+- {$data['posters_per_month']} Posters per Month (Static/Carousel/Infographic based on marketing objective)
+- {$data['reels_per_week']} Reels per Week (Product-focused, testimonial, behind-the-scenes, etc.)
+" . (isset($data['includes_video_editing']) && $data['includes_video_editing'] ? "- Video Editing Support: Any video content shared by your team will be professionally edited and optimized for social media.\n" : "") . "
+
+We propose a complete social media marketing solution to enhance {$data['company_name']}'s digital presence, drive quality leads, and increase brand awareness across {$platforms}.
+
+## Deliverables Summary
+| Deliverables | Details |
+|--------------|---------|
+| Posters per month | {$data['posters_per_month']} per month |
+| Reels per Week | " . ($data['reels_per_week'] * 4) . "+ per month |
+| Ad Creative Designs | Included |
+| Video Editing | " . (isset($data['includes_video_editing']) && $data['includes_video_editing'] ? 'Included (Client video)' : 'Not included') . " |
+| Lead Generation Setup & Monitoring | Included |
+| Page Management & Strategy | Included |
+
+## Monthly Charges
+**Total Monthly Fee: ₹" . number_format($data['monthly_charges']) . "/-**
+
+## Payment Terms
+- Payment Mode: " . str_replace('_', ' / ', strtoupper($data['payment_mode'])) . "
+- GST: " . str_replace('_', ' ', $data['gst_applicable']) . "
+- Advance Payment: One month in advance to initiate work
+
+## Growth Monitoring
+- Monthly performance report (Reach, Engagement, Leads, Followers)
+- Strategy refinement based on insights
+
+## Important Notes
+- Meta Ad budget (Facebook/Instagram Ads) is to be provided separately by the client
+- Ads will be run through client's business manager/ad account for transparency  
+- All designs and edited content will be shared for approval before posting
+
+" . (isset($data['additional_notes']) && $data['additional_notes'] ? "## Additional Notes\n{$data['additional_notes']}\n\n" : "") . "
+
+---
+
+**Let's Elevate Your Digital Presence!**
+
+For queries or approval, feel free to contact us:
+- Phone: +91 9123354003
+- Email: sales.konnectixtech@gmail.com  
+- Website: www.konnectixtech.com
+
+We look forward to helping {$data['company_name']} achieve digital marketing success!
+        ";
+        
+        return trim($content);
+    }
+
+    /**
+     * Generate deliverables text
+     */
+    private function generateDeliverablesText($data)
+    {
+        $deliverables = [
+            "{$data['posters_per_month']} Posters per month",
+            ($data['reels_per_week'] * 4) . "+ Reels per month",
+            "Ad Creative Designs",
+            "Lead Generation Setup & Monitoring",
+            "Page Management & Strategy"
+        ];
+        
+        if (isset($data['includes_video_editing']) && $data['includes_video_editing']) {
+            $deliverables[] = "Video Editing Support";
+        }
+        
+        return implode("\n", $deliverables);
+    }
+
+    /**
+     * Generate payment terms text  
+     */
+    private function generatePaymentTerms($data)
+    {
+        return "Monthly Fee: ₹" . number_format($data['monthly_charges']) . "/-\n" .
+               "Payment Mode: " . str_replace('_', ' / ', strtoupper($data['payment_mode'])) . "\n" .
+               "GST: " . str_replace('_', ' ', $data['gst_applicable']) . "\n" .
+               "Advance Payment: One month in advance to initiate work";
     }
 
     /**

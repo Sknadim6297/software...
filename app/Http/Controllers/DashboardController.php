@@ -82,18 +82,17 @@ class DashboardController extends Controller
         // Upcoming Work - Callbacks and Meetings
         $currentUserId = Auth::id();
         
-        // For callbacks - show ALL callbacks (incoming and outgoing)
+        // For callbacks - show ONLY TODAY's callbacks in the list
         $upcomingCallbacks = Lead::whereNotNull('callback_time')
-            ->where('callback_time', '>=', Carbon::now())
+            ->whereDate('callback_time', Carbon::today())
+            ->where('status', 'callback_scheduled') // Only show callbacks that are still in callback status
             ->orderBy('callback_time', 'asc')
-            ->take(10)
             ->get();
 
-        // For meetings - show ALL meetings (incoming and outgoing) regardless of assignment
+        // For meetings - show ONLY TODAY's meetings in the list
         $upcomingMeetings = Lead::whereNotNull('meeting_time')
-            ->where('meeting_time', '>=', Carbon::today()->startOfDay())
+            ->whereDate('meeting_time', Carbon::today())
             ->orderBy('meeting_time', 'asc')
-            ->take(10)
             ->get();
 
         // Count ALL meetings for today (both incoming and outgoing)
@@ -127,21 +126,24 @@ class DashboardController extends Controller
             }
         }
 
-        // Determine which count to show in main badge
-        if ($todayMeetingsCount > 0) {
-            $displayMeetingsCount = $todayMeetingsCount;
-            $displayDate = 'Today';
-        } elseif ($tomorrowMeetingsCount > 0) {
-            $displayMeetingsCount = $tomorrowMeetingsCount;
-            $displayDate = 'Tomorrow';
-        } elseif ($dayAfterTomorrowMeetingsCount > 0) {
-            $displayMeetingsCount = $dayAfterTomorrowMeetingsCount;
-            $displayDate = Carbon::today()->addDays(2)->format('M j');
-        } else {
-            // Show next upcoming meeting day
-            $nextMeetingDay = collect($next7DaysMeetings)->first();
-            $displayMeetingsCount = $nextMeetingDay ? $nextMeetingDay['count'] : 0;
-            $displayDate = $nextMeetingDay ? $nextMeetingDay['day_name'] : 'None';
+        // Always show today's count in main badge, with next day info if today is empty
+        $displayMeetingsCount = $todayMeetingsCount;
+        $displayDate = 'Today';
+        
+        // If today has no meetings, show next upcoming day's count
+        if ($todayMeetingsCount == 0) {
+            if ($tomorrowMeetingsCount > 0) {
+                $displayMeetingsCount = $tomorrowMeetingsCount;
+                $displayDate = 'Tomorrow';
+            } elseif ($dayAfterTomorrowMeetingsCount > 0) {
+                $displayMeetingsCount = $dayAfterTomorrowMeetingsCount;
+                $displayDate = Carbon::today()->addDays(2)->format('M j');
+            } else {
+                // Show next upcoming meeting day from 7-day view
+                $nextMeetingDay = collect($next7DaysMeetings)->skip(1)->first(); // Skip today since it's 0
+                $displayMeetingsCount = $nextMeetingDay ? $nextMeetingDay['count'] : 0;
+                $displayDate = $nextMeetingDay ? $nextMeetingDay['day_name'] : 'None';
+            }
         }
 
         // Did Not Receive Call List - show ALL leads
@@ -149,6 +151,12 @@ class DashboardController extends Controller
             ->orderBy('updated_at', 'desc')
             ->take(10)
             ->get();
+            
+        // Count today's callbacks for dashboard display
+        $todayCallbacksCount = Lead::whereNotNull('callback_time')
+            ->whereDate('callback_time', Carbon::today())
+            ->where('status', 'callback_scheduled')
+            ->count();
         
         return view('dashboard', compact(
             'monthlyAmount',
@@ -171,7 +179,8 @@ class DashboardController extends Controller
             'next7DaysMeetings',
             'displayMeetingsCount',
             'displayDate',
-            'didNotReceiveList'
+            'didNotReceiveList',
+            'todayCallbacksCount'
         ));
     }
 }

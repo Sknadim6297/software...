@@ -32,50 +32,57 @@ class LeadController extends Controller
         $convertedLeads = Lead::where('status', 'converted')->count();
         $todayLeads = Lead::whereDate('created_at', today())->count();
         
-        // Get unique customer names with phone numbers for dropdown
+        // Get unique customer names with phone numbers for dropdown (all leads)
         $customers = Lead::select('customer_name', 'phone_number')
+            ->whereNotNull('customer_name')
+            ->where('customer_name', '!=', '')
             ->distinct()
             ->orderBy('customer_name')
             ->get()
             ->map(function($lead) {
                 return [
                     'name' => $lead->customer_name,
-                    'phone' => $lead->phone_number,
-                    'display' => $lead->customer_name . ' - ' . $lead->phone_number
+                    'phone' => $lead->phone_number ?? '',
+                    'display' => $lead->customer_name . ($lead->phone_number ? ' - ' . $lead->phone_number : '')
                 ];
-            });
+            })
+            ->unique('display');
         
-        // Status options for all leads
-        $statusOptions = [
-            'new' => 'New',
-            'pending' => 'Pending',
-            'callback_scheduled' => 'Call Back',
-            'did_not_receive' => 'Did Not Receive', 
-            'not_required' => 'Not Required',
-            'meeting_scheduled' => 'Meeting',
-            'not_interested' => 'Not Interested',
-            'interested' => 'Interested',
-            'converted' => 'Converted'
-        ];
+        // Get actual status options from database
+        $statusOptions = Lead::select('status')
+            ->whereNotNull('status')
+            ->distinct()
+            ->pluck('status')
+            ->filter()
+            ->sort()
+            ->values();
+            
+        // Get actual platform options from database
+        $platformOptions = Lead::select('platform')
+            ->whereNotNull('platform')
+            ->distinct()
+            ->pluck('platform')
+            ->filter()
+            ->sort()
+            ->values();
         
-        // Remarks options for filtering
-        $remarksOptions = [
-            'Call Back',
-            'Did not receive',
-            'Not Required',
-            'Meeting',
-            'Not Interested',
-            'Interested',
-            'Follow up required',
-            'Hot lead',
-            'Cold lead'
-        ];
+        // Get actual remarks from database
+        $remarksOptions = Lead::select('remarks')
+            ->whereNotNull('remarks')
+            ->where('remarks', '!=', '')
+            ->distinct()
+            ->pluck('remarks')
+            ->filter()
+            ->sort()
+            ->take(20)
+            ->values();
         
         return view('leads.all', compact(
             'leads', 
             'bdms', 
             'customers', 
-            'statusOptions', 
+            'statusOptions',
+            'platformOptions', 
             'remarksOptions',
             'totalLeads',
             'incomingLeads',
@@ -92,43 +99,56 @@ class LeadController extends Controller
         $leads = Lead::with('assignedUser')->where('type', 'incoming')->latest()->get();
         $bdms = User::all(); // Get all users since we don't have role column
         
-        // Get unique customer names with phone numbers for dropdown
+        // Get unique customer names with phone numbers for dropdown (incoming leads only)
         $customers = Lead::select('customer_name', 'phone_number')
+            ->where('type', 'incoming')
+            ->whereNotNull('customer_name')
+            ->where('customer_name', '!=', '')
             ->distinct()
             ->orderBy('customer_name')
             ->get()
             ->map(function($lead) {
                 return [
                     'name' => $lead->customer_name,
-                    'phone' => $lead->phone_number,
-                    'display' => $lead->customer_name . ' - ' . $lead->phone_number
+                    'phone' => $lead->phone_number ?? '',
+                    'display' => $lead->customer_name . ($lead->phone_number ? ' - ' . $lead->phone_number : '')
                 ];
-            });
+            })
+            ->unique('display');
         
-        // Status options for incoming leads
-        $statusOptions = [
-            'pending' => 'Pending',
-            'callback_scheduled' => 'Call Back',
-            'did_not_receive' => 'Did Not Receive', 
-            'not_required' => 'Not Required',
-            'meeting_scheduled' => 'Meeting',
-            'not_interested' => 'Not Interested',
-            'converted' => 'Converted'
-        ];
+        // Get actual status options from incoming leads
+        $statusOptions = Lead::select('status')
+            ->where('type', 'incoming')
+            ->whereNotNull('status')
+            ->distinct()
+            ->pluck('status')
+            ->filter()
+            ->sort()
+            ->values();
+            
+        // Get actual platform options from incoming leads
+        $platformOptions = Lead::select('platform')
+            ->where('type', 'incoming')
+            ->whereNotNull('platform')
+            ->distinct()
+            ->pluck('platform')
+            ->filter()
+            ->sort()
+            ->values();
         
-        // Remarks options for filtering
-        $remarksOptions = [
-            'Call Back',
-            'Did not receive',
-            'Not Required',
-            'Meeting',
-            'Not Interested',
-            'Follow up required',
-            'Hot lead',
-            'Cold lead'
-        ];
+        // Get actual remarks from incoming leads
+        $remarksOptions = Lead::select('remarks')
+            ->where('type', 'incoming')
+            ->whereNotNull('remarks')
+            ->where('remarks', '!=', '')
+            ->distinct()
+            ->pluck('remarks')
+            ->filter()
+            ->sort()
+            ->take(15)
+            ->values();
         
-        return view('leads.incoming', compact('leads', 'bdms', 'customers', 'statusOptions', 'remarksOptions'));
+        return view('leads.incoming', compact('leads', 'bdms', 'customers', 'statusOptions', 'platformOptions', 'remarksOptions'));
     }
 
     public function outgoing(Request $request)
@@ -148,49 +168,61 @@ class LeadController extends Controller
                       });
             })->count();
         
-        // Get unique customer names with phone numbers for dropdown
+        // Get unique customer names with phone numbers for dropdown (outgoing leads only)
         $customers = Lead::select('customer_name', 'phone_number')
+            ->where('type', 'outgoing')
+            ->whereNotNull('customer_name')
+            ->where('customer_name', '!=', '')
             ->distinct()
             ->orderBy('customer_name')
             ->get()
             ->map(function($lead) {
                 return [
                     'name' => $lead->customer_name,
-                    'phone' => $lead->phone_number,
-                    'display' => $lead->customer_name . ' - ' . $lead->phone_number
+                    'phone' => $lead->phone_number ?? '',
+                    'display' => $lead->customer_name . ($lead->phone_number ? ' - ' . $lead->phone_number : '')
                 ];
-            });
+            })
+            ->unique('display');
         
-        // Status options for outgoing leads (includes 'interested')
-        $statusOptions = [
-            'pending' => 'Pending',
-            'callback_scheduled' => 'Call Back',
-            'did_not_receive' => 'Did Not Receive', 
-            'not_required' => 'Not Required',
-            'meeting_scheduled' => 'Meeting',
-            'not_interested' => 'Not Interested',
-            'interested' => 'Interested',
-            'converted' => 'Converted'
-        ];
+        // Get actual status options from outgoing leads
+        $statusOptions = Lead::select('status')
+            ->where('type', 'outgoing')
+            ->whereNotNull('status')
+            ->distinct()
+            ->pluck('status')
+            ->filter()
+            ->sort()
+            ->values();
+            
+        // Get actual platform options from outgoing leads
+        $platformOptions = Lead::select('platform')
+            ->where('type', 'outgoing')
+            ->whereNotNull('platform')
+            ->distinct()
+            ->pluck('platform')
+            ->filter()
+            ->sort()
+            ->values();
         
-        // Remarks options for filtering
-        $remarksOptions = [
-            'Call Back',
-            'Did not receive',
-            'Not Required',
-            'Meeting',
-            'Not Interested',
-            'Interested',
-            'Follow up required',
-            'Hot lead',
-            'Cold lead'
-        ];
+        // Get actual remarks from outgoing leads
+        $remarksOptions = Lead::select('remarks')
+            ->where('type', 'outgoing')
+            ->whereNotNull('remarks')
+            ->where('remarks', '!=', '')
+            ->distinct()
+            ->pluck('remarks')
+            ->filter()
+            ->sort()
+            ->take(15)
+            ->values();
         
         return view('leads.outgoing', compact(
             'leads', 
             'bdms', 
             'customers', 
-            'statusOptions', 
+            'statusOptions',
+            'platformOptions', 
             'remarksOptions',
             'totalOutgoing',
             'pendingOutgoing',
@@ -279,6 +311,7 @@ class LeadController extends Controller
             'platform' => 'required|string|in:facebook,instagram,website,google,justdial,other',
             'platform_other' => 'nullable|required_if:platform,other|string|max:100',
             'project_type' => 'required|string|max:100',
+            'project_type_other' => 'nullable|required_if:project_type,other|string|max:100',
             'project_valuation' => 'nullable|numeric|min:0|max:99999999.99',
             'assigned_to' => 'nullable|exists:users,id',
             'status' => 'required|string|in:new,pending,callback_scheduled,did_not_receive,not_required,meeting_scheduled,not_interested,interested,converted',
@@ -374,6 +407,7 @@ class LeadController extends Controller
                 'phone_number' => $validated['phone_number'],
                 'email' => $validated['email'],
                 'project_type' => $validated['project_type'],
+                'project_type_other' => $validated['project_type_other'] ?? null,
                 'project_valuation' => $validated['project_valuation'],
                 'remarks' => $validated['remarks'],
                 'status' => $validated['status'],
@@ -511,6 +545,7 @@ class LeadController extends Controller
             'source' => $sourceValue,
             'source_custom' => $sourceCustom,
             'project_type' => $validated['project_type'],
+            'project_type_other' => $validated['project_type_other'] ?? null,
             'budget_range' => $validated['budget_range'],
             'assigned_to' => $validated['bdm_id'],
             'status' => $validated['status'],
@@ -945,6 +980,49 @@ class LeadController extends Controller
                 'success' => false, 
                 'message' => 'Failed to convert lead to customer. Please try again.'
             ]);
+        }
+    }
+
+    public function updateInterestedStatus(Request $request, Lead $lead)
+    {
+        try {
+            $validated = $request->validate([
+                'status' => 'required|string|in:interested',
+                'confirmed_email' => 'required|email|max:255',
+                'has_gst' => 'required|string|in:yes,no',
+                'gst_number' => 'nullable|required_if:has_gst,yes|string|max:15',
+                'wants_gst' => 'required|string|in:yes,no',
+                'invoice_gst_number' => 'nullable|required_if:wants_gst,yes|string|max:15',
+                'gst_email' => 'nullable|required_if:wants_gst,yes|email|max:255'
+            ]);
+
+            // Update the lead with interested status and GST information
+            $lead->update([
+                'status' => 'interested',
+                'customer_email' => $validated['confirmed_email'], // Update/confirm email
+                'has_gst' => $validated['has_gst'],
+                'gst_number' => $validated['gst_number'],
+                'wants_gst' => $validated['wants_gst'],
+                'invoice_gst_number' => $validated['invoice_gst_number'],
+                'gst_email' => $validated['gst_email'],
+                'updated_at' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lead marked as interested with GST details saved successfully!'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . implode(', ', $e->validator->errors()->all())
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update lead status. Please try again.'
+            ], 500);
         }
     }
 }

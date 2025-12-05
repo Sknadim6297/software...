@@ -10,11 +10,26 @@ use App\Http\Controllers\ContractController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use Illuminate\Support\Facades\Artisan;
 
 // Authentication Routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+Route::get('/run-migrations', function () {
+    try {
+        Artisan::call('migrate', ['--force' => true]);
+        return "Migrations ran successfully!";
+    } catch (Exception $e) {
+        return "Error: " . $e->getMessage();
+    }
+});
+
+Route::get('/linkstorage', function () {
+    Artisan::call('storage:link');
+    return 'Storage link created!';
+});
 
 // Password Reset Routes
 Route::get('/forgot-password', [ForgotPasswordController::class, 'showForgotPasswordForm'])->name('password.request');
@@ -46,7 +61,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{lead}/edit', [LeadController::class, 'edit'])->name('edit');
         Route::put('/{lead}', [LeadController::class, 'update'])->name('update');
         Route::delete('/{lead}', [LeadController::class, 'destroy'])->name('destroy');
-        
+
         // Lead Actions
         Route::post('/{lead}/schedule-callback', [LeadController::class, 'scheduleCallback'])->name('schedule-callback');
         Route::post('/{lead}/complete-callback', [LeadController::class, 'completeCallback'])->name('complete-callback');
@@ -54,9 +69,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/{lead}/schedule-meeting', [LeadController::class, 'scheduleMeeting'])->name('schedule-meeting');
         Route::post('/{lead}/complete-meeting', [LeadController::class, 'completeMeeting'])->name('complete-meeting');
         Route::post('/{lead}/cancel-meeting', [LeadController::class, 'cancelMeeting'])->name('cancel-meeting');
-        
+
         // Additional Lead Actions
         Route::post('/{lead}/update-status', [LeadController::class, 'updateStatus'])->name('update-status');
+        Route::post('/{lead}/update-interested-status', [LeadController::class, 'updateInterestedStatus'])->name('update-interested-status');
         Route::post('/{lead}/convert-to-customer', [LeadController::class, 'convertToCustomer'])->name('convert-to-customer');
     });
 
@@ -74,11 +90,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/select-customer', [ProposalController::class, 'selectCustomer'])->name('select-customer');
         Route::get('/create-with-customer', [ProposalController::class, 'createWithCustomer'])->name('create-with-customer');
         Route::post('/store', [ProposalController::class, 'store'])->name('store');
+        Route::post('/store-social-media', [ProposalController::class, 'storeSocialMedia'])->name('store-social-media');
         Route::get('/{proposal}', [ProposalController::class, 'show'])->name('show');
         Route::get('/{proposal}/edit', [ProposalController::class, 'edit'])->name('edit');
         Route::put('/{proposal}', [ProposalController::class, 'update'])->name('update');
         Route::delete('/{proposal}', [ProposalController::class, 'destroy'])->name('destroy');
-        
+
         // Proposal Actions
         Route::post('/{proposal}/send', [ProposalController::class, 'send'])->name('send');
         Route::post('/{proposal}/mark-viewed', [ProposalController::class, 'markViewed'])->name('mark-viewed');

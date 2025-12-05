@@ -18,7 +18,9 @@ class Lead extends Model
         'customer_name',
         'phone_number',
         'email',
+        'customer_email', // For confirmed email when interested
         'project_type',
+        'project_type_other', // For custom project type
         'project_valuation',
         'remarks',
         'status',
@@ -33,6 +35,12 @@ class Lead extends Model
         'callback_completed',
         'call_notes',
         'assigned_to',
+        // GST fields
+        'has_gst',
+        'gst_number',
+        'wants_gst',
+        'invoice_gst_number',
+        'gst_email',
     ];
 
     protected $casts = [
