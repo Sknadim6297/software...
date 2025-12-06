@@ -87,7 +87,8 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('proposals')->name('proposals.')->group(function () {
         Route::get('/', [ProposalController::class, 'index'])->name('index');
         Route::get('/create', [ProposalController::class, 'create'])->name('create');
-        Route::post('/select-customer', [ProposalController::class, 'selectCustomer'])->name('select-customer');
+        Route::get('/select-customer', [ProposalController::class, 'selectCustomer'])->name('select-customer');
+        Route::post('/select-customer', [ProposalController::class, 'selectCustomer']);
         Route::get('/create-with-customer', [ProposalController::class, 'createWithCustomer'])->name('create-with-customer');
         Route::post('/store', [ProposalController::class, 'store'])->name('store');
         Route::post('/store-social-media', [ProposalController::class, 'storeSocialMedia'])->name('store-social-media');

@@ -29,6 +29,7 @@ class Proposal extends Model
         'viewed_at',
         'responded_at',
         'admin_notes',
+        'metadata',
     ];
 
     protected $casts = [

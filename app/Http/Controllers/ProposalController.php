@@ -11,6 +11,9 @@ use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class ProposalController extends Controller
 {
@@ -223,8 +226,8 @@ We propose a complete social media marketing solution to enhance {$data['company
 | Lead Generation Setup & Monitoring | Included |
 | Page Management & Strategy | Included |
 
-## Monthly Charges
-**Total Monthly Fee: ₹" . number_format($data['monthly_charges']) . "/-**
+## Proposed Price
+**Total Proposed Price: ₹" . number_format($data['monthly_charges']) . "/-**
 
 ## Payment Terms
 - Payment Mode: " . str_replace('_', ' / ', strtoupper($data['payment_mode'])) . "
@@ -282,7 +285,7 @@ We look forward to helping {$data['company_name']} achieve digital marketing suc
      */
     private function generatePaymentTerms($data)
     {
-        return "Monthly Fee: ₹" . number_format($data['monthly_charges']) . "/-\n" .
+        return "Proposed Price: ₹" . number_format($data['monthly_charges']) . "/-\n" .
                "Payment Mode: " . str_replace('_', ' / ', strtoupper($data['payment_mode'])) . "\n" .
                "GST: " . str_replace('_', ' ', $data['gst_applicable']) . "\n" .
                "Advance Payment: One month in advance to initiate work";
@@ -302,7 +305,34 @@ We look forward to helping {$data['company_name']} achieve digital marketing suc
      */
     public function edit(Proposal $proposal)
     {
-        // Project types
+        // Check if this is a Social Media Marketing proposal
+        if ($proposal->project_type === 'Social Media Marketing') {
+            // Load lead relationship
+            $proposal->load('lead');
+            
+            // Get lead information
+            $lead = $proposal->lead ?? Lead::find($proposal->lead_id);
+            
+            // If lead not found, use proposal customer data as fallback
+            if (!$lead) {
+                $lead = (object)[
+                    'id' => $proposal->lead_id,
+                    'customer_name' => $proposal->customer_name,
+                    'email' => $proposal->customer_email,
+                    'phone_number' => $proposal->customer_phone,
+                    'type' => $proposal->lead_type
+                ];
+            }
+            
+            $leadType = $proposal->lead_type;
+            
+            // Decode metadata to populate form
+            $metadata = json_decode($proposal->metadata, true) ?? [];
+            
+            return view('proposals.social-media-edit', compact('proposal', 'lead', 'leadType', 'metadata'));
+        }
+        
+        // Project types for other proposals
         $projectTypes = [
             'Website Development',
             'Software Development',
@@ -323,6 +353,56 @@ We look forward to helping {$data['company_name']} achieve digital marketing suc
      */
     public function update(Request $request, Proposal $proposal)
     {
+        // Check if this is a social media marketing proposal
+        if ($request->project_type === 'social_media_marketing' || $proposal->project_type === 'Social Media Marketing') {
+            $validated = $request->validate([
+                'lead_id' => 'required|exists:leads,id',
+                'lead_type' => 'required|in:incoming,outgoing',
+                'project_type' => 'required|string',
+                'company_name' => 'required|string|max:255',
+                'monthly_charges' => 'required|numeric|min:1000',
+                'platforms' => 'required|array|min:1',
+                'platforms.*' => 'string',
+                'target_audience' => 'required|string',
+                'posters_per_month' => 'required|integer|min:1',
+                'reels_per_week' => 'required|integer|min:0',
+                'includes_video_editing' => 'nullable',
+                'services' => 'nullable|array',
+                'services.*' => 'string',
+                'payment_mode' => 'required|string',
+                'gst_applicable' => 'required|string',
+                'additional_notes' => 'nullable|string|max:1000'
+            ]);
+
+            // Convert checkbox value to boolean
+            $validated['includes_video_editing'] = $request->has('includes_video_editing') ? true : false;
+
+            $lead = Lead::findOrFail($request->lead_id);
+            
+            // Regenerate professional proposal content
+            $proposalContent = $this->generateSocialMediaProposalContent($validated, $lead);
+            
+            // Update proposal record
+            $proposal->update([
+                'customer_name' => $lead->customer_name,
+                'customer_email' => $lead->email,
+                'customer_phone' => $lead->phone_number,
+                'project_type' => 'Social Media Marketing',
+                'project_description' => "Social Media Marketing services for {$validated['company_name']}",
+                'proposal_content' => $proposalContent,
+                'proposed_amount' => $validated['monthly_charges'],
+                'currency' => 'INR',
+                'estimated_days' => 30,
+                'deliverables' => $this->generateDeliverablesText($validated),
+                'payment_terms' => $this->generatePaymentTerms($validated),
+                'metadata' => json_encode($validated)
+            ]);
+            
+            return redirect()->route('proposals.show', $proposal->id)
+                ->with('success', 'Social Media Marketing proposal updated successfully!');
+        }
+        
+        // Standard proposal update
         $validated = $request->validate([
             'project_type' => 'required|string|max:255',
             'project_description' => 'nullable|string',
@@ -351,22 +431,38 @@ We look forward to helping {$data['company_name']} achieve digital marketing suc
 
         try {
             DB::beginTransaction();
-            
+
+            // Render proposal HTML for PDF (supports markdown content)
+            $pdfHtml = view('emails.proposal-pdf', [
+                'proposal' => $proposal,
+                'contentHtml' => Str::markdown($proposal->proposal_content ?? '')
+            ])->render();
+
+            // Generate PDF attachment
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $dompdf = new Dompdf($options);
+            $dompdf->loadHtml($pdfHtml);
+            $dompdf->render();
+            $pdfOutput = $dompdf->output();
+
             $proposal->update([
                 'status' => 'sent',
                 'sent_at' => now()
             ]);
             
-            // Send email to customer
-            Mail::send('emails.proposal-sent-customer', ['proposal' => $proposal], function($message) use ($proposal) {
+            // Send email to customer with PDF
+            Mail::send('emails.proposal-sent-customer', ['proposal' => $proposal], function($message) use ($proposal, $pdfOutput) {
                 $message->to($proposal->customer_email)
-                    ->subject('Proposal for ' . $proposal->project_type . ' - Konnectix');
+                    ->subject('Proposal for ' . $proposal->project_type . ' - Konnectix')
+                    ->attachData($pdfOutput, 'proposal-' . $proposal->id . '.pdf', ['mime' => 'application/pdf']);
             });
             
-            // Send email to admin
-            Mail::send('emails.proposal-sent-admin', ['proposal' => $proposal], function($message) use ($proposal) {
+            // Send email to admin with PDF
+            Mail::send('emails.proposal-sent-admin', ['proposal' => $proposal], function($message) use ($proposal, $pdfOutput) {
                 $message->to('bdm.konnectixtech@gmail.com')
-                    ->subject('New Proposal Sent to ' . $proposal->customer_name);
+                    ->subject('New Proposal Sent to ' . $proposal->customer_name)
+                    ->attachData($pdfOutput, 'proposal-' . $proposal->id . '.pdf', ['mime' => 'application/pdf']);
             });
             
             DB::commit();
