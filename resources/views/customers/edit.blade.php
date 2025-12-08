@@ -71,14 +71,12 @@
                                 <label class="form-label">Project Type</label>
                                 <select class="form-control @error('project_type') is-invalid @enderror" name="project_type">
                                     <option value="">Select Project Type</option>
-                                    <option value="web_development" {{ old('project_type', $customer->project_type) == 'web_development' ? 'selected' : '' }}>Web Development</option>
-                                    <option value="mobile_app" {{ old('project_type', $customer->project_type) == 'mobile_app' ? 'selected' : '' }}>Mobile App</option>
-                                    <option value="ecommerce" {{ old('project_type', $customer->project_type) == 'ecommerce' ? 'selected' : '' }}>E-commerce</option>
-                                    <option value="software_development" {{ old('project_type', $customer->project_type) == 'software_development' ? 'selected' : '' }}>Software Development</option>
-                                    <option value="ui_ux_design" {{ old('project_type', $customer->project_type) == 'ui_ux_design' ? 'selected' : '' }}>UI/UX Design</option>
-                                    <option value="digital_marketing" {{ old('project_type', $customer->project_type) == 'digital_marketing' ? 'selected' : '' }}>Digital Marketing</option>
-                                    <option value="consultation" {{ old('project_type', $customer->project_type) == 'consultation' ? 'selected' : '' }}>Consultation</option>
-                                    <option value="other" {{ old('project_type', $customer->project_type) == 'other' ? 'selected' : '' }}>Other</option>
+                                    @php $projectTypes = App\Models\Customer::getProjectTypes(); @endphp
+                                    @foreach($projectTypes as $key => $type)
+                                        <option value="{{ $key }}" {{ old('project_type', $customer->project_type) == $key ? 'selected' : '' }}>
+                                            {{ $type['name'] }}
+                                        </option>
+                                    @endforeach
                                 </select>
                                 @error('project_type')
                                     <div class="invalid-feedback">{{ $message }}</div>

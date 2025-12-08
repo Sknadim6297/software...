@@ -67,7 +67,11 @@
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Proposed Price (₹) <span class="text-danger">*</span></label>
                                         <input type="number" class="form-control" name="monthly_charges" 
+                                               value="{{ $lead->project_valuation ?? '' }}"
                                                placeholder="19000" min="1000" required>
+                                        @if($lead->project_valuation)
+                                            <small class="text-muted">Auto-fetched from lead valuation</small>
+                                        @endif
                                     </div>
                                 </div>
                                 
@@ -94,9 +98,10 @@
                                         </div>
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Target Audience <span class="text-danger">*</span></label>
+                                        <label class="form-label">Target Audience</label>
                                         <textarea class="form-control" name="target_audience" rows="4" 
-                                                  placeholder="e.g., businesses, builders, architects, developers, institutions" required></textarea>
+                                                  placeholder="e.g., businesses, builders, architects, developers, institutions"></textarea>
+                                        <small class="text-muted">Optional — leave blank if not specified</small>
                                     </div>
                                 </div>
                             </div>

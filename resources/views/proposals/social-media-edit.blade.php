@@ -104,9 +104,10 @@
                                         </div>
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Target Audience <span class="text-danger">*</span></label>
+                                        <label class="form-label">Target Audience</label>
                                         <textarea class="form-control" name="target_audience" rows="4" 
-                                                  placeholder="e.g., businesses, builders, architects, developers, institutions" required>{{ $metadata['target_audience'] ?? '' }}</textarea>
+                                                  placeholder="e.g., businesses, builders, architects, developers, institutions">{{ $metadata['target_audience'] ?? '' }}</textarea>
+                                        <small class="text-muted">Optional — leave blank if not specified</small>
                                     </div>
                                 </div>
                             </div>

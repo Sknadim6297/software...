@@ -2,29 +2,41 @@
 <html>
 <head>
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 640px; margin: 0 auto; padding: 20px; }
-        .header { background: #17a2b8; color: white; padding: 20px; text-align: center; }
-        .content { background: #f8f9fa; padding: 24px; margin-top: 20px; }
-        .details { background: white; padding: 16px; margin: 15px 0; border-left: 4px solid #17a2b8; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
-        .pill { display: inline-block; padding: 6px 10px; background: #e0f2fe; color: #0ea5e9; border-radius: 999px; margin: 2px 0; font-size: 12px; }
-        .small { font-size: 13px; color: #555; }
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; margin: 0; padding: 20px; }
+        .container { max-width: 640px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #17a2b8 0%, #20c0d7 100%); color: white; padding: 30px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+        .content { padding: 30px 24px; background: white; }
+        .alert { background: #e7f6fd; border-left: 4px solid #17a2b8; padding: 15px; margin-bottom: 20px; border-radius: 4px; }
+        .details { background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 6px; border: 1px solid #e9ecef; }
+        .details p { margin: 8px 0; font-size: 14px; }
+        .details strong { color: #17a2b8; display: inline-block; min-width: 140px; }
+        .footer { background: #a9cdac; padding: 20px; text-align: center; color: #333; font-size: 13px; }
     </style>
 </head>
 <body>
     @php
         $meta = json_decode($proposal->metadata ?? '{}', true);
+        $logoPath = public_path('logo.jpg');
+        $logoData = '';
+        if (file_exists($logoPath)) {
+            $logoData = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
+        }
     @endphp
     <div class="container">
         <div class="header">
-            <h1>New Proposal Sent</h1>
+            @if($logoData)
+                <img src="{{ $logoData }}" alt="Konnectix Technologies" style="height: 70px; max-width: 250px;">
+            @else
+                <h1 style="margin: 0; color: white;">Konnectix Technologies</h1>
+            @endif
         </div>
         
         <div class="content">
-            <h2>Proposal Notification</h2>
-            
-            <p>A new proposal has been sent to a customer.</p>
+            <div class="alert">
+                <strong>✅ Proposal Sent Successfully</strong><br>
+                <span style="font-size: 14px; font-weight: normal;">A proposal has been successfully sent to the customer with PDF attachment.</span>
+            </div>
             
             <div class="details">
                 <h3>Proposal Details:</h3>

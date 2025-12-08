@@ -2,94 +2,107 @@
 <html>
 <head>
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 640px; margin: 0 auto; padding: 20px; }
-        .header { background: #007bff; color: white; padding: 20px; text-align: center; }
-        .content { background: #f8f9fa; padding: 24px; margin-top: 20px; }
-        .footer { text-align: center; padding: 16px; color: #666; font-size: 12px; }
-        .details { background: white; padding: 16px; margin: 15px 0; border-left: 4px solid #007bff; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
-        .pill { display: inline-block; padding: 6px 10px; background: #eef2ff; color: #1d4ed8; border-radius: 999px; margin: 2px 0; font-size: 12px; }
-        .small { font-size: 13px; color: #555; }
+        body { font-family: 'Poppins', Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; margin: 0; padding: 20px; }
+        .container { max-width: 640px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #2d7a32 0%, #33973a 100%); color: white; padding: 30px 20px; text-align: center; }
+        .header img { height: 70px; max-width: 250px; }
+        .content { padding: 30px 24px; background: white; }
+        .greeting { font-size: 16px; color: #2d7a32; font-weight: 600; margin-bottom: 20px; }
+        .message { font-size: 15px; line-height: 1.8; color: #333; margin-bottom: 20px; }
+        .highlight-box { background: #f0f8f1; border-left: 4px solid #33973a; padding: 20px; margin: 20px 0; border-radius: 4px; }
+        .project-info { margin: 20px 0; }
+        .project-info p { margin: 8px 0; font-size: 14px; }
+        .project-info strong { color: #2d7a32; display: inline-block; min-width: 140px; }
+        .cta-button { display: inline-block; background: #33973a; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: 600; margin: 20px 0; }
+        .footer { background: #a9cdac; padding: 20px; text-align: center; color: #333; font-size: 13px; }
+        .footer-contact { margin: 10px 0; }
+        .footer-contact span { display: inline-block; margin: 0 10px; }
     </style>
 </head>
 <body>
     @php
         $meta = json_decode($proposal->metadata ?? '{}', true);
+        $logoPath = public_path('logo.jpg');
+        $logoData = '';
+        if (file_exists($logoPath)) {
+            $logoData = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
+        }
     @endphp
     <div class="container">
         <div class="header">
-            <h1>New Proposal from Konnectix Technologies</h1>
+            @if($logoData)
+                <img src="{{ $logoData }}" alt="Konnectix Technologies">
+            @else
+                <h1 style="margin: 0; color: white;">Konnectix Technologies</h1>
+            @endif
         </div>
         
         <div class="content">
-            <h2>Dear {{ $proposal->customer_name }},</h2>
+            <div class="greeting">Dear {{ $proposal->customer_name }},</div>
             
-            <p>We are pleased to send you a proposal for your <strong>{{ $proposal->project_type }}</strong> project.</p>
-            
-            <div class="details">
-                <h3>Proposal Details:</h3>
-                <p><strong>Project Type:</strong> {{ $proposal->project_type }}</p>
-                <p><strong>Proposed Amount:</strong> {{ $proposal->currency }} {{ number_format($proposal->proposed_amount, 2) }}</p>
-                @if($proposal->estimated_days)
-                    <p><strong>Estimated Duration:</strong> {{ $proposal->estimated_days }} days</p>
-                @endif
-                @if($proposal->payment_terms)
-                    <p><strong>Payment Terms:</strong> {{ $proposal->payment_terms }}</p>
-                @endif
+            <div class="message">
+                <p>Thank you for considering <strong>Konnectix Technologies</strong> for your <strong>{{ $proposal->project_type }}</strong> project.</p>
+                
+                <p>We are excited to present our comprehensive proposal tailored specifically to meet your business requirements. Our team has carefully analyzed your needs and crafted a solution that will deliver exceptional value.</p>
             </div>
-            @if($proposal->project_type === 'Social Media Marketing' && is_array($meta) && !empty($meta))
-                <h3>Social Media Plan (Dynamic)</h3>
-                <div class="grid">
-                    <div><strong>Company:</strong><br>{{ $meta['company_name'] ?? '-' }}</div>
-                    <div><strong>Platforms:</strong><br>
-                        @if(isset($meta['platforms']))
-                            @foreach($meta['platforms'] as $p)
-                                <span class="pill">{{ $p }}</span>
-                            @endforeach
-                        @endif
-                    </div>
-                    <div><strong>Target Audience:</strong><br>{{ $meta['target_audience'] ?? '-' }}</div>
-                    <div><strong>Posters / Month:</strong><br>{{ $meta['posters_per_month'] ?? '-' }}</div>
-                    <div><strong>Reels / Week:</strong><br>{{ $meta['reels_per_week'] ?? '-' }}</div>
-                    <div><strong>Video Editing:</strong><br>{{ !empty($meta['includes_video_editing']) ? 'Included' : 'Not included' }}</div>
-                    <div><strong>Payment Mode:</strong><br>{{ isset($meta['payment_mode']) ? str_replace('_',' / ', strtoupper($meta['payment_mode'])) : '-' }}</div>
-                    <div><strong>GST:</strong><br>{{ $meta['gst_applicable'] ?? '-' }}</div>
+            
+            <div class="highlight-box">
+                <h3 style="margin-top: 0; color: #2d7a32;">Proposal Highlights</h3>
+                <div class="project-info">
+                    <p><strong>Project Type:</strong> {{ $proposal->project_type }}</p>
+                    <p><strong>Proposed Investment:</strong> {{ $proposal->currency }} {{ number_format($proposal->proposed_amount, 2) }}</p>
+                    @if($proposal->estimated_days)
+                        <p><strong>Timeline:</strong> {{ $proposal->estimated_days }} days</p>
+                    @endif
+                    @if($proposal->payment_terms)
+                        <p><strong>Payment Terms:</strong> {{ $proposal->payment_terms }}</p>
+                    @endif
                 </div>
-                @if(!empty($meta['services']))
-                    <p class="small" style="margin-top:8px;"><strong>Services:</strong>
-                        {{ implode(', ', array_map('ucwords', str_replace('_',' ', $meta['services']))) }}
-                    </p>
-                @endif
-                @if(!empty($meta['additional_notes']))
-                    <p class="small"><strong>Additional Notes:</strong> {{ $meta['additional_notes'] }}</p>
-                @endif
-            @endif
-
-            @if($proposal->project_description)
-                <h3>Project Description:</h3>
-                <p>{{ $proposal->project_description }}</p>
-            @endif
-            
-            <h3>Full Proposal:</h3>
-            <div style="background: white; padding: 18px; font-family: inherit;">
-                {!! \Illuminate\Support\Str::markdown($proposal->proposal_content) !!}
             </div>
-            <p class="small" style="margin-top:12px;">A PDF copy is attached for your convenience.</p>
             
-            <p style="margin-top: 30px;">Please review the proposal and let us know if you have any questions or require any clarifications.</p>
+            <div class="message">
+                <p><strong>📎 Attached:</strong> Please find the complete detailed proposal attached as a PDF document. The document includes:</p>
+                <ul style="margin: 10px 0; padding-left: 25px;">
+                    <li>Comprehensive project scope and deliverables</li>
+                    <li>Detailed pricing breakdown</li>
+                    <li>Timeline and milestones</li>
+                    <li>Terms and conditions</li>
+                </ul>
+            </div>
             
-            <p>We look forward to working with you!</p>
+            <div class="message">
+                <p>We would be delighted to discuss this proposal with you in detail and address any questions you may have.</p>
+                
+                <p><strong>Next Steps:</strong></p>
+                <ol style="margin: 10px 0; padding-left: 25px;">
+                    <li>Review the attached proposal document</li>
+                    <li>Feel free to reach out with any questions or clarifications</li>
+                    <li>We're ready to schedule a call to discuss further</li>
+                </ol>
+            </div>
             
-            <p>
-                <strong>Best regards,</strong><br>
-                Konnectix Technologies Team<br>
-                Email: bdm.konnectixtech@gmail.com
-            </p>
+            <div style="margin: 30px 0; text-align: center;">
+                <p style="font-size: 14px; color: #666; margin-bottom: 15px;">We look forward to partnering with you!</p>
+            </div>
+            
+            <div style="border-top: 2px solid #f0f0f0; padding-top: 20px; margin-top: 30px;">
+                <p style="margin: 5px 0;"><strong style="color: #2d7a32;">Best Regards,</strong></p>
+                <p style="margin: 5px 0;">Konnectix Technologies Team</p>
+                <p style="margin: 5px 0; font-size: 14px; color: #666;">📧 bdm.konnectixtech@gmail.com</p>
+                <p style="margin: 5px 0; font-size: 14px; color: #666;">📞 7003228913 / 9123354003</p>
+            </div>
         </div>
         
         <div class="footer">
-            <p>&copy; {{ date('Y') }} Konnectix Technologies. All rights reserved.</p>
+            <div class="footer-contact">
+                <span>📞 7003228913 / 9123354003</span>
+                <span>✉ info@konnectixtech.com</span>
+            </div>
+            <div class="footer-contact">
+                <span>📍 Dum Dum, Kolkata - 700 074</span>
+                <span>🌐 www.konnectixtech.com</span>
+            </div>
+            <p style="margin-top: 15px; font-size: 12px;">&copy; {{ date('Y') }} Konnectix Technologies Pvt. Ltd. All rights reserved.<br>CIN NO: U72900WB2021PTC243081</p>
         </div>
     </div>
 </body>

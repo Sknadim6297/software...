@@ -102,11 +102,14 @@
                                             <option value="web_development" {{ old('project_type', $lead->project_type) === 'web_development' ? 'selected' : '' }}>Web Development</option>
                                             <option value="mobile_app" {{ old('project_type', $lead->project_type) === 'mobile_app' ? 'selected' : '' }}>Mobile App</option>
                                             <option value="desktop_software" {{ old('project_type', $lead->project_type) === 'desktop_software' ? 'selected' : '' }}>Desktop Software</option>
-                                            <option value="e_commerce" {{ old('project_type', $lead->project_type) === 'e_commerce' ? 'selected' : '' }}>E-commerce</option>
                                             <option value="cms" {{ old('project_type', $lead->project_type) === 'cms' ? 'selected' : '' }}>CMS</option>
                                             <option value="api_integration" {{ old('project_type', $lead->project_type) === 'api_integration' ? 'selected' : '' }}>API Integration</option>
                                             <option value="maintenance" {{ old('project_type', $lead->project_type) === 'maintenance' ? 'selected' : '' }}>Maintenance</option>
                                             <option value="consulting" {{ old('project_type', $lead->project_type) === 'consulting' ? 'selected' : '' }}>Consulting</option>
+                                            <option value="social_media_marketing" {{ old('project_type', $lead->project_type) === 'social_media_marketing' ? 'selected' : '' }}>Social Media Marketing</option>
+                                            <option value="youtube_marketing" {{ old('project_type', $lead->project_type) === 'youtube_marketing' ? 'selected' : '' }}>YouTube Marketing</option>
+                                            <option value="graphic_designing" {{ old('project_type', $lead->project_type) === 'graphic_designing' ? 'selected' : '' }}>Graphic / Poster Designing</option>
+                                            <option value="reels_design" {{ old('project_type', $lead->project_type) === 'reels_design' ? 'selected' : '' }}>Reels Design</option>
                                             <option value="other" {{ old('project_type', $lead->project_type) === 'other' ? 'selected' : '' }}>Other</option>
                                         </select>
                                         @error('project_type')

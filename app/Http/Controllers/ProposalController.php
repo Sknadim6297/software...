@@ -68,8 +68,9 @@ class ProposalController extends Controller
         
         $lead = Lead::findOrFail($leadId);
         
-        // Check if this is a Social Media Marketing project
-        if ($lead->project_type === 'social_media_marketing') {
+        // Check if this is a Social Media Marketing or related project
+        $socialMediaTypes = ['social_media_marketing', 'youtube_marketing', 'graphic_designing', 'reels_design'];
+        if (in_array($lead->project_type, $socialMediaTypes)) {
             return view('proposals.social-media-form', compact('lead', 'leadType'));
         }
         
@@ -133,10 +134,10 @@ class ProposalController extends Controller
             'monthly_charges' => 'required|numeric|min:1000',
             'platforms' => 'required|array|min:1',
             'platforms.*' => 'string',
-            'target_audience' => 'required|string',
+            'target_audience' => 'nullable|string',
             'posters_per_month' => 'required|integer|min:1',
             'reels_per_week' => 'required|integer|min:0',
-            'includes_video_editing' => 'nullable|boolean',
+            'includes_video_editing' => 'nullable',
             'services' => 'nullable|array',
             'services.*' => 'string',
             'payment_mode' => 'required|string',
@@ -149,6 +150,16 @@ class ProposalController extends Controller
         // Generate professional proposal content
         $proposalContent = $this->generateSocialMediaProposalContent($validated, $lead);
         
+        // Map project type to display name
+        $projectTypeMap = [
+            'social_media_marketing' => 'Social Media Marketing',
+            'youtube_marketing' => 'YouTube Marketing',
+            'graphic_designing' => 'Graphic / Poster Designing',
+            'reels_design' => 'Reels Design'
+        ];
+        
+        $projectTypeName = $projectTypeMap[$lead->project_type] ?? 'Social Media Marketing';
+        
         // Create proposal record
         $proposal = Proposal::create([
             'lead_id' => $request->lead_id,
@@ -156,8 +167,8 @@ class ProposalController extends Controller
             'customer_name' => $lead->customer_name,
             'customer_email' => $lead->email,
             'customer_phone' => $lead->phone_number,
-            'project_type' => 'Social Media Marketing',
-            'project_description' => "Social Media Marketing services for {$validated['company_name']}",
+            'project_type' => $projectTypeName,
+            'project_description' => "{$projectTypeName} services for {$validated['company_name']}",
             'proposal_content' => $proposalContent,
             'proposed_amount' => $validated['monthly_charges'],
             'currency' => 'INR',
@@ -305,8 +316,9 @@ We look forward to helping {$data['company_name']} achieve digital marketing suc
      */
     public function edit(Proposal $proposal)
     {
-        // Check if this is a Social Media Marketing proposal
-        if ($proposal->project_type === 'Social Media Marketing') {
+        // Check if this is a Social Media Marketing or related proposal
+        $socialMediaTypes = ['Social Media Marketing', 'YouTube Marketing', 'Graphic / Poster Designing', 'Reels Design'];
+        if (in_array($proposal->project_type, $socialMediaTypes)) {
             // Load lead relationship
             $proposal->load('lead');
             
@@ -353,8 +365,11 @@ We look forward to helping {$data['company_name']} achieve digital marketing suc
      */
     public function update(Request $request, Proposal $proposal)
     {
-        // Check if this is a social media marketing proposal
-        if ($request->project_type === 'social_media_marketing' || $proposal->project_type === 'Social Media Marketing') {
+        // Check if this is a social media marketing or related proposal
+        $socialMediaRequestTypes = ['social_media_marketing', 'youtube_marketing', 'graphic_designing', 'reels_design'];
+        $socialMediaProposalTypes = ['Social Media Marketing', 'YouTube Marketing', 'Graphic / Poster Designing', 'Reels Design'];
+        
+        if (in_array($request->project_type, $socialMediaRequestTypes) || in_array($proposal->project_type, $socialMediaProposalTypes)) {
             $validated = $request->validate([
                 'lead_id' => 'required|exists:leads,id',
                 'lead_type' => 'required|in:incoming,outgoing',
@@ -363,10 +378,10 @@ We look forward to helping {$data['company_name']} achieve digital marketing suc
                 'monthly_charges' => 'required|numeric|min:1000',
                 'platforms' => 'required|array|min:1',
                 'platforms.*' => 'string',
-                'target_audience' => 'required|string',
+                'target_audience' => 'nullable|string',
                 'posters_per_month' => 'required|integer|min:1',
                 'reels_per_week' => 'required|integer|min:0',
-                'includes_video_editing' => 'nullable',
+                'includes_video_editing' => 'nullable|boolean',
                 'services' => 'nullable|array',
                 'services.*' => 'string',
                 'payment_mode' => 'required|string',
@@ -379,6 +394,16 @@ We look forward to helping {$data['company_name']} achieve digital marketing suc
 
             $lead = Lead::findOrFail($request->lead_id);
             
+            // Map project type to display name
+            $projectTypeMap = [
+                'social_media_marketing' => 'Social Media Marketing',
+                'youtube_marketing' => 'YouTube Marketing',
+                'graphic_designing' => 'Graphic / Poster Designing',
+                'reels_design' => 'Reels Design'
+            ];
+            
+            $projectTypeName = $projectTypeMap[$request->project_type] ?? $proposal->project_type;
+            
             // Regenerate professional proposal content
             $proposalContent = $this->generateSocialMediaProposalContent($validated, $lead);
             
@@ -387,8 +412,8 @@ We look forward to helping {$data['company_name']} achieve digital marketing suc
                 'customer_name' => $lead->customer_name,
                 'customer_email' => $lead->email,
                 'customer_phone' => $lead->phone_number,
-                'project_type' => 'Social Media Marketing',
-                'project_description' => "Social Media Marketing services for {$validated['company_name']}",
+                'project_type' => $projectTypeName,
+                'project_description' => "{$projectTypeName} services for {$validated['company_name']}",
                 'proposal_content' => $proposalContent,
                 'proposed_amount' => $validated['monthly_charges'],
                 'currency' => 'INR',

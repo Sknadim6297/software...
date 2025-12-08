@@ -134,11 +134,13 @@
                                     <option value="">Select Project Type</option>
                                     <option value="web_development" {{ old('project_type') == 'web_development' ? 'selected' : '' }}>Web Development</option>
                                     <option value="mobile_app" {{ old('project_type') == 'mobile_app' ? 'selected' : '' }}>Mobile App</option>
-                                    <option value="ecommerce" {{ old('project_type') == 'ecommerce' ? 'selected' : '' }}>E-commerce</option>
                                     <option value="software_development" {{ old('project_type') == 'software_development' ? 'selected' : '' }}>Software Development</option>
                                     <option value="ui_ux_design" {{ old('project_type') == 'ui_ux_design' ? 'selected' : '' }}>UI/UX Design</option>
                                     <option value="digital_marketing" {{ old('project_type') == 'digital_marketing' ? 'selected' : '' }}>Digital Marketing</option>
                                     <option value="social_media_marketing" {{ old('project_type') == 'social_media_marketing' ? 'selected' : '' }}>Social Media Marketing</option>
+                                    <option value="youtube_marketing" {{ old('project_type') == 'youtube_marketing' ? 'selected' : '' }}>YouTube Marketing</option>
+                                    <option value="graphic_designing" {{ old('project_type') == 'graphic_designing' ? 'selected' : '' }}>Graphic / Poster Designing</option>
+                                    <option value="reels_design" {{ old('project_type') == 'reels_design' ? 'selected' : '' }}>Reels Design</option>
                                     <option value="consultation" {{ old('project_type') == 'consultation' ? 'selected' : '' }}>Consultation</option>
                                     <option value="other" {{ old('project_type') == 'other' ? 'selected' : '' }}>Other</option>
                                 </select>
