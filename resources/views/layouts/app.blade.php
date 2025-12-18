@@ -6,7 +6,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 	
-	<title>@yield('title', 'Konnectix Admin Panel')</title>
+	<title>@yield('title', 'Konnectix BDM Panel')</title>
     
     <!-- Favicon icon -->
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('template/images/favicon.png') }}">
@@ -185,16 +185,20 @@
                         <ul class="navbar-nav header-right">
                             <li class="nav-item dropdown header-profile">
                                 <a class="nav-link" href="javascript:void(0)" role="button" data-bs-toggle="dropdown">
-                                    <img src="{{ asset('template/images/profile/17.jpg') }}" width="20" alt=""/>
-									<div class="header-info">
-										<span class="text-black">{{ Auth::user()->name ?? 'Admin' }}</span>
-										<p class="fs-12 mb-0">{{ Auth::user()->email ?? 'admin@konnectix.com' }}</p>
+                                    @if(Auth::check() && Auth::user()->bdm && Auth::user()->bdm->profile_image)
+                                        <img src="{{ asset('storage/' . Auth::user()->bdm->profile_image) }}" width="20" alt=""/>
+                                    @else
+                                        <img src="{{ asset('template/images/profile/17.jpg') }}" width="20" alt=""/>
+                                    @endif
+									<div class="header-info" style="display: block !important;">
+										<span class="text-black">{{ Auth::check() && Auth::user()->bdm ? Auth::user()->bdm->name : Auth::user()->name }}</span>
+										<p class="fs-12 mb-0">{{ Auth::check() && Auth::user()->bdm ? Auth::user()->bdm->employee_code : Auth::user()->email }}</p>
 									</div>
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-right">
-                                    <a href="#" class="dropdown-item ai-icon">
+                                    <a href="{{ route('bdm.profile') }}" class="dropdown-item ai-icon">
                                         <svg id="icon-user1" xmlns="http://www.w3.org/2000/svg" class="text-primary" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                        <span class="ms-2">Profile </span>
+                                        <span class="ms-2">My Profile </span>
                                     </a>
                                     <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="dropdown-item ai-icon">
                                         <svg id="icon-logout" xmlns="http://www.w3.org/2000/svg" class="text-danger" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
@@ -282,15 +286,55 @@
                             </a></li>
                         </ul>
                     </li>
-                    {{-- Commented out for now as requested --}}
-                    {{--
+
+                    {{-- BDM Personal Management --}}
                     <li>
-                        <a class="ai-icon" href="{{ route('invoices.index') }}" aria-expanded="false">
-                            <i class="flaticon-381-notepad"></i>
-                            <span class="nav-text">Invoice Management</span>
+                        <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
+                            <i class="flaticon-381-user-9"></i>
+                            <span class="nav-text">My Profile & Documents</span>
+                        </a>
+                        <ul aria-expanded="false">
+                            <li><a href="{{ route('bdm.profile') }}">
+                                <i class="flaticon-381-user text-primary me-2"></i>My Profile
+                            </a></li>
+                            <li><a href="{{ route('bdm.documents') }}">
+                                <i class="flaticon-381-file-1 text-info me-2"></i>Documents
+                            </a></li>
+                        </ul>
+                    </li>
+                    
+                    <li>
+                        <a class="ai-icon" href="{{ route('bdm.salary') }}" aria-expanded="false">
+                            <i class="flaticon-381-price-tag"></i>
+                            <span class="nav-text">Salary & Remuneration</span>
                         </a>
                     </li>
-                    --}}
+                    
+                    <li>
+                        <a class="ai-icon" href="{{ route('bdm.leaves') }}" aria-expanded="false">
+                            <i class="flaticon-381-calendar-1"></i>
+                            <span class="nav-text">Leave Management</span>
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a class="ai-icon" href="{{ route('bdm.targets') }}" aria-expanded="false">
+                            <i class="flaticon-381-diploma"></i>
+                            <span class="nav-text">Target Management</span>
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a class="ai-icon" href="{{ route('bdm.notifications') }}" aria-expanded="false">
+                            <i class="flaticon-381-alarm-clock"></i>
+                            <span class="nav-text">Notifications</span>
+                            @auth
+                                @if(Auth::user()->bdm && Auth::user()->bdm->notifications()->where('is_read', false)->count() > 0)
+                                    <span class="badge badge-xs badge-danger ms-2">{{ Auth::user()->bdm->notifications()->where('is_read', false)->count() }}</span>
+                                @endif
+                            @endauth
+                        </a>
+                    </li>
 
                     {{-- Future modules - commented for now --}}
                     {{--

@@ -13,6 +13,9 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
+        
+        // Evaluate BDM targets on the 1st of each month at 2 AM (for previous month)
+        $schedule->command('bdm:evaluate-targets')->monthlyOn(1, '02:00');
     }
 
     /**

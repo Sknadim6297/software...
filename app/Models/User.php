@@ -57,4 +57,12 @@ class User extends Authenticatable
     {
         $this->notify(new ResetPasswordNotification($token));
     }
+
+    /**
+     * Get the BDM profile associated with the user
+     */
+    public function bdm()
+    {
+        return $this->hasOne(BDM::class);
+    }
 }

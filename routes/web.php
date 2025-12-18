@@ -7,6 +7,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\ProposalController;
 use App\Http\Controllers\ContractController;
+use App\Http\Controllers\BDMController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
@@ -37,8 +38,8 @@ Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink
 Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
 Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
 
-// Protected Routes (require authentication)
-Route::middleware(['auth'])->group(function () {
+// Protected Routes (require authentication and BDM status check)
+Route::middleware(['auth', 'bdm.check'])->group(function () {
     // Dashboard Route
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -92,6 +93,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/create-with-customer', [ProposalController::class, 'createWithCustomer'])->name('create-with-customer');
         Route::post('/store', [ProposalController::class, 'store'])->name('store');
         Route::post('/store-social-media', [ProposalController::class, 'storeSocialMedia'])->name('store-social-media');
+        Route::post('/store-erp-software', [ProposalController::class, 'storeErpSoftware'])->name('store-erp-software');
         Route::get('/{proposal}', [ProposalController::class, 'show'])->name('show');
         Route::get('/{proposal}/edit', [ProposalController::class, 'edit'])->name('edit');
         Route::put('/{proposal}', [ProposalController::class, 'update'])->name('update');
@@ -119,4 +121,37 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/invoices/export/excel', [InvoiceController::class, 'exportExcel'])->name('invoices.export.excel');
     Route::get('/invoices/export/pdf', [InvoiceController::class, 'exportPdf'])->name('invoices.export.pdf');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'generatePdf'])->name('invoices.pdf');
+
+    // BDM Panel Routes
+    Route::prefix('bdm')->name('bdm.')->group(function () {
+        Route::get('/dashboard', [BDMController::class, 'dashboard'])->name('dashboard');
+        
+        // Profile
+        Route::get('/profile', [BDMController::class, 'showProfile'])->name('profile');
+        Route::post('/profile', [BDMController::class, 'updateProfile'])->name('profile.update');
+        
+        // Documents
+        Route::get('/documents', [BDMController::class, 'showDocuments'])->name('documents');
+        Route::post('/documents/upload', [BDMController::class, 'uploadDocument'])->name('documents.upload');
+        Route::get('/documents/{id}/download', [BDMController::class, 'downloadDocument'])->name('documents.download');
+        Route::delete('/documents/{id}', [BDMController::class, 'deleteDocument'])->name('documents.delete');
+        
+        // Salary
+        Route::get('/salary', [BDMController::class, 'showSalary'])->name('salary');
+        Route::get('/salary/{id}/download', [BDMController::class, 'downloadSalarySlip'])->name('salary.download');
+        
+        // Leaves
+        Route::get('/leaves', [BDMController::class, 'showLeaves'])->name('leaves');
+        Route::post('/leaves/apply', [BDMController::class, 'applyLeave'])->name('leaves.apply');
+        
+        // Targets
+        Route::get('/targets', [BDMController::class, 'showTargets'])->name('targets');
+        Route::get('/targets/{id}', [BDMController::class, 'showTargetDetail'])->name('targets.detail');
+        
+        // Notifications
+        Route::get('/notifications', [BDMController::class, 'showNotifications'])->name('notifications');
+        Route::post('/notifications/{id}/read', [BDMController::class, 'markNotificationRead'])->name('notifications.read');
+        Route::post('/notifications/read-all', [BDMController::class, 'markAllNotificationsRead'])->name('notifications.read-all');
+    });
+
 });

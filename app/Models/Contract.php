@@ -11,6 +11,7 @@ class Contract extends Model
 
     protected $fillable = [
         'proposal_id',
+        'bdm_id',
         'contract_number',
         'customer_name',
         'customer_email',
@@ -18,6 +19,7 @@ class Contract extends Model
         'contract_content',
         'project_type',
         'final_amount',
+        'total_amount',
         'currency',
         'start_date',
         'expected_completion_date',
@@ -26,6 +28,7 @@ class Contract extends Model
         'payment_schedule',
         'status',
         'signed_at',
+        'finalized_at',
         'sent_to_customer_at',
         'sent_to_admin_at',
         'terms_and_conditions',
@@ -33,9 +36,11 @@ class Contract extends Model
 
     protected $casts = [
         'final_amount' => 'decimal:2',
+        'total_amount' => 'decimal:2',
         'start_date' => 'date',
         'expected_completion_date' => 'date',
         'signed_at' => 'datetime',
+        'finalized_at' => 'datetime',
         'sent_to_customer_at' => 'datetime',
         'sent_to_admin_at' => 'datetime',
     ];
@@ -46,6 +51,14 @@ class Contract extends Model
     public function proposal()
     {
         return $this->belongsTo(Proposal::class);
+    }
+
+    /**
+     * Get the BDM assigned to this contract
+     */
+    public function bdm()
+    {
+        return $this->belongsTo(BDM::class);
     }
 
     /**

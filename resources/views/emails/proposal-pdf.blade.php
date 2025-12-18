@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Proposal for {{ $proposal->customer_name }}</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-        
         * {
             margin: 0;
             padding: 0;
@@ -15,319 +13,359 @@
 
         @page {
             margin: 0;
-            margin-top: 130px;
-            margin-bottom: 20px;
+            size: A4;
         }
 
         body {
-            font-family: 'Poppins', Arial, sans-serif;
+            font-family: 'Times New Roman', serif;
             background-color: white;
             padding: 0;
-            line-height: 1.6;
-            position: relative;
             margin: 0;
+            line-height: 1.6;
         }
 
-        /* Watermark - fixed position for all pages */
+        .container {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0;
+            background-color: white;
+            padding: 0;
+            padding-bottom: 80px;
+            position: relative;
+        }
+
+        .page {
+            position: relative;
+            width: 210mm;
+            min-height: 297mm;
+            page-break-after: auto;
+        }
+
+        /* Watermark */
         .watermark {
             position: fixed;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%);
+            width: 500px;
+            height: 500px;
+            margin-left: -250px;
+            margin-top: -250px;
             z-index: 0;
             pointer-events: none;
-            opacity: 0.05;
-            width: 100%;
-            text-align: center;
+            opacity: 0.08;
         }
 
         .watermark img {
-            width: 400px;
+            width: 100%;
             height: auto;
-            max-width: 60%;
         }
 
-        /* Header - fixed at top of every page */
-        .page-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 110px;
-            background: white;
-            z-index: 10;
+        .content {
+            position: relative;
+            z-index: 1;
+            padding: 20mm;
+            padding-top: 10mm;
         }
 
-        .header-content-wrapper {
-            padding: 10px 20mm 0 20mm;
+        /* Header with green bars and logo */
+        .header {
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .header-row {
+            position: relative;
+            width: 100%;
+            margin-bottom: 15px;
+            min-height: 120px;
+            page-break-inside: avoid;
         }
 
         .green-bars {
-            margin-bottom: 8px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 75%;
+            z-index: 1;
         }
 
         .green-bar {
-            height: 15px;
             background-color: #33973a;
-            margin-bottom: 10px;
             position: relative;
         }
 
         .green-bar:first-child {
-            height: 45px;
-            width: 100%;
+            height: 55px;
+            width: 110%;
+            margin-bottom: 15px;
         }
 
         .green-bar:last-child {
-            width: 60%;
+            height: 20px;
+            width: 70%;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-start;
         }
 
         .logo-section {
             position: absolute;
-            top: 10px;
             right: 20mm;
+            top: 60px;
             text-align: right;
+            z-index: 10;
         }
 
         .logo {
-            height: 55px;
+            height: 70px;
             width: auto;
-            margin-bottom: 3px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .company-info {
+            text-align: left;
+        }
+
+        .company-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2d7a32;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
         }
 
         .cin-number {
-            font-size: 9px;
+            font-size: 11px;
             color: #666;
+            text-align: right;
+            white-space: nowrap;
         }
 
-        /* Footer - inline at end of content only */
-        .footer-wrapper {
-            margin-top: 40px;
-            position: relative;
-            page-break-inside: avoid;
-        }
-
-        .footer-top-bar {
-            width: 100px;
-            height: 20px;
-            background-color: #33973a;
-            float: right;
-            margin-bottom: -20px;
-        }
-
-        .footer {
-            background-color: #a9cdac;
-            padding: 12px 20mm;
-            color: black;
-            font-size: 11px;
-            clear: both;
-        }
-
-        .footer-grid {
-            display: table;
-            width: 100%;
-        }
-
-        .footer-row {
-            display: table-row;
-        }
-
-        .footer-cell {
-            display: table-cell;
-            padding: 3px 10px 3px 0;
-            width: 50%;
-        }
-
-        .footer-icon {
-            font-size: 12px;
-            margin-right: 5px;
-        }
-
-        /* Main content area */
-        .content {
-            position: relative;
-            z-index: 1;
-            padding: 10px 20mm 0 20mm;
-        }
-
-        /* First page specific content */
-        .first-page-content {
-            margin-bottom: 15px;
-            margin-top: 5px;
-        }
-
+        /* Company details section */
         .company-details {
-            margin-bottom: 18px;
-            font-size: 11px;
-            line-height: 1.6;
+            margin-top: 25px;
+            margin-bottom: 30px;
+            font-size: 12px;
+            line-height: 1.8;
             color: #333;
         }
 
         .company-details p {
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
 
         .date {
-            margin-top: 8px;
-            font-weight: 600;
-            font-size: 11px;
+            margin-top: 15px;
+            font-weight: bold;
         }
 
+        /* Recipient section */
         .recipient {
-            margin-top: 18px;
-            margin-bottom: 12px;
-            font-size: 12px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+        }
+
+        .recipient-label {
+            font-size: 14px;
+            margin-bottom: 5px;
         }
 
         .recipient-name {
+            font-size: 14px;
             margin-top: 5px;
         }
 
         .recipient-name strong {
-            font-size: 13px;
+            font-size: 15px;
             color: #2d7a32;
-            font-weight: 600;
         }
 
+        /* Subject section */
         .subject {
-            margin-top: 12px;
-            margin-bottom: 15px;
-            font-size: 12px;
+            margin-top: 20px;
+            margin-bottom: 25px;
+        }
+
+        .subject-label {
+            font-size: 14px;
+            margin-bottom: 5px;
         }
 
         .subject-text {
-            font-weight: 600;
+            font-size: 14px;
+            font-weight: bold;
+            text-decoration: underline;
             color: #2d7a32;
-            font-size: 12px;
         }
 
+        /* Salutation */
         .salutation {
-            margin-top: 12px;
-            margin-bottom: 8px;
-            font-size: 12px;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            font-size: 14px;
         }
 
         /* Body content */
         .body-content {
-            margin-top: 10px;
-            font-size: 12px;
-            line-height: 1.7;
+            margin-top: 20px;
+            font-size: 14px;
+            text-align: justify;
+            line-height: 1.8;
             color: #333;
         }
 
         .body-content p {
-            margin-bottom: 12px;
-            text-align: justify;
+            margin-bottom: 15px;
+            text-indent: 0;
+            page-break-inside: avoid;
+            orphans: 3;
+            widows: 3;
         }
 
         .body-content strong {
             color: #2d7a32;
-            font-weight: 600;
+            font-weight: bold;
         }
 
-        .body-content h1, .body-content h2, .body-content h3, .body-content h4 {
+        .body-content h1 {
+            font-size: 18px;
             color: #2d7a32;
+            font-weight: bold;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            text-align: center;
+            border-bottom: 2px solid #33973a;
+            padding-bottom: 8px;
+            page-break-after: avoid;
+        }
+
+        .body-content h2 {
+            font-size: 15px;
+            color: #2d7a32;
+            font-weight: bold;
             margin-top: 20px;
             margin-bottom: 10px;
-            page-break-after: avoid;
-            font-weight: 600;
-            clear: both;
-        }
-
-        .body-content h1 { 
-            font-size: 20px; 
-            text-align: center;
-            border-bottom: 3px solid #33973a; 
-            padding-bottom: 8px;
-            margin-bottom: 15px;
-        }
-        
-        .body-content h2 { 
-            font-size: 15px; 
-            border-bottom: 2px solid #33973a; 
+            border-bottom: 2px solid #33973a;
             padding-bottom: 5px;
-            margin-top: 25px;
+            page-break-after: avoid;
         }
-        
-        .body-content h3 { font-size: 13px; }
-        .body-content h4 { font-size: 12px; }
 
-        .body-content ul, .body-content ol {
+        .body-content h3 {
+            font-size: 13px;
+            color: #2d7a32;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            page-break-after: avoid;
+        }
+
+        .body-content ul,
+        .body-content ol {
             margin-left: 25px;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
+            page-break-inside: avoid;
         }
 
         .body-content li {
-            margin-bottom: 6px;
-            line-height: 1.7;
+            margin-bottom: 8px;
+            line-height: 1.8;
+            page-break-inside: avoid;
         }
 
         .body-content table {
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
+            font-size: 12px;
             page-break-inside: avoid;
-            font-size: 11px;
         }
 
-        .body-content table th,
+        .body-content table th {
+            border: 1px solid #33973a;
+            padding: 12px;
+            text-align: left;
+            background-color: #33973a;
+            color: #ffffff;
+            font-weight: bold;
+        }
+
         .body-content table td {
             border: 1px solid #33973a;
             padding: 12px;
             text-align: left;
-            vertical-align: top;
+            background-color: #ffffff;
         }
 
-        .body-content table th {
-            background-color: #33973a;
-            color: white;
-            font-weight: 600;
-        }
-
-        .body-content table tr:nth-child(even) {
-            background-color: #f0f8f1;
-        }
-        
-        .body-content table tr:hover {
-            background-color: #e8f5e9;
-        }
-        
         .body-content hr {
             border: none;
             border-top: 2px solid #33973a;
             margin: 25px 0;
         }
 
-        .section-title {
+        /* Footer */
+        .footer-wrapper {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: auto;
+        }
+
+        .footer-top-bar {
+            position: absolute;
+            top: -20px;
+            right: 0;
+            width: 120px;
+            height: 45px;
+            background-color: #33973a;
+            z-index: 2;
+        }
+
+        .footer {
+            position: relative;
+            background-color: #a9cdac;
+            padding: 15px 20mm;
+            color: black;
+            font-size: 14px;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .footer-content {
+            width: 100%;
+        }
+
+        .footer-info {
+            width: 100%;
+        }
+
+        .footer-row {
+            margin-bottom: 5px;
+            line-height: 1.8;
+        }
+
+        .footer-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .footer-info span {
+            white-space: nowrap;
+            display: inline-block;
+            width: 49%;
+            vertical-align: top;
+            font-size: 14px;
+        }
+
+        .footer-icon {
+            color: black;
             font-size: 16px;
-            font-weight: 600;
-            color: #2d7a32;
-            margin-top: 25px;
-            margin-bottom: 12px;
-            border-bottom: 2px solid #33973a;
-            padding-bottom: 5px;
-        }
-
-        .info-box {
-            background: #f0f8f1;
-            border-left: 4px solid #33973a;
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 4px;
-        }
-
-        .info-box p {
-            margin: 5px 0;
-        }
-
-        /* Page breaks */
-        .page-break {
-            page-break-after: always;
-        }
-
-        /* Avoid breaking inside important elements */
-        .recipient, .subject, .company-details {
-            page-break-inside: avoid;
+            display: inline;
+            margin-right: 5px;
         }
     </style>
 </head>
@@ -340,16 +378,15 @@
         }
     @endphp
     
-    <!-- Watermark - appears on all pages -->
-    <div class="watermark">
-        @if($logoData)
-            <img src="{{ $logoData }}" alt="Watermark">
-        @endif
-    </div>
-    
-    <!-- Header - appears on all pages -->
-    <div class="page-header">
-        <div class="header-content-wrapper">
+    <div class="container">
+        <div class="watermark">
+            @if($logoData)
+                <img src="{{ $logoData }}" alt="Watermark">
+            @endif
+        </div>
+        
+        <!-- Header row with green bars and logo -->
+        <div class="header-row">
             <div class="green-bars">
                 <div class="green-bar"></div>
                 <div class="green-bar"></div>
@@ -361,20 +398,18 @@
                 <div class="cin-number">CIN NO:-U72900WB2021PTC243081</div>
             </div>
         </div>
-    </div>
-    
-    <!-- Main Content - flows across pages -->
-    <div class="content">
-        <div class="first-page-content">
+        
+        <div class="content">
             <div class="company-details">
                 <p><strong>KONNECTIX TECHNOLOGIES PVT. LTD.</strong></p>
                 <p>Dum Dum, Kolkata - 700 074, West Bengal, India</p>
-                <p>Phone: 7003228913 / 9123354003 | Email: info@konnectixtech.com</p>
+                <p>Phone: 7003228913 / 9123354003</p>
+                <p>Email: info@konnectixtech.com | Website: www.konnectixtech.com</p>
                 <p class="date"><strong>Date:</strong> {{ $proposal->created_at?->format('d F, Y') }}</p>
             </div>
 
             <div class="recipient">
-                <div><strong>To,</strong></div>
+                <div class="recipient-label"><strong>To,</strong></div>
                 <div class="recipient-name">
                     <strong>{{ $proposal->customer_name }}</strong><br>
                     @if($proposal->customer_email)Email: {{ $proposal->customer_email }}<br>@endif
@@ -383,27 +418,34 @@
             </div>
 
             <div class="subject">
-                <div><strong>Subject:</strong></div>
+                <div class="subject-label"><strong>Subject:</strong></div>
                 <div class="subject-text">{{ $proposal->project_type }} Proposal - Submitted by Konnectix Technologies Pvt. Ltd.</div>
             </div>
+
+            <div class="salutation">
+                <strong>Dear {{ $proposal->customer_name }},</strong>
+            </div>
+
+            <div class="body-content">
+                {!! $contentHtml !!}
+            </div>
+        </div>
         </div>
 
-        <div class="body-content">
-            {!! $contentHtml !!}
-        </div>
-        
-        <!-- Footer - only at the end -->
+        <!-- Footer -->
         <div class="footer-wrapper">
             <div class="footer-top-bar"></div>
             <div class="footer">
-                <div class="footer-grid">
-                    <div class="footer-row">
-                        <div class="footer-cell"><span class="footer-icon">☎</span> 7003228913 / 9123354003</div>
-                        <div class="footer-cell"><span class="footer-icon">✉</span> info@konnectixtech.com</div>
-                    </div>
-                    <div class="footer-row">
-                        <div class="footer-cell"><span class="footer-icon">📍</span> Dum Dum, Kolkata - 700 074</div>
-                        <div class="footer-cell"><span class="footer-icon">🌐</span> www.konnectixtech.com</div>
+                <div class="footer-content">
+                    <div class="footer-info">
+                        <div class="footer-row">
+                            <span><span class="footer-icon">☎</span> 7003228913 / 9123354003</span>
+                            <span><span class="footer-icon">✉</span> info@konnectixtech.com</span>
+                        </div>
+                        <div class="footer-row">
+                            <span><span class="footer-icon">📍</span> Dum Dum, Kolkata - 700 074</span>
+                            <span><span class="footer-icon">🌐</span> www.konnectixtech.com</span>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -74,6 +74,12 @@ class ProposalController extends Controller
             return view('proposals.social-media-form', compact('lead', 'leadType'));
         }
         
+        // Check if this is an ERP/Software Development project
+        $erpSoftwareTypes = ['software_development', 'web_development', 'mobile_app', 'ui_ux_design'];
+        if (in_array($lead->project_type, $erpSoftwareTypes)) {
+            return view('proposals.erp-software-form', compact('lead', 'leadType'));
+        }
+        
         // Project types for other projects
         $projectTypes = [
             'Website Development',
@@ -181,6 +187,243 @@ class ProposalController extends Controller
         
         return redirect()->route('proposals.show', $proposal->id)
             ->with('success', 'Social Media Marketing proposal created successfully! You can now review and send it.');
+    }
+
+    /**
+     * Store an ERP/Software Development proposal
+     */
+    public function storeErpSoftware(Request $request)
+    {
+        $validated = $request->validate([
+            'lead_id' => 'required|exists:leads,id',
+            'lead_type' => 'required|in:incoming,outgoing',
+            'project_type' => 'required|string',
+            'project_title' => 'required|string|max:500',
+            'project_description' => 'nullable|string',
+            'total_cost' => 'required|numeric|min:1000',
+            'gst_percentage' => 'required|numeric|min:0|max:100',
+            'advance_percentage' => 'required|numeric|min:0|max:100',
+            'development_percentage' => 'required|numeric|min:0|max:100',
+            'deployment_percentage' => 'required|numeric|min:0|max:100',
+            'timeline_weeks' => 'required|integer|min:1',
+            'features' => 'nullable|array',
+            'features.*' => 'string',
+            'deliverables' => 'nullable|array',
+            'deliverables.*' => 'string',
+            'support_months' => 'nullable|integer|min:0',
+            'architecture' => 'nullable|string',
+            'technology_stack' => 'nullable|string',
+            'additional_notes' => 'nullable|string|max:2000'
+        ]);
+
+        $lead = Lead::findOrFail($request->lead_id);
+        
+        // Generate professional ERP/Software proposal content
+        $proposalContent = $this->generateErpSoftwareProposalContent($validated, $lead);
+        
+        // Map project type to display name
+        $projectTypeMap = [
+            'software_development' => 'Software Development',
+            'web_development' => 'Web Development',
+            'mobile_app' => 'Mobile App Development',
+            'ui_ux_design' => 'UI/UX Design'
+        ];
+        
+        $projectTypeName = $projectTypeMap[$lead->project_type] ?? 'Software Development';
+        
+        // Calculate final amount with GST
+        $gstAmount = ($validated['total_cost'] * $validated['gst_percentage']) / 100;
+        $finalAmount = $validated['total_cost'] + $gstAmount;
+        
+        // Create proposal record
+        $proposal = Proposal::create([
+            'lead_id' => $request->lead_id,
+            'lead_type' => $request->lead_type,
+            'customer_name' => $lead->customer_name,
+            'customer_email' => $lead->email,
+            'customer_phone' => $lead->phone_number,
+            'project_type' => $projectTypeName,
+            'project_description' => $validated['project_title'],
+            'proposal_content' => $proposalContent,
+            'proposed_amount' => $finalAmount,
+            'currency' => 'INR',
+            'estimated_days' => $validated['timeline_weeks'] * 7,
+            'deliverables' => $this->generateErpDeliverablesText($validated),
+            'payment_terms' => $this->generateErpPaymentTerms($validated),
+            'status' => 'draft',
+            'metadata' => json_encode($validated) // Store all form data for future reference
+        ]);
+        
+        return redirect()->route('proposals.show', $proposal->id)
+            ->with('success', 'ERP/Software proposal created successfully! You can now review and send it.');
+    }
+
+    /**
+     * Generate professional ERP/Software proposal content
+     */
+    private function generateErpSoftwareProposalContent($data, $lead)
+    {
+        $gstAmount = ($data['total_cost'] * $data['gst_percentage']) / 100;
+        $finalAmount = $data['total_cost'] + $gstAmount;
+        
+        $features = isset($data['features']) && is_array($data['features']) ? $data['features'] : [];
+        $deliverables = isset($data['deliverables']) && is_array($data['deliverables']) ? $data['deliverables'] : [];
+        
+        $content = "
+# {$data['project_title']}
+
+**Proposal for: {$lead->customer_name}**  
+**Submitted by: Konnectix Technologies Pvt. Ltd.**
+
+---
+
+## 1. Executive Summary
+
+We are pleased to submit this comprehensive proposal for the development and implementation of a custom software solution for **{$lead->customer_name}**. This proposal outlines our approach, technical specifications, deliverables, timeline, and investment required to bring your vision to reality.
+
+" . ($data['project_description'] ? "## 2. Project Overview\n\n" . $data['project_description'] . "\n\n" : "") . "
+
+## 3. Key Features & Modules
+";
+
+        // Add features dynamically
+        if (!empty($features)) {
+            foreach ($features as $index => $feature) {
+                $featureNum = $index + 1;
+                $content .= "\n### 3.{$featureNum} " . trim(explode("\n", $feature)[0]) . "\n\n";
+                
+                // Add the rest of the feature content
+                $featureLines = explode("\n", trim($feature));
+                if (count($featureLines) > 1) {
+                    array_shift($featureLines); // Remove first line (already used as heading)
+                    $content .= implode("\n", $featureLines) . "\n\n";
+                }
+            }
+        } else {
+            $content .= "
+* Comprehensive system architecture tailored to your business needs
+* User-friendly interface with role-based access control
+* Real-time data processing and reporting
+* Automated workflow management
+* Integration capabilities with existing systems
+
+";
+        }
+
+        $content .= "
+
+## 4. Technical Specifications
+
+**Architecture:** " . ($data['architecture'] ?? 'Cloud-based / On-premise (as per requirement)') . "  
+**Technology Stack:** " . ($data['technology_stack'] ?? 'PHP/Laravel, MySQL, React/HTML, CSS, Bootstrap 4.0') . "  
+**Security:** SSL encryption, secure authentication, regular backups  
+**Compatibility:** Desktop, Tablet, Mobile responsive
+
+## 5. Timeline
+
+**Total Duration:** Approximately {$data['timeline_weeks']} weeks
+
+The project will be executed in phases to ensure quality and timely delivery.
+
+## 6. Pricing & Payment Terms
+
+**Total Project Cost:** ₹" . number_format($data['total_cost']) . "/- + {$data['gst_percentage']}% GST  
+**Final Amount:** ₹" . number_format($finalAmount) . "/-
+
+**Payment Schedule:**
+
+* **{$data['advance_percentage']}% Advance** (Project Kickoff) - ₹" . number_format(($finalAmount * $data['advance_percentage']) / 100) . "/-
+* **{$data['development_percentage']}%** After Completion of Development - ₹" . number_format(($finalAmount * $data['development_percentage']) / 100) . "/-
+* **{$data['deployment_percentage']}%** After Final Deployment - ₹" . number_format(($finalAmount * $data['deployment_percentage']) / 100) . "/-
+
+## 7. Deliverables
+";
+
+        if (!empty($deliverables)) {
+            foreach ($deliverables as $deliverable) {
+                $content .= "* " . trim($deliverable) . "\n";
+            }
+        } else {
+            $content .= "* Fully functional system as per the agreed scope
+* Admin and user manuals
+* User training materials
+* Source code documentation
+";
+        }
+
+        if (isset($data['support_months']) && $data['support_months'] > 0) {
+            $content .= "* {$data['support_months']} months of free technical support post-deployment\n";
+        }
+
+        $content .= "
+
+## 8. Why Konnectix Technologies Pvt. Ltd.?
+
+* **Proven Expertise:** Years of experience in ERP design and implementation
+* **User-Centric Approach:** Strong focus on user experience and intuitive design
+* **Data Security:** Industry-standard security protocols and data protection
+* **Dedicated Support:** Post-deployment support team available for assistance
+* **Custom Solutions:** Tailored solutions aligned with your exact business processes
+* **Quality Assurance:** Rigorous testing and quality control procedures
+
+" . (isset($data['additional_notes']) && $data['additional_notes'] ? "## 9. Additional Information\n\n{$data['additional_notes']}\n\n" : "") . "
+
+## " . (isset($data['additional_notes']) && $data['additional_notes'] ? "10" : "9") . ". Acceptance
+
+We believe our proposed solution will empower **{$lead->customer_name}** with improved operational efficiency, better control, and higher productivity. We are ready to initiate the project upon your approval.
+
+---
+
+**For Konnectix Technologies Pvt. Ltd.**
+
+Ishita Banerjee  
+Director & Owner  
+Email: info@konnectixtech.com  
+Phone: 9123354003
+        ";
+        
+        return trim($content);
+    }
+
+    /**
+     * Generate ERP deliverables text
+     */
+    private function generateErpDeliverablesText($data)
+    {
+        $deliverables = [];
+        
+        if (isset($data['deliverables']) && is_array($data['deliverables'])) {
+            $deliverables = $data['deliverables'];
+        } else {
+            $deliverables = [
+                "Fully functional system as per the agreed scope",
+                "Admin and user manuals",
+                "User training materials"
+            ];
+        }
+        
+        if (isset($data['support_months']) && $data['support_months'] > 0) {
+            $deliverables[] = "{$data['support_months']} months of free technical support";
+        }
+        
+        return implode("\n", $deliverables);
+    }
+
+    /**
+     * Generate ERP payment terms text  
+     */
+    private function generateErpPaymentTerms($data)
+    {
+        $gstAmount = ($data['total_cost'] * $data['gst_percentage']) / 100;
+        $finalAmount = $data['total_cost'] + $gstAmount;
+        
+        return "Total Cost: ₹" . number_format($data['total_cost']) . "/-\n" .
+               "GST ({$data['gst_percentage']}%): ₹" . number_format($gstAmount) . "/-\n" .
+               "Final Amount: ₹" . number_format($finalAmount) . "/-\n\n" .
+               "Payment Schedule:\n" .
+               "- {$data['advance_percentage']}% Advance (Project Kickoff)\n" .
+               "- {$data['development_percentage']}% After Development Completion\n" .
+               "- {$data['deployment_percentage']}% After Final Deployment";
     }
 
     /**
@@ -568,7 +811,7 @@ We look forward to helping {$data['company_name']} achieve digital marketing suc
             
             if (!$customer) {
                 $customer = Customer::create([
-                    'name' => $proposal->customer_name,
+                    'customer_name' => $proposal->customer_name,
                     'email' => $proposal->customer_email,
                     'number' => $proposal->customer_phone,
                     'project_type' => $proposal->project_type,

@@ -239,9 +239,6 @@
                                         </a>
                                     </div>
                                     <div>
-                                        <button type="button" class="btn btn-info me-2" onclick="previewProposal()">
-                                            <i class="fa fa-eye me-1"></i> Preview Proposal
-                                        </button>
                                         <button type="submit" class="btn btn-success">
                                             <i class="fa fa-check me-1"></i> Generate & Send Proposal
                                         </button>
@@ -256,31 +253,7 @@
     </div>
 </div>
 
-<!-- Preview Modal -->
-<div class="modal fade" id="previewModal" tabindex="-1" style="z-index: 1055;">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Social Media Marketing Proposal Preview</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="previewContent">
-                <!-- Preview content will be loaded here -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-success" onclick="submitProposal()">
-                    <i class="fa fa-paper-plane me-1"></i> Generate & Send Proposal
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-function previewProposal() {
-    // Collect form data
-    const form = document.getElementById('socialMediaForm');
+<style>
     const formData = new FormData(form);
     
     // Build platforms list
@@ -411,148 +384,160 @@ function previewProposal() {
         </div>
     `;
     
-    document.getElementById('previewContent').innerHTML = previewHTML;
-    var modal = new bootstrap.Modal(document.getElementById('previewModal'));
-    modal.show();
-}
-
-function submitProposal() {
-    // Hide preview modal
-    var modal = bootstrap.Modal.getInstance(document.getElementById('previewModal'));
-    if (modal) modal.hide();
-    
-    // Submit the form
-    document.getElementById('socialMediaForm').submit();
-}
-</script>
-
 <style>
-/* Compact layout fixes */
+/* Container Optimization */
 .container-fluid {
-    padding: 10px;
+    padding: 15px;
 }
 
+/* Card Styling */
 .card {
-    margin-bottom: 1rem !important;
-    border: 1px solid #dee2e6;
-    border-radius: 0.375rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 1.25rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
 }
 
 .card-body {
-    padding: 1rem !important;
+    padding: 1.25rem;
 }
 
 .card-header {
-    padding: 0.75rem 1rem !important;
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 2px solid #dee2e6;
+    border-radius: 8px 8px 0 0;
 }
 
+.card-header .card-title {
+    margin-bottom: 0;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.card-header p {
+    margin-bottom: 0;
+    font-size: 0.875rem;
+}
+
+/* Form Elements */
 .form-label {
-    margin-bottom: 0.25rem !important;
+    margin-bottom: 0.4rem;
     font-weight: 600;
     font-size: 0.9rem;
+    color: #495057;
 }
 
-.form-control {
-    margin-bottom: 0.25rem !important;
-    padding: 0.5rem 0.75rem;
+.form-control, .form-select {
+    padding: 0.6rem 0.85rem;
+    font-size: 0.925rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    transition: all 0.2s ease;
 }
 
-.form-control:focus {
+.form-control:focus, .form-select:focus {
     border-color: #0d6efd;
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
 }
 
-/* Compact row spacing */
-.row {
-    margin-left: -0.5rem !important;
-    margin-right: -0.5rem !important;
-}
-
-.row > * {
-    padding-left: 0.5rem !important;
-    padding-right: 0.5rem !important;
-}
-
-/* Compact form spacing */
-.mb-3 {
-    margin-bottom: 0.75rem !important;
-}
-
-.mb-4 {
-    margin-bottom: 1rem !important;
-}
-
-/* Compact checkbox styling */
+/* Checkbox & Radio Styling */
 .form-check {
-    margin-bottom: 0.25rem !important;
-    padding-left: 1.5rem;
-}
-
-.form-check-label {
-    margin-left: 0;
-    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    padding-left: 1.75rem;
 }
 
 .form-check-input {
-    margin-top: 0.125em;
+    width: 1.15em;
+    height: 1.15em;
+    margin-top: 0.175em;
+    cursor: pointer;
 }
 
-/* Platforms grid layout */
+.form-check-label {
+    margin-left: 0.25rem;
+    font-size: 0.925rem;
+    cursor: pointer;
+    color: #495057;
+}
+
+/* Platforms Grid */
 .platforms-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.25rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
 }
 
-/* Small text styling */
-small.text-muted {
-    font-size: 0.8rem;
-    margin-top: 0.25rem;
-    display: block;
-}
-
-/* Textarea compact */
+/* Textarea */
 textarea.form-control {
     resize: vertical;
-    min-height: 80px;
+    min-height: 90px;
 }
 
-/* Button responsive styling */
-.d-flex.flex-wrap {
-    gap: 0.5rem;
+/* Small Text */
+small.text-muted {
+    font-size: 0.825rem;
+    margin-top: 0.3rem;
+    display: block;
+    color: #6c757d;
 }
 
+/* Buttons */
 .btn {
-    margin-bottom: 0.25rem;
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
+    padding: 0.6rem 1.25rem;
+    font-size: 0.925rem;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s ease;
 }
 
-/* Mobile responsiveness */
+.btn i {
+    margin-right: 0.35rem;
+}
+
+.btn-success:hover {
+    background-color: #198754;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(25, 135, 84, 0.3);
+}
+
+.btn-info:hover {
+    background-color: #0dcaf0;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(13, 202, 240, 0.3);
+}
+
+/* Action Buttons Container */
+.d-flex.flex-wrap {
+    gap: 0.75rem;
+}
+
+/* Mobile Responsiveness */
 @media (max-width: 768px) {
     .container-fluid {
-        padding: 5px;
+        padding: 10px;
     }
     
     .card-body {
-        padding: 0.75rem !important;
+        padding: 1rem;
+    }
+    
+    .card-header {
+        padding: 0.875rem 1rem;
     }
     
     .d-flex.justify-content-between {
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.75rem;
     }
     
     .btn {
         width: 100%;
-        margin-bottom: 0.25rem;
-    }
-    
-    .col-md-6, .col-lg-4 {
-        margin-bottom: 0.75rem;
     }
     
     .platforms-grid {
@@ -560,65 +545,18 @@ textarea.form-control {
     }
 }
 
-/* Proposal preview styling */
-.proposal-preview {
-    padding: 15px;
-    background: white;
-    font-family: Arial, sans-serif;
+/* Badge Styling */
+.badge {
+    padding: 0.4em 0.75em;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 4px;
 }
 
-.proposal-preview h2, .proposal-preview h4, .proposal-preview h5 {
-    margin-bottom: 10px;
-}
-
-.proposal-preview ul {
-    padding-left: 20px;
-    margin-bottom: 10px;
-}
-
-.proposal-preview .table th {
-    background-color: #f8f9fa;
-    font-weight: 600;
-    padding: 0.5rem;
-}
-
-.proposal-preview .table td {
-    padding: 0.5rem;
-}
-
-/* Modal responsiveness */
-@media (max-width: 768px) {
-    .modal-xl {
-        max-width: 95%;
-    }
-}
-
-@media print {
-    .modal-header, .modal-footer {
-        display: none;
-    }
-}
-
-/* Card title icons */
-.card-title i {
-    color: #0d6efd;
-}
-
-/* Remove default Bootstrap spacing overrides */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-/* Override Bootstrap margins */
-.mb-0 {
-    margin-bottom: 0 !important;
-}
-
-/* Compact select styling */
-select.form-control {
-    padding: 0.5rem 0.75rem;
-}
+/* Utility Classes */
+.text-primary { color: #0d6efd !important; }
+.text-success { color: #198754 !important; }
+.text-info { color: #0dcaf0 !important; }
+.text-warning { color: #ffc107 !important; }
 </style>
 @endsection
