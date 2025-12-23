@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Customer;
+use App\Models\Contract;
+use App\Models\Lead;
 use App\Models\InvoiceItem;
 use App\Exports\InvoicesExport;
 use Illuminate\Http\Request;
@@ -26,8 +28,8 @@ class InvoiceController extends Controller
             $query->where('customer_id', $request->customer_id);
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', $request->payment_status);
         }
 
         if ($request->filled('invoice_type')) {
@@ -54,8 +56,43 @@ class InvoiceController extends Controller
     public function create()
     {
         $customers = Customer::where('active', true)->orderBy('customer_name')->get();
-        $invoiceNumber = Invoice::generateInvoiceNumber('regular');
-        return view('invoices.create', compact('customers', 'invoiceNumber'));
+        $contracts = Contract::where('status', 'active')->orderBy('contract_number')->get();
+        $invoiceNumber = Invoice::generateInvoiceNumber('tax_invoice');
+        return view('invoices.create', compact('customers', 'contracts', 'invoiceNumber'));
+    }
+    
+    /**
+     * Get contract details for AJAX
+     */
+    public function getContractDetails($id)
+    {
+        $contract = Contract::with('proposal')->findOrFail($id);
+        
+        // Try to get customer_id from proposal's lead if it exists
+        $customerId = null;
+        if ($contract->proposal && $contract->proposal->lead_id) {
+            $lead = Lead::find($contract->proposal->lead_id);
+            if ($lead && $lead->customer_id) {
+                $customerId = $lead->customer_id;
+            }
+        }
+        
+        // If no customer_id found, try to find customer by name
+        if (!$customerId) {
+            $customer = Customer::where('customer_name', $contract->customer_name)->first();
+            $customerId = $customer ? $customer->id : null;
+        }
+        
+        return response()->json([
+            'contract_number' => $contract->contract_number,
+            'customer_id' => $customerId,
+            'customer_name' => $contract->customer_name,
+            'customer_email' => $contract->customer_email,
+            'customer_phone' => $contract->customer_phone,
+            'final_amount' => $contract->final_amount,
+            'total_amount' => $contract->total_amount ?? $contract->final_amount,
+            'project_type' => $contract->project_type,
+        ]);
     }
 
     /**
@@ -64,9 +101,19 @@ class InvoiceController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'customer_id' => 'required|exists:customers,id',
-            'invoice_type' => 'required|in:regular,proforma',
+            'contract_id' => 'required|exists:contracts,id',
+            'customer_id' => 'nullable|exists:customers,id',
+            'invoice_type' => 'required|in:proforma,tax_invoice,money_receipt',
             'invoice_date' => 'required|date',
+            'invoice_ref_no' => 'nullable|string',
+            'invoice_ref_date' => 'nullable|date',
+            'remarks' => 'nullable|string',
+            'customer_gstin' => 'nullable|string',
+            'customer_state_code' => 'nullable|string',
+            'customer_state_name' => 'nullable|string',
+            'tcs_amount' => 'nullable|numeric|min:0',
+            'round_off' => 'nullable|numeric',
+            'payment_status' => 'nullable|in:paid,unpaid,partially_paid',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.product_description' => 'required|string',
@@ -124,18 +171,30 @@ class InvoiceController extends Controller
                 ];
             }
 
-            $grandTotal = $subtotal - $discountAmount + $taxTotal;
+            $tcsAmount = $validated['tcs_amount'] ?? 0;
+            $roundOff = $validated['round_off'] ?? 0;
+            $grandTotal = $subtotal - $discountAmount + $taxTotal + $tcsAmount + $roundOff;
 
             // Create invoice
             $invoice = Invoice::create([
+                'contract_id' => $validated['contract_id'],
                 'customer_id' => $validated['customer_id'],
                 'invoice_number' => $invoiceNumber,
                 'invoice_type' => $validated['invoice_type'],
                 'invoice_date' => $validated['invoice_date'],
+                'invoice_ref_no' => $validated['invoice_ref_no'] ?? null,
+                'invoice_ref_date' => $validated['invoice_ref_date'] ?? null,
+                'remarks' => $validated['remarks'] ?? null,
+                'customer_gstin' => $validated['customer_gstin'] ?? null,
+                'customer_state_code' => $validated['customer_state_code'] ?? null,
+                'customer_state_name' => $validated['customer_state_name'] ?? null,
                 'subtotal' => $subtotal,
                 'discount_amount' => $discountAmount,
                 'tax_total' => $taxTotal,
+                'tcs_amount' => $tcsAmount,
+                'round_off' => $roundOff,
                 'grand_total' => $grandTotal,
+                'payment_status' => $validated['payment_status'] ?? 'unpaid',
                 'notes' => $validated['notes'],
             ]);
 
@@ -171,8 +230,9 @@ class InvoiceController extends Controller
     public function edit(Invoice $invoice)
     {
         $customers = Customer::where('active', true)->orderBy('customer_name')->get();
-        $invoice->load('items');
-        return view('invoices.edit', compact('invoice', 'customers'));
+        $contracts = Contract::with('proposal')->where('status', 'active')->orderBy('contract_number')->get();
+        $invoice->load('items', 'contract');
+        return view('invoices.edit', compact('invoice', 'customers', 'contracts'));
     }
 
     /**
@@ -181,8 +241,18 @@ class InvoiceController extends Controller
     public function update(Request $request, Invoice $invoice)
     {
         $validated = $request->validate([
-            'customer_id' => 'required|exists:customers,id',
+            'contract_id' => 'required|exists:contracts,id',
+            'customer_id' => 'nullable|exists:customers,id',
             'invoice_date' => 'required|date',
+            'invoice_ref_no' => 'nullable|string',
+            'invoice_ref_date' => 'nullable|date',
+            'remarks' => 'nullable|string',
+            'customer_gstin' => 'nullable|string',
+            'customer_state_code' => 'nullable|string',
+            'customer_state_name' => 'nullable|string',
+            'tcs_amount' => 'nullable|numeric|min:0',
+            'round_off' => 'nullable|numeric',
+            'payment_status' => 'nullable|in:paid,unpaid,partially_paid',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.product_description' => 'required|string',
@@ -237,16 +307,28 @@ class InvoiceController extends Controller
                 ];
             }
 
-            $grandTotal = $subtotal - $discountAmount + $taxTotal;
+            $tcsAmount = $validated['tcs_amount'] ?? 0;
+            $roundOff = $validated['round_off'] ?? 0;
+            $grandTotal = $subtotal - $discountAmount + $taxTotal + $tcsAmount + $roundOff;
 
             // Update invoice
             $invoice->update([
+                'contract_id' => $validated['contract_id'],
                 'customer_id' => $validated['customer_id'],
                 'invoice_date' => $validated['invoice_date'],
+                'invoice_ref_no' => $validated['invoice_ref_no'] ?? null,
+                'invoice_ref_date' => $validated['invoice_ref_date'] ?? null,
+                'remarks' => $validated['remarks'] ?? null,
+                'customer_gstin' => $validated['customer_gstin'] ?? null,
+                'customer_state_code' => $validated['customer_state_code'] ?? null,
+                'customer_state_name' => $validated['customer_state_name'] ?? null,
                 'subtotal' => $subtotal,
                 'discount_amount' => $discountAmount,
                 'tax_total' => $taxTotal,
+                'tcs_amount' => $tcsAmount,
+                'round_off' => $roundOff,
                 'grand_total' => $grandTotal,
+                'payment_status' => $validated['payment_status'] ?? $invoice->payment_status,
                 'notes' => $validated['notes'],
             ]);
 
@@ -301,8 +383,8 @@ class InvoiceController extends Controller
             $query->where('customer_id', $request->customer_id);
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', $request->payment_status);
         }
 
         if ($request->filled('invoice_type')) {
@@ -343,7 +425,14 @@ class InvoiceController extends Controller
     {
         $invoice->load(['customer', 'items']);
         
-        $html = view('invoices.single-pdf', compact('invoice'))->render();
+        // Select the appropriate template based on invoice type
+        $viewName = match($invoice->invoice_type) {
+            'proforma' => 'invoices.proforma-invoice-pdf',
+            'money_receipt' => 'invoices.money-receipt-pdf',
+            default => 'invoices.tax-invoice-pdf',
+        };
+        
+        $html = view($viewName, compact('invoice'))->render();
         
         $options = new Options();
         $options->set('defaultFont', 'Arial');
@@ -355,8 +444,25 @@ class InvoiceController extends Controller
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
         
+        $filename = match($invoice->invoice_type) {
+            'proforma' => 'proforma_invoice_',
+            'money_receipt' => 'money_receipt_',
+            default => 'tax_invoice_',
+        };
+        
         return response($dompdf->output(), 200)
             ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'attachment; filename="invoice_' . $invoice->invoice_number . '.pdf"');
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . $invoice->invoice_number . '.pdf"');
+    }
+    
+    /**
+     * Get invoice number based on type (AJAX)
+     */
+    public function getInvoiceNumber(Request $request)
+    {
+        $type = $request->input('type', 'tax_invoice');
+        $invoiceNumber = Invoice::generateInvoiceNumber($type);
+        
+        return response()->json(['invoice_number' => $invoiceNumber]);
     }
 }

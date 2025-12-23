@@ -400,6 +400,14 @@
         </div>
         
         <div class="content">
+            @php
+                // Check if this is an agreement (not a proposal)
+                $isAgreement = stripos($proposal->project_type, 'Agreement') !== false || 
+                               stripos($proposal->project_description, 'Agreement') !== false ||
+                               stripos($proposal->proposal_content, 'AGREEMENT') !== false;
+            @endphp
+            
+            @if(!$isAgreement)
             <div class="company-details">
                 <p><strong>KONNECTIX TECHNOLOGIES PVT. LTD.</strong></p>
                 <p>Dum Dum, Kolkata - 700 074, West Bengal, India</p>
@@ -425,6 +433,7 @@
             <div class="salutation">
                 <strong>Dear {{ $proposal->customer_name }},</strong>
             </div>
+            @endif
 
             <div class="body-content">
                 {!! $contentHtml !!}

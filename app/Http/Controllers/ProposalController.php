@@ -74,8 +74,21 @@ class ProposalController extends Controller
             return view('proposals.social-media-form', compact('lead', 'leadType'));
         }
         
+        // Check if this is an App/Website Development project
+        $appWebsiteTypes = [
+            'website_development', 
+            'web_development',  // Added this
+            'app_development', 
+            'mobile_app',  // Added this
+            'ecommerce_development', 
+            'web_application'
+        ];
+        if (in_array($lead->project_type, $appWebsiteTypes)) {
+            return view('proposals.app-website-form', compact('lead', 'leadType'));
+        }
+        
         // Check if this is an ERP/Software Development project
-        $erpSoftwareTypes = ['software_development', 'web_development', 'mobile_app', 'ui_ux_design'];
+        $erpSoftwareTypes = ['software_development', 'ui_ux_design'];
         if (in_array($lead->project_type, $erpSoftwareTypes)) {
             return view('proposals.erp-software-form', compact('lead', 'leadType'));
         }
@@ -256,6 +269,73 @@ class ProposalController extends Controller
         
         return redirect()->route('proposals.show', $proposal->id)
             ->with('success', 'ERP/Software proposal created successfully! You can now review and send it.');
+    }
+
+    /**
+     * Store an app/website development proposal
+     */
+    public function storeAppWebsite(Request $request)
+    {
+        $validated = $request->validate([
+            'lead_id' => 'required|exists:leads,id',
+            'lead_type' => 'required|in:incoming,outgoing',
+            'project_type' => 'required|string',
+            'project_title' => 'required|string|max:255',
+            'total_cost' => 'required|numeric|min:1000',
+            'timeline' => 'required|string',
+            'services' => 'nullable|array',
+            'services.*' => 'string',
+            'additional_features' => 'nullable|string',
+            'upfront_percentage' => 'required|numeric|min:0|max:100',
+            'upfront_amount' => 'required|numeric',
+            'final_percentage' => 'required|numeric|min:0|max:100',
+            'final_amount' => 'required|numeric',
+            'payment_note' => 'nullable|string',
+            'domain_provided_by' => 'nullable|string',
+            'hosting_duration' => 'nullable|string',
+            'support_period' => 'nullable|string',
+            'post_support_charges' => 'nullable|string',
+            'client_responsibilities' => 'nullable|array',
+            'client_responsibilities.*' => 'string',
+            'additional_terms' => 'nullable|string'
+        ]);
+
+        $lead = Lead::findOrFail($request->lead_id);
+        
+        // Generate professional app/website agreement content
+        $proposalContent = $this->generateAppWebsiteProposalContent($validated, $lead);
+        
+        // Map project type to display name
+        $projectTypeMap = [
+            'website_development' => 'Website Development',
+            'app_development' => 'Mobile App Development',
+            'ecommerce_development' => 'E-Commerce Development',
+            'web_application' => 'Web Application Development'
+        ];
+        
+        $projectTypeName = $projectTypeMap[$lead->project_type] ?? $validated['project_title'];
+        
+        // Create proposal record
+        $proposal = Proposal::create([
+            'lead_id' => $request->lead_id,
+            'lead_type' => $request->lead_type,
+            'customer_name' => $lead->customer_name,
+            'customer_email' => $lead->email,
+            'customer_phone' => $lead->phone_number,
+            'project_type' => $projectTypeName,
+            'project_description' => $validated['project_title'],
+            'proposal_content' => $proposalContent,
+            'proposed_amount' => $validated['total_cost'],
+            'currency' => 'INR',
+            'estimated_days' => $this->estimateDaysFromTimeline($validated['timeline']),
+            'deliverables' => $this->generateAppWebsiteDeliverables($validated),
+            'payment_terms' => $this->generateAppWebsitePaymentTerms($validated),
+            'status' => 'draft',
+            'metadata' => json_encode($validated) // Store all form data for future reference
+        ]);
+        
+        return redirect()->route('proposals.show', $proposal->id)
+            ->with('success', 'App/Website agreement created successfully! You can now review and send it.');
     }
 
     /**
@@ -728,7 +808,7 @@ We look forward to helping {$data['company_name']} achieve digital marketing suc
             
             // Send email to admin with PDF
             Mail::send('emails.proposal-sent-admin', ['proposal' => $proposal], function($message) use ($proposal, $pdfOutput) {
-                $message->to('bdm.konnectixtech@gmail.com')
+                $message->to('snfreelancingteam@gmail.com')
                     ->subject('New Proposal Sent to ' . $proposal->customer_name)
                     ->attachData($pdfOutput, 'proposal-' . $proposal->id . '.pdf', ['mime' => 'application/pdf']);
             });
@@ -952,5 +1032,224 @@ We look forward to helping {$data['company_name']} achieve digital marketing suc
         
         This contract is binding upon acceptance.
         ";
+    }
+
+    /**
+     * Generate app/website development agreement content
+     */
+    private function generateAppWebsiteProposalContent($data, $lead)
+    {
+        $services = isset($data['services']) && is_array($data['services']) ? $data['services'] : [];
+        $clientResponsibilities = isset($data['client_responsibilities']) && is_array($data['client_responsibilities']) ? $data['client_responsibilities'] : [];
+        
+        $servicesText = !empty($services) ? "\n- " . implode("\n- ", $services) : '';
+        $additionalFeatures = isset($data['additional_features']) && $data['additional_features'] ? "\n\n**Additional Features:**\n{$data['additional_features']}" : '';
+        $responsibilitiesText = !empty($clientResponsibilities) ? "\n- " . implode("\n- ", $clientResponsibilities) : '';
+        $additionalTerms = isset($data['additional_terms']) && $data['additional_terms'] ? "\n\n## 13. ADDITIONAL TERMS\n{$data['additional_terms']}" : '';
+        
+        $content = "
+# {$data['project_title']} AGREEMENT
+
+This Agreement is made on " . date('d.m.Y') . "
+
+**BETWEEN**
+
+**{$lead->customer_name}**,  
+hereinafter referred to as the **\"Client\"**,
+
+**AND**
+
+**Konnectix Technologies Pvt. Ltd.**,  
+hereinafter referred to as the **\"Service Provider.\"**
+
+The Client and the Service Provider shall collectively be referred to as the **\"Parties.\"**
+
+---
+
+## 1. PURPOSE OF THE AGREEMENT
+
+The purpose of this Agreement is to define the terms and conditions under which the Service Provider shall design and develop a {$data['project_title']} for the Client.
+
+## 2. SCOPE OF WORK
+
+The Service Provider agrees to provide the following services:
+{$servicesText}
+{$additionalFeatures}
+
+**Note:** Any features or changes beyond the above scope shall be considered additional work and charged separately upon mutual agreement.
+
+## 3. PROJECT TIMELINE
+
+- The project shall commence after receipt of the upfront payment and required materials from the Client
+- Estimated project completion timeline: **{$data['timeline']}**
+- Any delay due to late content, approvals, or feedback from the Client shall extend the timeline accordingly
+
+## 4. FEES & PAYMENT TERMS
+
+- **Total Project Cost:** ₹" . number_format($data['total_cost']) . " (Rupees " . $this->convertToWords($data['total_cost']) . " Only)
+- **Upfront Payment:** {$data['upfront_percentage']}% of the total amount (₹" . number_format($data['upfront_amount']) . ") payable before commencement of work
+- **Final Payment:** {$data['final_percentage']}% of the total amount (₹" . number_format($data['final_amount']) . ") payable after completion of the website/app and before the website/app goes live
+
+" . (isset($data['payment_note']) && $data['payment_note'] ? "**Important:** {$data['payment_note']}" : "The website/app shall not be made live until the full and final payment is received.") . "
+
+## 5. DOMAIN & HOSTING
+
+- The domain name shall be provided by the **{$data['domain_provided_by']}**
+- {$data['hosting_duration']}
+- The Service Provider shall not be responsible for delays caused due to domain-related issues from the Client's end
+
+## 6. CLIENT RESPONSIBILITIES
+
+The Client agrees to:
+{$responsibilitiesText}
+
+## 7. INTELLECTUAL PROPERTY RIGHTS
+
+- Ownership of the website/app and related files shall be transferred to the Client only after full payment
+- The Service Provider retains the right to display the completed project in its portfolio unless restricted in writing
+
+## 8. WARRANTY & SUPPORT
+
+- {$data['support_period']}
+- {$data['post_support_charges']}
+
+## 9. TERMINATION
+
+- Either Party may terminate this Agreement with written notice
+- Payments made shall be non-refundable
+- In case of termination after project commencement, the upfront payment shall be forfeited
+
+## 10. LIMITATION OF LIABILITY
+
+The Service Provider shall not be liable for:
+- Downtime or failure caused by third-party services including domain registrars and payment gateways
+- Any indirect loss of business, revenue, or data
+
+## 11. GOVERNING LAW & JURISDICTION
+
+This Agreement shall be governed by and construed in accordance with the laws of India, and courts of Kolkata shall have exclusive jurisdiction.
+
+## 12. ENTIRE AGREEMENT
+
+This Agreement constitutes the entire understanding between the Parties and supersedes all prior discussions or communications.
+{$additionalTerms}
+
+---
+
+## 13. ACCEPTANCE & SIGNATURES
+
+By signing below, both Parties agree to the terms and conditions stated herein.
+
+**For {$lead->customer_name} (Client)**  
+Name: {$lead->customer_name}  
+Signature: _________________  
+Date: _________________
+
+**For Konnectix Technologies Pvt. Ltd. (Service Provider)**  
+Name: Ishita Banerjee  
+Designation: Director  
+Signature: _________________  
+Date: " . date('d.m.Y') . "
+
+---
+
+**Contact Information:**  
+Konnectix Technologies Pvt. Ltd.  
+📞 7003228913 / 9123354003  
+✉ info@konnectixtech.com  
+🌐 www.konnectixtech.com  
+📍 Dum Dum, Kolkata - 700 074
+        ";
+        
+        return trim($content);
+    }
+
+    /**
+     * Generate deliverables text for app/website proposal
+     */
+    private function generateAppWebsiteDeliverables($data)
+    {
+        $deliverables = [];
+        
+        if (isset($data['services']) && is_array($data['services'])) {
+            $deliverables = $data['services'];
+        }
+        
+        if (isset($data['additional_features']) && $data['additional_features']) {
+            $deliverables[] = $data['additional_features'];
+        }
+        
+        return implode("\n", $deliverables);
+    }
+
+    /**
+     * Generate payment terms text for app/website proposal
+     */
+    private function generateAppWebsitePaymentTerms($data)
+    {
+        return "{$data['upfront_percentage']}% Upfront (₹" . number_format($data['upfront_amount']) . ") + {$data['final_percentage']}% on Completion (₹" . number_format($data['final_amount']) . ")";
+    }
+
+    /**
+     * Estimate days from timeline string
+     */
+    private function estimateDaysFromTimeline($timeline)
+    {
+        // Try to extract number from timeline string
+        if (preg_match('/(\d+)\s*(day|week|month)/i', $timeline, $matches)) {
+            $number = intval($matches[1]);
+            $unit = strtolower($matches[2]);
+            
+            switch ($unit) {
+                case 'day':
+                    return $number;
+                case 'week':
+                    return $number * 7;
+                case 'month':
+                    return $number * 30;
+            }
+        }
+        
+        return 7; // Default to 7 days
+    }
+
+    /**
+     * Convert number to words (Indian numbering system)
+     */
+    private function convertToWords($number)
+    {
+        $number = intval($number);
+        
+        if ($number === 0) return 'Zero';
+        
+        $words = [
+            '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+            'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+            'Seventeen', 'Eighteen', 'Nineteen'
+        ];
+        
+        $tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+        
+        if ($number < 20) {
+            return $words[$number];
+        }
+        
+        if ($number < 100) {
+            return $tens[intval($number / 10)] . ($number % 10 ? ' ' . $words[$number % 10] : '');
+        }
+        
+        if ($number < 1000) {
+            return $words[intval($number / 100)] . ' Hundred' . ($number % 100 ? ' ' . $this->convertToWords($number % 100) : '');
+        }
+        
+        if ($number < 100000) {
+            return $this->convertToWords(intval($number / 1000)) . ' Thousand' . ($number % 1000 ? ' ' . $this->convertToWords($number % 1000) : '');
+        }
+        
+        if ($number < 10000000) {
+            return $this->convertToWords(intval($number / 100000)) . ' Lakh' . ($number % 100000 ? ' ' . $this->convertToWords($number % 100000) : '');
+        }
+        
+        return $this->convertToWords(intval($number / 10000000)) . ' Crore' . ($number % 10000000 ? ' ' . $this->convertToWords($number % 10000000) : '');
     }
 }

@@ -12,6 +12,9 @@ class BDMLeaveBalance extends Model
     
     protected $fillable = [
         'bdm_id',
+        'casual_leave',
+        'sick_leave',
+        'unpaid_leave',
         'casual_leave_balance',
         'sick_leave_balance',
         'casual_leave_used_this_month',

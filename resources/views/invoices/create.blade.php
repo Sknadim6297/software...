@@ -17,36 +17,126 @@
                     
                     <div class="row mb-4">
                         <div class="col-md-4">
-                            <label class="form-label">Customer <span class="text-danger">*</span></label>
-                            <select class="form-control @error('customer_id') is-invalid @enderror" name="customer_id" required>
-                                <option value="">Select Customer</option>
-                                @foreach($customers as $customer)
-                                    <option value="{{ $customer->id }}" {{ old('customer_id') == $customer->id ? 'selected' : '' }}>
-                                        {{ $customer->customer_name }} @if($customer->company_name) ({{ $customer->company_name }}) @endif
+                            <label class="form-label">Contract <span class="text-danger">*</span></label>
+                            <select class="form-control @error('contract_id') is-invalid @enderror" name="contract_id" id="contractSelect" required>
+                                <option value="">Select Contract</option>
+                                @foreach($contracts as $contract)
+                                    <option value="{{ $contract->id }}" {{ old('contract_id') == $contract->id ? 'selected' : '' }}>
+                                        {{ $contract->contract_number }} - {{ $contract->customer_name }}
                                     </option>
                                 @endforeach
                             </select>
-                            @error('customer_id')
+                            @error('contract_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
+                            <small class="text-muted">Select contract to auto-fill customer and rate details</small>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Customer <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="customerNameDisplay" readonly placeholder="Auto-filled from contract">
+                            <input type="hidden" name="customer_id" id="customerId">
                         </div>
                         
                         <div class="col-md-4">
                             <label class="form-label">Invoice Type <span class="text-danger">*</span></label>
                             <select class="form-control @error('invoice_type') is-invalid @enderror" name="invoice_type" id="invoiceType" required>
-                                <option value="regular" {{ old('invoice_type', 'regular') == 'regular' ? 'selected' : '' }}>Regular Invoice</option>
+                                <option value="tax_invoice" {{ old('invoice_type', 'tax_invoice') == 'tax_invoice' ? 'selected' : '' }}>Tax Invoice</option>
                                 <option value="proforma" {{ old('invoice_type') == 'proforma' ? 'selected' : '' }}>Proforma Invoice</option>
+                                <option value="money_receipt" {{ old('invoice_type') == 'money_receipt' ? 'selected' : '' }}>Money Receipt</option>
                             </select>
                             @error('invoice_type')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        
+                    </div>
+
+                    <div class="row mb-4">
                         <div class="col-md-4">
                             <label class="form-label">Invoice Date <span class="text-danger">*</span></label>
                             <input type="date" class="form-control @error('invoice_date') is-invalid @enderror" 
                                 name="invoice_date" value="{{ old('invoice_date', date('Y-m-d')) }}" required>
                             @error('invoice_date')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Invoice Ref No.</label>
+                            <input type="text" class="form-control @error('invoice_ref_no') is-invalid @enderror" 
+                                name="invoice_ref_no" value="{{ old('invoice_ref_no') }}" placeholder="e.g., 00127">
+                            @error('invoice_ref_no')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Invoice Ref Date</label>
+                            <input type="date" class="form-control @error('invoice_ref_date') is-invalid @enderror" 
+                                name="invoice_ref_date" value="{{ old('invoice_ref_date') }}">
+                            @error('invoice_ref_date')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label">Customer GSTIN</label>
+                            <input type="text" class="form-control @error('customer_gstin') is-invalid @enderror" 
+                                name="customer_gstin" value="{{ old('customer_gstin') }}" placeholder="e.g., 19BNZPS8515D1Z7">
+                            @error('customer_gstin')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Customer State Code</label>
+                            <input type="text" class="form-control @error('customer_state_code') is-invalid @enderror" 
+                                name="customer_state_code" value="{{ old('customer_state_code') }}" placeholder="e.g., 19">
+                            @error('customer_state_code')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Customer State Name</label>
+                            <input type="text" class="form-control @error('customer_state_name') is-invalid @enderror" 
+                                name="customer_state_name" value="{{ old('customer_state_name') }}" placeholder="e.g., West Bengal">
+                            @error('customer_state_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <label class="form-label">Payment Status</label>
+                            <select class="form-control @error('payment_status') is-invalid @enderror" name="payment_status">
+                                <option value="unpaid" {{ old('payment_status', 'unpaid') == 'unpaid' ? 'selected' : '' }}>Unpaid</option>
+                                <option value="paid" {{ old('payment_status') == 'paid' ? 'selected' : '' }}>Paid</option>
+                                <option value="partially_paid" {{ old('payment_status') == 'partially_paid' ? 'selected' : '' }}>Partially Paid</option>
+                            </select>
+                            @error('payment_status')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label class="form-label">Contract Amount</label>
+                            <input type="text" class="form-control" id="contractAmount" readonly placeholder="Auto-filled from contract">
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label class="form-label">Project Type</label>
+                            <input type="text" class="form-control" id="projectType" readonly placeholder="Auto-filled from contract">
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label class="form-label">Remarks</label>
+                            <input type="text" class="form-control @error('remarks') is-invalid @enderror" 
+                                name="remarks" value="{{ old('remarks') }}" placeholder="e.g., PROFORMA INVOICE">
+                            @error('remarks')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
@@ -95,6 +185,22 @@
                                             <td>Tax Total:</td>
                                             <td class="text-end"><strong id="taxDisplay">₹0.00</strong></td>
                                         </tr>
+                                        <tr>
+                                            <td>
+                                                <label>TCS:</label>
+                                                <input type="number" class="form-control form-control-sm" name="tcs_amount" id="tcsAmount" 
+                                                    step="0.01" min="0" value="{{ old('tcs_amount', 0) }}" style="width: 100px; display: inline-block;">
+                                            </td>
+                                            <td class="text-end"><strong id="tcsDisplay">₹0.00</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <label>Round Off:</label>
+                                                <input type="number" class="form-control form-control-sm" name="round_off" id="roundOff" 
+                                                    step="0.01" value="{{ old('round_off', 0) }}" style="width: 100px; display: inline-block;">
+                                            </td>
+                                            <td class="text-end"><strong id="roundOffDisplay">₹0.00</strong></td>
+                                        </tr>
                                         <tr class="border-top">
                                             <td><h5>Grand Total:</h5></td>
                                             <td class="text-end"><h5 id="grandTotalDisplay">₹0.00</h5></td>
@@ -119,6 +225,7 @@
 @push('scripts')
 <script>
 let itemIndex = 0;
+let contractRate = 0;
 
 document.addEventListener('DOMContentLoaded', function() {
     // Add first item by default
@@ -126,7 +233,51 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add item button
     document.getElementById('addItemBtn').addEventListener('click', addInvoiceItem);
+    
+    // Handle contract selection
+    document.getElementById('contractSelect').addEventListener('change', function() {
+        const contractId = this.value;
+        if (contractId) {
+            fetchContractDetails(contractId);
+        } else {
+            clearContractDetails();
+        }
+    });
 });
+
+function fetchContractDetails(contractId) {
+    fetch(`/invoices/contract/${contractId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            // Populate customer details
+            document.getElementById('customerNameDisplay').value = data.customer_name;
+            document.getElementById('customerId').value = data.customer_id || '';
+            document.getElementById('contractAmount').value = '₹' + parseFloat(data.final_amount).toFixed(2);
+            document.getElementById('projectType').value = data.project_type || '-';
+            
+            // Store contract rate for items
+            contractRate = parseFloat(data.final_amount);
+            
+            // Auto-fill first item rate if exists
+            const firstRateInput = document.querySelector('.item-rate[data-index="0"]');
+            if (firstRateInput && !firstRateInput.value) {
+                firstRateInput.value = contractRate;
+                calculateItemTotal(0);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching contract details:', error);
+            alert('Error loading contract details. Please try again.');
+        });
+}
+
+function clearContractDetails() {
+    document.getElementById('customerNameDisplay').value = '';
+    document.getElementById('customerId').value = '';
+    document.getElementById('contractAmount').value = '';
+    document.getElementById('projectType').value = '';
+    contractRate = 0;
+}
 
 function addInvoiceItem() {
     const container = document.getElementById('invoice-items');
@@ -274,13 +425,23 @@ function updateInvoiceSummary() {
         totalTax += taxAmount;
     });
     
-    const grandTotal = subtotal - totalDiscount + totalTax;
+    const tcsAmount = parseFloat(document.getElementById('tcsAmount')?.value) || 0;
+    const roundOff = parseFloat(document.getElementById('roundOff')?.value) || 0;
+    const grandTotal = subtotal - totalDiscount + totalTax + tcsAmount + roundOff;
     
     document.getElementById('subtotalDisplay').textContent = '₹' + subtotal.toFixed(2);
     document.getElementById('discountDisplay').textContent = '₹' + totalDiscount.toFixed(2);
     document.getElementById('taxDisplay').textContent = '₹' + totalTax.toFixed(2);
+    document.getElementById('tcsDisplay').textContent = '₹' + tcsAmount.toFixed(2);
+    document.getElementById('roundOffDisplay').textContent = '₹' + roundOff.toFixed(2);
     document.getElementById('grandTotalDisplay').textContent = '₹' + grandTotal.toFixed(2);
 }
+
+// Add event listeners for TCS and Round Off
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('tcsAmount')?.addEventListener('input', updateInvoiceSummary);
+    document.getElementById('roundOff')?.addEventListener('input', updateInvoiceSummary);
+});
 
 function removeItem(index) {
     const item = document.querySelector(`.invoice-item[data-index="${index}"]`);

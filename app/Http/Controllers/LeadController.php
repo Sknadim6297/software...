@@ -438,7 +438,7 @@ class LeadController extends Controller
                     if ($lead->email) {
                         Mail::to($lead->email)->send(new MeetingScheduledNotification($lead, true));
                     }
-                    Mail::to('bdm.konnectixtech@gmail.com')->send(new MeetingScheduledNotification($lead, false));
+                    Mail::to('snfreelancingteam@gmail.com')->send(new MeetingScheduledNotification($lead, false));
                 } catch (\Exception $e) {
                     Log::error('Failed sending meeting creation emails: ' . $e->getMessage());
                 }

@@ -127,6 +127,64 @@
 			flex-direction: column;
 			min-height: 100vh;
 		}
+		
+		/* Notification Bell Styles */
+		.notification_dropdown .nav-link {
+			position: relative;
+			padding: 0.5rem 1rem !important;
+		}
+		.notification_dropdown .nav-link i {
+			font-size: 24px;
+			color: #333;
+		}
+		.notification_dropdown .badge-circle {
+			position: absolute;
+			top: 5px;
+			right: 5px;
+			min-width: 18px;
+			height: 18px;
+			padding: 2px 5px;
+			font-size: 10px;
+			line-height: 14px;
+			border-radius: 50%;
+		}
+		.notification_dropdown .dropdown-menu {
+			min-width: 350px;
+			max-width: 400px;
+		}
+		.notification_dropdown .timeline {
+			list-style: none;
+			padding: 0;
+			margin: 0;
+		}
+		.notification_dropdown .timeline li {
+			padding: 10px 0;
+			border-bottom: 1px solid #f0f0f0;
+		}
+		.notification_dropdown .timeline li:last-child {
+			border-bottom: none;
+		}
+		.notification_dropdown .timeline-panel {
+			display: flex;
+			align-items: start;
+			gap: 10px;
+			padding: 5px;
+			border-radius: 4px;
+		}
+		.notification_dropdown .timeline-panel.bg-light {
+			background-color: #f8f9fa;
+		}
+		.notification_dropdown .media i {
+			font-size: 20px;
+		}
+		.notification_dropdown .media-body h6 {
+			margin-bottom: 5px;
+			font-size: 13px;
+			font-weight: 600;
+		}
+		.notification_dropdown .media-body small {
+			font-size: 11px;
+		}
 	</style>
 	
 	@stack('styles')
@@ -183,6 +241,75 @@
                             </div>
                         </div>
                         <ul class="navbar-nav header-right">
+                            {{-- Notifications --}}
+                            <li class="nav-item dropdown notification_dropdown">
+                                <a class="nav-link bell dz-theme-mode p-0" href="javascript:void(0);" role="button" data-bs-toggle="dropdown">
+                                    <i class="flaticon-381-alarm-clock"></i>
+                                    @auth
+                                        @php
+                                            $unreadCount = Auth::user()->bdm ? Auth::user()->bdm->notifications()->where('is_read', false)->count() : 0;
+                                        @endphp
+                                        @if($unreadCount > 0)
+                                            <span class="badge badge-circle badge-danger">{{ $unreadCount }}</span>
+                                        @endif
+                                    @endauth
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-end">
+                                    <div id="DZ_W_Notification1" class="widget-media dz-scroll p-3" style="height:380px;">
+                                        <div class="timeline-panel">
+                                            <div class="media-heading mb-2">
+                                                <h5 class="mb-0">Notifications</h5>
+                                            </div>
+                                        </div>
+                                        <ul class="timeline">
+                                            @auth
+                                                @if(Auth::user()->bdm)
+                                                    @php
+                                                        $notifications = Auth::user()->bdm->notifications()
+                                                            ->latest()
+                                                            ->take(10)
+                                                            ->get();
+                                                    @endphp
+                                                    @forelse($notifications as $notification)
+                                                        <li>
+                                                            <div class="timeline-panel {{ $notification->is_read ? '' : 'bg-light' }}">
+                                                                <div class="media me-2">
+                                                                    @if($notification->type == 'leave')
+                                                                        <i class="flaticon-381-calendar-1 text-warning"></i>
+                                                                    @elseif($notification->type == 'salary')
+                                                                        <i class="flaticon-381-price-tag text-success"></i>
+                                                                    @elseif($notification->type == 'target')
+                                                                        <i class="flaticon-381-diploma text-primary"></i>
+                                                                    @else
+                                                                        <i class="flaticon-381-alarm-clock text-info"></i>
+                                                                    @endif
+                                                                </div>
+                                                                <div class="media-body">
+                                                                    <h6 class="mb-1">{{ $notification->title }}</h6>
+                                                                    <small class="d-block">{{ $notification->message }}</small>
+                                                                    <small class="text-muted">{{ $notification->created_at->diffForHumans() }}</small>
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                    @empty
+                                                        <li class="text-center">
+                                                            <p class="text-muted mt-3">No notifications</p>
+                                                        </li>
+                                                    @endforelse
+                                                @endif
+                                            @endauth
+                                        </ul>
+                                        @auth
+                                            @if(Auth::user()->bdm && $unreadCount > 0)
+                                                <div class="text-center mt-3">
+                                                    <a href="{{ route('bdm.notifications') }}" class="btn btn-primary btn-sm">View All</a>
+                                                </div>
+                                            @endif
+                                        @endauth
+                                    </div>
+                                </div>
+                            </li>
+                            
                             <li class="nav-item dropdown header-profile">
                                 <a class="nav-link" href="javascript:void(0)" role="button" data-bs-toggle="dropdown">
                                     @if(Auth::check() && Auth::user()->bdm && Auth::user()->bdm->profile_image)
@@ -240,9 +367,9 @@
                             <li><a href="{{ route('customers.index') }}">
                                 <i class="flaticon-381-user text-primary me-2"></i>All Customers
                             </a></li>
-                            {{-- <li><a href="{{ route('customers.history') }}">
+                            <li><a href="{{ route('customers.history') }}">
                                 <i class="flaticon-381-back-1 text-info me-2"></i>Customer History
-                            </a></li> --}}
+                            </a></li>
                         </ul>
                     </li>
                     
@@ -291,30 +418,22 @@
                     <li>
                         <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
                             <i class="flaticon-381-user-9"></i>
-                            <span class="nav-text">My Profile & Documents</span>
+                            <span class="nav-text">Profile, Salary & Leave</span>
                         </a>
                         <ul aria-expanded="false">
                             <li><a href="{{ route('bdm.profile') }}">
                                 <i class="flaticon-381-user text-primary me-2"></i>My Profile
                             </a></li>
                             <li><a href="{{ route('bdm.documents') }}">
-                                <i class="flaticon-381-file-1 text-info me-2"></i>Documents
+                                <i class="flaticon-381-file-1 text-info me-2"></i>My Documents
+                            </a></li>
+                            <li><a href="{{ route('bdm.salary') }}">
+                                <i class="flaticon-381-price-tag text-success me-2"></i>Salary & Remuneration
+                            </a></li>
+                            <li><a href="{{ route('bdm.leaves') }}">
+                                <i class="flaticon-381-calendar-1 text-warning me-2"></i>Leave Management
                             </a></li>
                         </ul>
-                    </li>
-                    
-                    <li>
-                        <a class="ai-icon" href="{{ route('bdm.salary') }}" aria-expanded="false">
-                            <i class="flaticon-381-price-tag"></i>
-                            <span class="nav-text">Salary & Remuneration</span>
-                        </a>
-                    </li>
-                    
-                    <li>
-                        <a class="ai-icon" href="{{ route('bdm.leaves') }}" aria-expanded="false">
-                            <i class="flaticon-381-calendar-1"></i>
-                            <span class="nav-text">Leave Management</span>
-                        </a>
                     </li>
                     
                     <li>
@@ -323,62 +442,32 @@
                             <span class="nav-text">Target Management</span>
                         </a>
                     </li>
-                    
-                    <li>
-                        <a class="ai-icon" href="{{ route('bdm.notifications') }}" aria-expanded="false">
-                            <i class="flaticon-381-alarm-clock"></i>
-                            <span class="nav-text">Notifications</span>
-                            @auth
-                                @if(Auth::user()->bdm && Auth::user()->bdm->notifications()->where('is_read', false)->count() > 0)
-                                    <span class="badge badge-xs badge-danger ms-2">{{ Auth::user()->bdm->notifications()->where('is_read', false)->count() }}</span>
-                                @endif
-                            @endauth
+
+                    {{-- Renewal & Service Management --}}
+                    <li class="{{ request()->routeIs('service-renewals.*') ? 'mm-active' : '' }}">
+                        <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
+                            <i class="flaticon-381-refresh"></i>
+                            <span class="nav-text">Renewal & Service Management</span>
                         </a>
-                    </li>
-
-                    {{-- Future modules - commented for now --}}
-                    {{--
-                    <li><a class="ai-icon" href="#" aria-expanded="false">
-							<i class="flaticon-381-calendar-1"></i>
-							<span class="nav-text">Monthly Amount</span>
-						</a>
-                    </li>
-
-                    <li><a class="ai-icon" href="#" aria-expanded="false">
-							<i class="flaticon-381-notebook-2"></i>
-							<span class="nav-text">Monthly Invoices</span>
-						</a>
-                    </li>
-
-                    <li><a class="ai-icon" href="#" aria-expanded="false">
-							<i class="flaticon-381-file"></i>
-							<span class="nav-text">Monthly GST</span>
-						</a>
-                    </li>
-
-                    <li><a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
-							<i class="flaticon-381-bookmark"></i>
-							<span class="nav-text">Leads Management</span>
-						</a>
                         <ul aria-expanded="false">
-                            <li><a href="{{ route('leads.all') }}">All Leads</a></li>
-                            <li><a href="{{ route('leads.incoming') }}">Incoming Leads</a></li>
-                            <li><a href="{{ route('leads.outgoing') }}">Outgoing Leads</a></li>
-                            <li><a href="{{ route('leads.create', 'incoming') }}">Add Incoming Lead</a></li>
-                            <li><a href="{{ route('leads.create', 'outgoing') }}">Add Outgoing Lead</a></li>
+                            <li><a href="{{ route('service-renewals.index') }}">
+                                <i class="flaticon-381-list text-primary me-2"></i>All Renewals
+                            </a></li>
+                            <li><a href="{{ route('service-renewals.create') }}">
+                                <i class="flaticon-381-add text-success me-2"></i>Create Renewal
+                            </a></li>
+                            <li><a href="{{ route('contracts.index') }}">
+                                <i class="flaticon-381-notebook-1 text-warning me-2"></i>Contracts
+                            </a></li>
+                            <li><a href="{{ route('invoices.index') }}">
+                                <i class="flaticon-381-notepad text-info me-2"></i>Invoices
+                            </a></li>
+                            <li><a href="{{ route('projects.index') }}">
+                                <i class="flaticon-381-settings-1 text-secondary me-2"></i>Projects
+                            </a></li>
                         </ul>
                     </li>
-
-                    <li><a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
-							<i class="flaticon-381-settings-1"></i>
-							<span class="nav-text">User Management</span>
-						</a>
-                        <ul aria-expanded="false">
-                            <li><a href="#">All Users</a></li>
-                            <li><a href="#">Add User</a></li>
-                        </ul>
-                    </li>
-                    --}}
+                   
                 </ul>
 			</div>
         </div>

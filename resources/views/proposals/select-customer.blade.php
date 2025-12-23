@@ -39,6 +39,7 @@
                                         <th>Name</th>
                                         <th>Email</th>
                                         <th>Phone</th>
+                                        <th>Project Type</th>
                                         <th>Status</th>
                                         <th>Last Activity</th>
                                         <th>Action</th>
@@ -52,6 +53,11 @@
                                             </td>
                                             <td>{{ $lead->email }}</td>
                                             <td>{{ $lead->phone_number }}</td>
+                                            <td>
+                                                <span class="badge badge-primary">
+                                                    {{ str_replace('_', ' ', ucwords($lead->project_type)) }}
+                                                </span>
+                                            </td>
                                             <td>
                                                 <span class="badge badge-success">
                                                     <i class="flaticon-381-like me-1"></i>

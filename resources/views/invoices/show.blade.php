@@ -39,14 +39,38 @@
                         <h5>Invoice Information</h5>
                         <p class="mb-1"><strong>Invoice Number:</strong> {{ $invoice->invoice_number }}</p>
                         <p class="mb-1"><strong>Invoice Date:</strong> {{ $invoice->invoice_date->format('d M Y') }}</p>
+                        @if($invoice->invoice_ref_no)
+                            <p class="mb-1"><strong>Invoice Ref No:</strong> {{ $invoice->invoice_ref_no }}</p>
+                        @endif
+                        @if($invoice->invoice_ref_date)
+                            <p class="mb-1"><strong>Invoice Ref Date:</strong> {{ $invoice->invoice_ref_date->format('d M Y') }}</p>
+                        @endif
                         <p class="mb-1">
                             <strong>Type:</strong>
-                            @if($invoice->invoice_type === 'proforma')
-                                <span class="badge badge-info">Proforma</span>
-                            @else
-                                <span class="badge badge-primary">Regular</span>
-                            @endif
+                            @php
+                                $typeInfo = match($invoice->invoice_type) {
+                                    'proforma' => ['badge' => 'info', 'label' => 'Proforma Invoice'],
+                                    'money_receipt' => ['badge' => 'success', 'label' => 'Money Receipt'],
+                                    default => ['badge' => 'primary', 'label' => 'Tax Invoice']
+                                };
+                            @endphp
+                            <span class="badge badge-{{ $typeInfo['badge'] }}">{{ $typeInfo['label'] }}</span>
                         </p>
+                        <p class="mb-1">
+                            <strong>Payment Status:</strong>
+                            @php
+                                $statusClass = match($invoice->payment_status) {
+                                    'paid' => 'success',
+                                    'partially_paid' => 'warning',
+                                    'unpaid' => 'danger',
+                                    default => 'secondary'
+                                };
+                            @endphp
+                            <span class="badge badge-{{ $statusClass }}">{{ ucfirst(str_replace('_', ' ', $invoice->payment_status)) }}</span>
+                        </p>
+                        @if($invoice->remarks)
+                            <p class="mb-1"><strong>Remarks:</strong> {{ $invoice->remarks }}</p>
+                        @endif
                     </div>
                 </div>
 
@@ -96,6 +120,18 @@
                                 <td colspan="9" class="text-end"><strong>Tax Total:</strong></td>
                                 <td class="text-end"><strong>₹{{ number_format($invoice->tax_total, 2) }}</strong></td>
                             </tr>
+                            @if($invoice->tcs_amount > 0)
+                            <tr>
+                                <td colspan="9" class="text-end"><strong>TCS:</strong></td>
+                                <td class="text-end"><strong>₹{{ number_format($invoice->tcs_amount, 2) }}</strong></td>
+                            </tr>
+                            @endif
+                            @if($invoice->round_off != 0)
+                            <tr>
+                                <td colspan="9" class="text-end"><strong>Round Off:</strong></td>
+                                <td class="text-end"><strong>₹{{ number_format($invoice->round_off, 2) }}</strong></td>
+                            </tr>
+                            @endif
                             <tr class="table-primary">
                                 <td colspan="9" class="text-end"><h5 class="mb-0">Grand Total:</h5></td>
                                 <td class="text-end"><h5 class="mb-0">₹{{ number_format($invoice->grand_total, 2) }}</h5></td>

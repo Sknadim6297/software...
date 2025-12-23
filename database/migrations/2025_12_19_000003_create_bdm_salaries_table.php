@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('bdm_salaries', function (Blueprint $table) {
             $table->id();
             $table->foreignId('bdm_id')->constrained()->onDelete('cascade');
-            $table->string('month_year'); // Format: YYYY-MM
+            $table->string('month_year'); 
             $table->decimal('basic_salary', 10, 2);
             $table->decimal('hra', 10, 2)->default(0);
             $table->decimal('other_allowances', 10, 2)->default(0);

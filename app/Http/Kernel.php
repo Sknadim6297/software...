@@ -65,6 +65,8 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'bdm.check' => \App\Http\Middleware\CheckBDMStatus::class,
+        'admin' => \App\Http\Middleware\AdminMiddleware::class,
+        'admin.guest' => \App\Http\Middleware\RedirectIfAdmin::class,
     ];
 }
 

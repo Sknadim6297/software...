@@ -8,10 +8,78 @@ use App\Http\Controllers\LeadController;
 use App\Http\Controllers\ProposalController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\BDMController;
+use App\Http\Controllers\ServiceRenewalController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use Illuminate\Support\Facades\Artisan;
+
+// Admin Controllers
+use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\DocumentController;
+use App\Http\Controllers\Admin\SalaryController;
+use App\Http\Controllers\Admin\LeaveController;
+use App\Http\Controllers\Admin\TargetController;
+use App\Http\Controllers\Admin\ReportController;
+
+// Admin Authentication Routes
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::middleware('admin.guest')->group(function () {
+        Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('login');
+        Route::post('/login', [AdminAuthController::class, 'login'])->name('login.post');
+    });
+    
+    Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
+});
+
+// Admin Panel Routes (Protected)
+Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    
+    // Employee Management
+    Route::resource('employees', EmployeeController::class);
+    Route::post('employees/{employee}/deactivate', [EmployeeController::class, 'deactivate'])->name('employees.deactivate');
+    Route::post('employees/{employee}/activate', [EmployeeController::class, 'activate'])->name('employees.activate');
+    Route::post('employees/{employee}/terminate', [EmployeeController::class, 'terminate'])->name('employees.terminate');
+    
+    // Document Management
+    Route::get('employees/{employee}/documents', [DocumentController::class, 'show'])->name('documents.show');
+    Route::post('employees/{employee}/documents/upload', [DocumentController::class, 'upload'])->name('documents.upload');
+    Route::get('documents/{document}/download', [DocumentController::class, 'download'])->name('documents.download');
+    Route::delete('documents/{document}', [DocumentController::class, 'destroy'])->name('documents.destroy');
+    
+    // Salary Management
+    Route::resource('salaries', SalaryController::class);
+    Route::get('salaries/{salary}/download', [SalaryController::class, 'download'])->name('salaries.download');
+    Route::post('salaries/{salary}/upload-slip', [SalaryController::class, 'uploadSlip'])->name('salaries.upload-slip');
+    
+    // Leave Management
+    Route::get('leaves', [LeaveController::class, 'index'])->name('leaves.index');
+    Route::get('leaves/{leave}', [LeaveController::class, 'show'])->name('leaves.show');
+    Route::post('leaves/{leave}/approve', [LeaveController::class, 'approve'])->name('leaves.approve');
+    Route::post('leaves/{leave}/reject', [LeaveController::class, 'reject'])->name('leaves.reject');
+    Route::delete('leaves/{leave}', [LeaveController::class, 'destroy'])->name('leaves.destroy');
+    Route::get('leave-balances', [LeaveController::class, 'balances'])->name('leaves.balances');
+    Route::post('leave-balances/{balance}/update', [LeaveController::class, 'updateBalance'])->name('leaves.update-balance');
+    
+    // Target Management
+    Route::resource('targets', TargetController::class);
+    Route::post('targets/{target}/update-achievement', [TargetController::class, 'updateAchievement'])->name('targets.update-achievement');
+    Route::get('targets-bulk/create', [TargetController::class, 'bulkCreate'])->name('targets.bulk-create');
+    Route::post('targets-bulk/store', [TargetController::class, 'bulkStore'])->name('targets.bulk-store');
+    
+    // Reports
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/target', [ReportController::class, 'targetReport'])->name('reports.target');
+    Route::get('reports/salary', [ReportController::class, 'salaryReport'])->name('reports.salary');
+    Route::get('reports/leave', [ReportController::class, 'leaveReport'])->name('reports.leave');
+    Route::get('reports/performance', [ReportController::class, 'performanceReport'])->name('reports.performance');
+    Route::get('reports/attendance', [ReportController::class, 'attendanceReport'])->name('reports.attendance');
+});
 
 // Authentication Routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -94,6 +162,7 @@ Route::middleware(['auth', 'bdm.check'])->group(function () {
         Route::post('/store', [ProposalController::class, 'store'])->name('store');
         Route::post('/store-social-media', [ProposalController::class, 'storeSocialMedia'])->name('store-social-media');
         Route::post('/store-erp-software', [ProposalController::class, 'storeErpSoftware'])->name('store-erp-software');
+        Route::post('/store-app-website', [ProposalController::class, 'storeAppWebsite'])->name('store-app-website');
         Route::get('/{proposal}', [ProposalController::class, 'show'])->name('show');
         Route::get('/{proposal}/edit', [ProposalController::class, 'edit'])->name('edit');
         Route::put('/{proposal}', [ProposalController::class, 'update'])->name('update');
@@ -121,6 +190,8 @@ Route::middleware(['auth', 'bdm.check'])->group(function () {
     Route::get('/invoices/export/excel', [InvoiceController::class, 'exportExcel'])->name('invoices.export.excel');
     Route::get('/invoices/export/pdf', [InvoiceController::class, 'exportPdf'])->name('invoices.export.pdf');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'generatePdf'])->name('invoices.pdf');
+    Route::get('/invoices/contract/{id}/details', [InvoiceController::class, 'getContractDetails'])->name('invoices.contract.details');
+    Route::post('/invoices/get-invoice-number', [InvoiceController::class, 'getInvoiceNumber'])->name('invoices.get-invoice-number');
 
     // BDM Panel Routes
     Route::prefix('bdm')->name('bdm.')->group(function () {
@@ -152,6 +223,42 @@ Route::middleware(['auth', 'bdm.check'])->group(function () {
         Route::get('/notifications', [BDMController::class, 'showNotifications'])->name('notifications');
         Route::post('/notifications/{id}/read', [BDMController::class, 'markNotificationRead'])->name('notifications.read');
         Route::post('/notifications/read-all', [BDMController::class, 'markAllNotificationsRead'])->name('notifications.read-all');
+    });
+
+    // Service Renewal Management Routes
+    Route::prefix('service-renewals')->name('service-renewals.')->group(function () {
+        Route::get('/', [ServiceRenewalController::class, 'index'])->name('index');
+        Route::get('/create', [ServiceRenewalController::class, 'create'])->name('create');
+        Route::post('/store', [ServiceRenewalController::class, 'store'])->name('store');
+        Route::get('/{serviceRenewal}', [ServiceRenewalController::class, 'show'])->name('show');
+        Route::get('/{serviceRenewal}/edit', [ServiceRenewalController::class, 'edit'])->name('edit');
+        Route::put('/{serviceRenewal}', [ServiceRenewalController::class, 'update'])->name('update');
+        Route::delete('/{serviceRenewal}', [ServiceRenewalController::class, 'destroy'])->name('destroy');
+        
+        // Service Renewal Actions
+        Route::post('/{serviceRenewal}/process-renewal', [ServiceRenewalController::class, 'processRenewal'])->name('process-renewal');
+        Route::post('/{serviceRenewal}/verify', [ServiceRenewalController::class, 'verifyRenewal'])->name('verify');
+        Route::post('/{serviceRenewal}/stop-renewal', [ServiceRenewalController::class, 'stopRenewal'])->name('stop-renewal');
+        Route::post('/{serviceRenewal}/send-reminder', [ServiceRenewalController::class, 'sendRenewalReminder'])->name('send-reminder');
+    });
+
+    // Project Management Routes
+    Route::prefix('projects')->name('projects.')->group(function () {
+        Route::get('/', [ProjectController::class, 'index'])->name('index');
+        Route::get('/create', [ProjectController::class, 'create'])->name('create');
+        Route::post('/store', [ProjectController::class, 'store'])->name('store');
+        Route::get('/{project}', [ProjectController::class, 'show'])->name('show');
+        Route::get('/{project}/edit', [ProjectController::class, 'edit'])->name('edit');
+        Route::put('/{project}', [ProjectController::class, 'update'])->name('update');
+        Route::delete('/{project}', [ProjectController::class, 'destroy'])->name('destroy');
+        
+        // Project Actions
+        Route::post('/{project}/take-payment', [ProjectController::class, 'takePayment'])->name('take-payment');
+        Route::post('/{project}/mark-installment-paid', [ProjectController::class, 'markInstallmentPaid'])->name('mark-installment-paid');
+        
+        // Maintenance Contract
+        Route::get('/{project}/maintenance-contract/create', [ProjectController::class, 'createMaintenanceContract'])->name('maintenance-contract.create');
+        Route::post('/{project}/maintenance-contract/store', [ProjectController::class, 'storeMaintenanceContract'])->name('maintenance-contract.store');
     });
 
 });
