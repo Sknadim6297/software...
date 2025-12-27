@@ -424,7 +424,7 @@
                             <li><a href="{{ route('bdm.profile') }}">
                                 <i class="flaticon-381-user text-primary me-2"></i>My Profile
                             </a></li>
-                            <li><a href="{{ route('bdm.documents') }}">
+                            {{-- <li><a href="{{ route('bdm.documents') }}">
                                 <i class="flaticon-381-file-1 text-info me-2"></i>My Documents
                             </a></li>
                             <li><a href="{{ route('bdm.salary') }}">
@@ -434,17 +434,17 @@
                                 <i class="flaticon-381-calendar-1 text-warning me-2"></i>Leave Management
                             </a></li>
                         </ul>
-                    </li>
+                    </li> --}}
                     
-                    <li>
+                    {{-- <li>
                         <a class="ai-icon" href="{{ route('bdm.targets') }}" aria-expanded="false">
                             <i class="flaticon-381-diploma"></i>
                             <span class="nav-text">Target Management</span>
                         </a>
-                    </li>
+                    </li> --}}
 
                     {{-- Renewal & Service Management --}}
-                    <li class="{{ request()->routeIs('service-renewals.*') ? 'mm-active' : '' }}">
+                    {{-- <li class="{{ request()->routeIs('service-renewals.*') ? 'mm-active' : '' }}">
                         <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
                             <i class="flaticon-381-refresh"></i>
                             <span class="nav-text">Renewal & Service Management</span>
@@ -466,7 +466,7 @@
                                 <i class="flaticon-381-settings-1 text-secondary me-2"></i>Projects
                             </a></li>
                         </ul>
-                    </li>
+                    </li> --}}
                    
                 </ul>
 			</div>

@@ -1261,11 +1261,51 @@ $(document).on('change', 'input[name="has_gst"]', function() {
 $(document).on('change', 'input[name="wants_gst"]', function() {
     if ($(this).val() === 'yes') {
         $('#gst_payment_group').show();
-        $('#invoice_gst_number, #gst_email').prop('required', true);
+        $('#invoice_gst_number, #gst_email').prop('required', false);
     } else {
         $('#gst_payment_group').hide();
         $('#invoice_gst_number, #gst_email').prop('required', false).val('');
     }
+});
+
+// Auto-save GST modal data to localStorage on input change
+$('#interestedGstModal').on('input change', 'input, select, textarea', function() {
+    const formData = {
+        confirmed_email: $('#confirmed_email').val(),
+        has_gst: $('input[name="has_gst"]:checked').val(),
+        gst_number: $('#gst_number').val(),
+        wants_gst: $('input[name="wants_gst"]:checked').val(),
+        invoice_gst_number: $('#invoice_gst_number').val(),
+        gst_email: $('#gst_email').val()
+    };
+    localStorage.setItem('gst_modal_draft_' + window.location.pathname, JSON.stringify(formData));
+});
+
+// Restore GST modal data when modal opens
+$('#interestedGstModal').on('show.bs.modal', function() {
+    const savedData = localStorage.getItem('gst_modal_draft_' + window.location.pathname);
+    if (savedData) {
+        try {
+            const formData = JSON.parse(savedData);
+            $('#confirmed_email').val(formData.confirmed_email || '');
+            if (formData.has_gst) {
+                $('input[name="has_gst"][value="' + formData.has_gst + '"]').prop('checked', true).trigger('change');
+                $('#gst_number').val(formData.gst_number || '');
+            }
+            if (formData.wants_gst) {
+                $('input[name="wants_gst"][value="' + formData.wants_gst + '"]').prop('checked', true).trigger('change');
+                $('#invoice_gst_number').val(formData.invoice_gst_number || '');
+                $('#gst_email').val(formData.gst_email || '');
+            }
+        } catch (e) {
+            console.error('Error restoring GST modal data:', e);
+        }
+    }
+});
+
+// Clear saved data when form is successfully submitted
+$('#interestedGstForm').on('submit', function() {
+    localStorage.removeItem('gst_modal_draft_' + window.location.pathname);
 });
 </script>
 
@@ -1323,11 +1363,11 @@ $(document).on('change', 'input[name="wants_gst"]', function() {
                     <div class="mb-3" id="gst_payment_group" style="display: none;">
                         <div class="row">
                             <div class="col-md-6">
-                                <label class="form-label">GST Number for Invoice <span class="text-danger">*</span></label>
+                                <label class="form-label">GST Number for Invoice</label>
                                 <input type="text" class="form-control" id="invoice_gst_number" name="invoice_gst_number" placeholder="22AAAAA0000A1Z5">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Email for GST Invoice <span class="text-danger">*</span></label>
+                                <label class="form-label">Email for GST Invoice</label>
                                 <input type="email" class="form-control" id="gst_email" name="gst_email" placeholder="accounts@company.com">
                             </div>
                         </div>

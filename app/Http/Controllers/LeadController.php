@@ -316,6 +316,7 @@ class LeadController extends Controller
             'assigned_to' => 'nullable|exists:users,id',
             'status' => 'required|string|in:new,pending,callback_scheduled,did_not_receive,not_required,meeting_scheduled,not_interested,interested,converted',
             'remarks' => 'nullable|string|max:1000',
+            'not_interested_reason' => 'nullable|required_if:status,not_interested|string|max:500',
             // Callback fields
             'callback_time' => 'nullable|required_if:status,callback_scheduled|date|after:now',
             'call_notes' => 'nullable|string|max:500',
@@ -335,6 +336,7 @@ class LeadController extends Controller
             'project_type.required' => 'Project type is required.',
             'status.required' => 'Status is required.',
             'status.in' => 'Please select a valid status.',
+            'not_interested_reason.required_if' => 'Please provide a reason for not being interested.',
             'callback_time.required_if' => 'Callback date & time is required for Call Back status.',
             'meeting_time.required_if' => 'Meeting date & time is required for Calendar status.',
             'meeting_address.required_if' => 'Meeting address is required for Calendar status.',
@@ -343,9 +345,21 @@ class LeadController extends Controller
             'meeting_summary.required_if' => 'Meeting summary is required for Calendar status.',
         ]);
 
-        // Check for duplicate phone number
-        $existingLead = Lead::where('phone_number', $validated['phone_number'])->first();
-        $existingCustomer = Customer::where('number', $validated['phone_number'])->first();
+        // Normalize phone number - remove country code prefixes and keep only 10 digits
+        $phoneNumber = preg_replace('/\D/', '', $validated['phone_number']); // Remove non-digits
+        // If starts with 91 and is 12 digits, remove the 91 prefix
+        if (strlen($phoneNumber) === 12 && substr($phoneNumber, 0, 2) === '91') {
+            $phoneNumber = substr($phoneNumber, 2);
+        }
+        // Keep only last 10 digits
+        if (strlen($phoneNumber) > 10) {
+            $phoneNumber = substr($phoneNumber, -10);
+        }
+        $validated['phone_number'] = $phoneNumber;
+
+        // Check for duplicate phone number - search for phone ending with these 10 digits
+        $existingLead = Lead::where('phone_number', 'LIKE', '%' . $phoneNumber)->first();
+        $existingCustomer = Customer::where('phone_number', 'LIKE', '%' . $phoneNumber)->first();
         
         if ($existingLead) {
             return redirect()->back()
@@ -354,9 +368,10 @@ class LeadController extends Controller
         }
         
         if ($existingCustomer) {
+            $customerName = $existingCustomer->customer_name ?? $existingCustomer->name;
             return redirect()->back()
                 ->withInput()
-                ->withErrors(['phone_number' => "This phone number already exists in customers: {$existingCustomer->customer_name} (Added: {$existingCustomer->created_at->format('d M Y')})"]);
+                ->withErrors(['phone_number' => "This phone number already exists in the system: {$customerName} (Added: {$existingCustomer->created_at->format('d M Y')})"]);
         }
 
         // Check for duplicate email if provided
@@ -371,9 +386,10 @@ class LeadController extends Controller
             }
             
             if ($existingCustomerEmail) {
+                $customerName = $existingCustomerEmail->customer_name ?? $existingCustomerEmail->name;
                 return redirect()->back()
                     ->withInput()
-                    ->withErrors(['email' => "This email already exists in customers: {$existingCustomerEmail->customer_name} (Added: {$existingCustomerEmail->created_at->format('d M Y')})"]);
+                    ->withErrors(['email' => "This email already exists in the system: {$customerName} (Added: {$existingCustomerEmail->created_at->format('d M Y')})"]);
             }
         }
 
@@ -413,6 +429,11 @@ class LeadController extends Controller
                 'status' => $validated['status'],
                 'assigned_to' => $validated['assigned_to'] ?? Auth::id(),
             ];
+            
+            // Add not_interested_reason if status is not_interested
+            if ($validated['status'] === 'not_interested') {
+                $leadData['not_interested_reason'] = $validated['not_interested_reason'] ?? null;
+            }
 
             // Only add callback fields if status is callback_scheduled
             if ($validated['status'] === 'callback_scheduled') {
@@ -782,15 +803,37 @@ class LeadController extends Controller
         $value = $request->value;
         $excludeId = $request->exclude_lead_id;
 
-        // Check in leads table
-        $leadQuery = Lead::where($type === 'phone' ? 'customer_phone' : 'customer_email', $value);
+        // Normalize phone number - remove country code and non-digits
+        if ($type === 'phone') {
+            $value = preg_replace('/\D/', '', $value); // Remove non-digits
+            // If starts with 91 and is 12 digits, remove the 91 prefix
+            if (strlen($value) === 12 && substr($value, 0, 2) === '91') {
+                $value = substr($value, 2);
+            }
+            // Keep only last 10 digits
+            if (strlen($value) > 10) {
+                $value = substr($value, -10);
+            }
+        }
+
+        // Check in leads table - for phone, use LIKE to match any format ending with the digits
+        if ($type === 'phone') {
+            $leadQuery = Lead::where('phone_number', 'LIKE', '%' . $value);
+        } else {
+            $leadQuery = Lead::where('email', $value);
+        }
+        
         if ($excludeId) {
             $leadQuery->where('id', '!=', $excludeId);
         }
         $existingLead = $leadQuery->first();
 
         // Check in customers table
-        $customerQuery = Customer::where($type === 'phone' ? 'number' : 'email', $value);
+        if ($type === 'phone') {
+            $customerQuery = Customer::where('phone_number', 'LIKE', '%' . $value);
+        } else {
+            $customerQuery = Customer::where('email', $value);
+        }
         $existingCustomer = $customerQuery->first();
 
         $exists = false;
@@ -809,7 +852,7 @@ class LeadController extends Controller
             $exists = true;
             $responseData = [
                 'exists' => true,
-                'customer_name' => $existingCustomer->customer_name,
+                'customer_name' => $existingCustomer->customer_name ?? $existingCustomer->name,
                 'created_date' => $existingCustomer->created_at->format('d M Y'),
                 'customer_id' => $existingCustomer->id,
                 'type' => 'customer'
@@ -827,7 +870,8 @@ class LeadController extends Controller
     {
         $request->validate([
             'status' => 'required|string|in:pending,contacted,callback_scheduled,did_not_receive,not_required,meeting_scheduled,not_interested,interested,qualified,converted,rejected',
-            'notes' => 'nullable|string|max:500'
+            'notes' => 'nullable|string|max:500',
+            'not_interested_reason' => 'nullable|required_if:status,not_interested|string|max:500'
         ]);
 
         $updateData = ['status' => $request->status];
@@ -835,6 +879,11 @@ class LeadController extends Controller
         // If completing callback, mark it as completed
         if ($lead->status === 'callback_scheduled') {
             $updateData['callback_completed'] = true;
+        }
+        
+        // Add not_interested_reason if status is not_interested
+        if ($request->status === 'not_interested' && $request->has('not_interested_reason')) {
+            $updateData['not_interested_reason'] = $request->not_interested_reason;
         }
         
         // Update remarks/notes if provided

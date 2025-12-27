@@ -69,36 +69,42 @@
                                 
                                 <div class="row">
                                     <div class="col-md-12 mb-3">
-                                        <label class="form-label">Project Overview/Description</label>
-                                        <textarea class="form-control" name="project_description" rows="4"
-                                                  placeholder="Brief overview of what this project will accomplish for the client...">{{ old('project_description') }}</textarea>
+                                        <label class="form-label">Project Overview/Introduction</label>
+                                        <textarea class="form-control" name="project_description" rows="6"
+                                                  placeholder="We, at Konnectix Technologies Pvt Ltd, are pleased to present our proposal for developing and implementing a comprehensive ERP software solution...&#10;&#10;Our ERP solution is designed to optimize workflows, enhance productivity...">{{ old('project_description') }}</textarea>
+                                        <small class="text-muted">This will appear in the introduction section of the proposal</small>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label">Objectives</label>
+                                        <textarea class="form-control" name="objectives" rows="5"
+                                                  placeholder="* Automate and streamline day-to-day operations&#10;* Enable real-time access to data for better decision-making&#10;* Maintain detailed log book of all activities...">{{ old('objectives') }}</textarea>
+                                        <small class="text-muted">List the key objectives. Use * for bullet points</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Features & Modules -->
+                        <!-- Scope of Work -->
                         <div class="card mb-3">
                             <div class="card-header">
                                 <h6 class="card-title mb-0">
-                                    <i class="fas fa-list-check me-2"></i>Key Features & Modules
+                                    <i class="fas fa-list-check me-2"></i>Scope of Work
                                 </h6>
                                 <p class="mb-0 mt-2 text-muted small">
                                     <i class="fas fa-info-circle me-1"></i>
-                                    Add detailed descriptions for each feature/module. The first line will be used as the heading.
+                                    Describe all modules, features, and functionality in detail. Use headings and formatting as needed.
                                 </p>
                             </div>
                             <div class="card-body">
-                                <div id="features-container">
-                                    <div class="feature-item mb-3">
-                                        <label class="form-label">Feature/Module 1</label>
-                                        <textarea class="form-control" name="features[]" rows="8" 
-                                                  placeholder="Feature Title (First line becomes heading)&#10;&#10;Detailed description of this feature/module...&#10;&#10;Example:&#10;Raw Material Inventory Management Panel&#10;&#10;Once the purchase invoice is submitted in the ERP system, the raw material stock levels are automatically updated. This ensures real-time tracking of available raw materials...">{{ old('features.0') }}</textarea>
-                                    </div>
-                                </div>
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="add-feature">
-                                    <i class="fas fa-plus me-1"></i>Add Another Feature/Module
-                                </button>
+                                <textarea class="form-control" id="scope_of_work" name="scope_of_work" rows="20"
+                                          placeholder="Modules to be Developed:&#10;&#10;1. User Management & Access Control&#10;&#10;* Super Admin Panel: Full control...&#10;&#10;Describe your scope of work with all modules and features here...">{{ old('scope_of_work') }}</textarea>
+                                <small class="text-muted mt-2 d-block">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    Tip: Use * for bullet points, ## for headings. This content can span multiple pages.
+                                </small>
                             </div>
                         </div>
 
@@ -296,23 +302,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add feature functionality
     let featureCount = 1;
-    document.getElementById('add-feature').addEventListener('click', function() {
-        featureCount++;
-        const container = document.getElementById('features-container');
-        const newFeature = document.createElement('div');
-        newFeature.className = 'feature-item mb-3';
-        newFeature.innerHTML = `
-            <label class="form-label">Feature/Module ${featureCount}</label>
-            <div class="position-relative">
-                <textarea class="form-control" name="features[]" rows="8" 
-                          placeholder="Feature Title (First line becomes heading)\n\nDetailed description of this feature/module..."></textarea>
-                <button type="button" class="btn btn-sm btn-danger remove-btn remove-feature" style="top: 5px;">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `;
-        container.appendChild(newFeature);
-    });
+    const addFeatureBtn = document.getElementById('add-feature');
+    if (addFeatureBtn) {
+        addFeatureBtn.addEventListener('click', function() {
+            featureCount++;
+            const container = document.getElementById('features-container');
+            const newFeature = document.createElement('div');
+            newFeature.className = 'feature-item mb-3';
+            newFeature.innerHTML = `
+                <label class="form-label">Feature/Module ${featureCount}</label>
+                <div class="position-relative">
+                    <textarea class="form-control" name="features[]" rows="8" 
+                              placeholder="Feature Title (First line becomes heading)\n\nDetailed description of this feature/module..."></textarea>
+                    <button type="button" class="btn btn-sm btn-danger remove-btn remove-feature" style="top: 5px;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(newFeature);
+        });
+    }
 
     // Remove feature functionality
     document.addEventListener('click', function(e) {

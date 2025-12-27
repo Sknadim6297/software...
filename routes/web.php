@@ -173,6 +173,9 @@ Route::middleware(['auth', 'bdm.check'])->group(function () {
         Route::post('/{proposal}/mark-viewed', [ProposalController::class, 'markViewed'])->name('mark-viewed');
         Route::post('/{proposal}/accept', [ProposalController::class, 'accept'])->name('accept');
         Route::post('/{proposal}/reject', [ProposalController::class, 'reject'])->name('reject');
+        
+        // View Agreement as Webpage
+        Route::get('/{proposal}/agreement', [ProposalController::class, 'viewAgreement'])->name('agreement');
     });
 
     // Contract Management Routes

@@ -780,17 +780,54 @@ We look forward to helping {$data['company_name']} achieve digital marketing suc
         try {
             DB::beginTransaction();
 
-            // Render proposal HTML for PDF (supports markdown content)
-            $pdfHtml = view('emails.proposal-pdf', [
+            // Determine which PDF template to use based on project type
+            $projectType = strtolower($proposal->project_type ?? '');
+            $pdfView = 'emails.proposal-pdf'; // Default view
+            
+            // Check for app/website development projects
+            $appWebsiteKeywords = ['website', 'app', 'ecommerce', 'web application', 'mobile app'];
+            foreach ($appWebsiteKeywords as $keyword) {
+                if (strpos($projectType, $keyword) !== false) {
+                    $pdfView = 'proposals.pdf.app-website-agreement';
+                    break;
+                }
+            }
+            
+            // Check for social media projects
+            $socialMediaKeywords = ['social media', 'youtube', 'graphic', 'poster', 'reels'];
+            foreach ($socialMediaKeywords as $keyword) {
+                if (strpos($projectType, $keyword) !== false) {
+                    $pdfView = 'proposals.pdf.social-media-agreement';
+                    break;
+                }
+            }
+            
+            // Check for ERP/Software projects
+            $erpKeywords = ['software', 'erp', 'ui/ux', 'design'];
+            foreach ($erpKeywords as $keyword) {
+                if (strpos($projectType, $keyword) !== false) {
+                    $pdfView = 'proposals.pdf.erp-software-agreement';
+                    break;
+                }
+            }
+
+            // Render proposal HTML for PDF
+            $pdfHtml = view($pdfView, [
                 'proposal' => $proposal,
                 'contentHtml' => Str::markdown($proposal->proposal_content ?? '')
             ])->render();
 
-            // Generate PDF attachment
+            // Generate PDF attachment with optimized settings
             $options = new Options();
-            $options->set('isRemoteEnabled', true);
+            $options->set('isRemoteEnabled', false); // Disable remote loading for security and performance
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isFontSubsettingEnabled', true);
+            $options->set('defaultFont', 'Arial');
+            $options->setChroot(public_path()); // Allow local file access from public directory
+            
             $dompdf = new Dompdf($options);
             $dompdf->loadHtml($pdfHtml);
+            $dompdf->setPaper('A4', 'portrait');
             $dompdf->render();
             $pdfOutput = $dompdf->output();
 
@@ -1251,5 +1288,58 @@ Konnectix Technologies Pvt. Ltd.
         }
         
         return $this->convertToWords(intval($number / 10000000)) . ' Crore' . ($number % 10000000 ? ' ' . $this->convertToWords($number % 10000000) : '');
+    }
+
+    /**
+     * View proposal agreement as webpage
+     */
+    public function viewAgreement(Proposal $proposal)
+    {
+        // Determine which view template to use based on project type
+        $projectType = strtolower($proposal->project_type ?? '');
+        $view = 'proposals.web.app-website-agreement'; // Default view
+
+        // Check for dedicated e-commerce agreements
+        $ecommerceKeywords = ['e-commerce', 'ecommerce'];
+        foreach ($ecommerceKeywords as $keyword) {
+            if (strpos($projectType, $keyword) !== false) {
+                $view = 'proposals.web.ecommerce-agreement';
+                break;
+            }
+        }
+        
+        // Check for app/website development projects
+        if ($view === 'proposals.web.app-website-agreement') {
+            $appWebsiteKeywords = ['website', 'app', 'ecommerce', 'web application', 'mobile app'];
+            foreach ($appWebsiteKeywords as $keyword) {
+                if (strpos($projectType, $keyword) !== false) {
+                    $view = 'proposals.web.app-website-agreement';
+                    break;
+                }
+            }
+        }
+        
+        // Check for social media projects
+        $socialMediaKeywords = ['social media', 'youtube', 'graphic', 'poster', 'reels'];
+        foreach ($socialMediaKeywords as $keyword) {
+            if (strpos($projectType, $keyword) !== false) {
+                $view = 'proposals.web.social-media-agreement';
+                break;
+            }
+        }
+        
+        // Check for ERP/Software projects
+        $erpKeywords = ['software', 'erp', 'ui/ux', 'design'];
+        foreach ($erpKeywords as $keyword) {
+            if (strpos($projectType, $keyword) !== false) {
+                $view = 'proposals.web.erp-software-agreement';
+                break;
+            }
+        }
+
+        return view($view, [
+            'proposal' => $proposal,
+            'contentHtml' => Str::markdown($proposal->proposal_content ?? '')
+        ]);
     }
 }

@@ -586,7 +586,24 @@ function markInterested(leadId) {
 
 function markNotInterested(leadId) {
     console.log('Marking lead as not interested:', leadId);
-    if (confirm('Mark this lead as "Not Interested"?')) {
+    $('#not_interested_lead_id').val(leadId);
+    $('#not_interested_reason').val('');
+    const modal = new bootstrap.Modal(document.getElementById('notInterestedModal'));
+    modal.show();
+}
+
+// Handle not interested form submission
+$(document).ready(function() {
+    $('#notInterestedForm').on('submit', function(e) {
+        e.preventDefault();
+        const leadId = $('#not_interested_lead_id').val();
+        const reason = $('#not_interested_reason').val().trim();
+        
+        if (!reason) {
+            showAlert('error', 'Please provide a reason.');
+            return;
+        }
+        
         fetch(`{{ url('/') }}/leads/${leadId}/update-status`, {
             method: 'POST',
             headers: {
@@ -595,7 +612,8 @@ function markNotInterested(leadId) {
                 'Accept': 'application/json'
             },
             body: JSON.stringify({
-                status: 'not_interested'
+                status: 'not_interested',
+                not_interested_reason: reason
             })
         })
         .then(response => {
@@ -608,6 +626,7 @@ function markNotInterested(leadId) {
         })
         .then(data => {
             if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('notInterestedModal')).hide();
                 showAlert('success', 'Lead marked as "Not Interested".');
                 setTimeout(() => location.reload(), 1500);
             } else {
@@ -618,8 +637,8 @@ function markNotInterested(leadId) {
             console.error('Error:', error);
             showAlert('error', error.message || 'An error occurred while updating the status.');
         });
-    }
-}
+    });
+});
 
 function completeCallback(leadId) {
     console.log('Opening complete callback modal for lead:', leadId);
@@ -1054,11 +1073,51 @@ $(document).on('change', 'input[name="has_gst"]', function() {
 $(document).on('change', 'input[name="wants_gst"]', function() {
     if ($(this).val() === 'yes') {
         $('#gst_payment_group').show();
-        $('#invoice_gst_number, #gst_email').prop('required', true);
+        $('#invoice_gst_number, #gst_email').prop('required', false);
     } else {
         $('#gst_payment_group').hide();
         $('#invoice_gst_number, #gst_email').prop('required', false).val('');
     }
+});
+
+// Auto-save GST modal data to localStorage on input change
+$('#interestedGstModal').on('input change', 'input, select, textarea', function() {
+    const formData = {
+        confirmed_email: $('#confirmed_email').val(),
+        has_gst: $('input[name="has_gst"]:checked').val(),
+        gst_number: $('#gst_number').val(),
+        wants_gst: $('input[name="wants_gst"]:checked').val(),
+        invoice_gst_number: $('#invoice_gst_number').val(),
+        gst_email: $('#gst_email').val()
+    };
+    localStorage.setItem('gst_modal_draft_' + window.location.pathname, JSON.stringify(formData));
+});
+
+// Restore GST modal data when modal opens
+$('#interestedGstModal').on('show.bs.modal', function() {
+    const savedData = localStorage.getItem('gst_modal_draft_' + window.location.pathname);
+    if (savedData) {
+        try {
+            const formData = JSON.parse(savedData);
+            $('#confirmed_email').val(formData.confirmed_email || '');
+            if (formData.has_gst) {
+                $('input[name="has_gst"][value="' + formData.has_gst + '"]').prop('checked', true).trigger('change');
+                $('#gst_number').val(formData.gst_number || '');
+            }
+            if (formData.wants_gst) {
+                $('input[name="wants_gst"][value="' + formData.wants_gst + '"]').prop('checked', true).trigger('change');
+                $('#invoice_gst_number').val(formData.invoice_gst_number || '');
+                $('#gst_email').val(formData.gst_email || '');
+            }
+        } catch (e) {
+            console.error('Error restoring GST modal data:', e);
+        }
+    }
+});
+
+// Clear saved data when form is successfully submitted
+$('#interestedGstForm').on('submit', function() {
+    localStorage.removeItem('gst_modal_draft_' + window.location.pathname);
 });
 </script>
 
@@ -1111,24 +1170,39 @@ $(document).on('change', 'input[name="wants_gst"]', function() {
                             <label class="form-check-label" for="wants_gst_no">NO</label>
                         </div>
                     </div>
-
-                    <!-- GST Details for payment (if wants GST) -->
-                    <div class="mb-3" id="gst_payment_group" style="display: none;">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label class="form-label">GST Number for Invoice <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="invoice_gst_number" name="invoice_gst_number" placeholder="22AAAAA0000A1Z5">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Email for GST Invoice <span class="text-danger">*</span></label>
-                                <input type="email" class="form-control" id="gst_email" name="gst_email" placeholder="accounts@company.com">
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success">Mark as Interested & Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Not Interested Reason Modal -->
+<div class="modal fade" id="notInterestedModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Not Interested - Reason Required</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="notInterestedForm">
+                <input type="hidden" id="not_interested_lead_id">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fa fa-exclamation-triangle"></i> Please provide a reason why the customer is not interested.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="not_interested_reason" name="reason" rows="4" required placeholder="Please explain why the customer is not interested..."></textarea>
+                        <small class="text-muted">This helps understand customer concerns and improve future approaches.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Save & Mark Not Interested</button>
                 </div>
             </form>
         </div>

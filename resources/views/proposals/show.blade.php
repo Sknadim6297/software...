@@ -47,6 +47,11 @@
                     
                     <div class="col-lg-4 text-end">
                         <div class="action-buttons-group">
+                            <!-- View Agreement Button -->
+                            <a href="{{ route('proposals.agreement', $proposal->id) }}" class="btn btn-info btn-modern" target="_blank">
+                                <i class="fa fa-file-contract me-2"></i> View Agreement
+                            </a>
+                            
                             @if($proposal->status === 'draft')
                                 <form action="{{ route('proposals.send', $proposal->id) }}" method="POST" class="d-inline">
                                     @csrf

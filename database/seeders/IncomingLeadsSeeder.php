@@ -94,11 +94,14 @@ class IncomingLeadsSeeder extends Seeder
                 ->exists();
 
             if (!$exists) {
+                // Generate valid email by removing spaces and special characters
+                $emailPrefix = strtolower(preg_replace('/[^a-z0-9]/', '', str_replace(' ', '', $projectData['name'])));
+                
                 Lead::create([
                     'type' => 'incoming',
                     'customer_name' => $projectData['name'],
-                    'email' => strtolower(str_replace(' ', '', $projectData['name'])) . '@example.com',
-                    'phone_number' => $faker->numerify('+91 ######### '),
+                    'email' => $emailPrefix . '@example.com',
+                    'phone_number' => $faker->numerify('+91 ##########'),
                     'platform' => $projectData['platform'],
                     'platform_custom' => null,
                     'date' => now()->subDays(rand(1, 7)),

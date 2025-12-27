@@ -650,7 +650,203 @@
     </div>
 </div>
 
+<!-- Lead History Timeline Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">Lead Journey & History</h4>
+                <p class="text-muted mb-0">Complete timeline of all interactions and status changes</p>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <!-- Lead Created -->
+                    <div class="timeline-item">
+                        <div class="timeline-badge bg-primary">
+                            <i class="fa fa-plus"></i>
+                        </div>
+                        <div class="timeline-panel">
+                            <div class="timeline-heading">
+                                <h5 class="timeline-title">Lead Created</h5>
+                                <p class="text-muted"><small><i class="fa fa-clock"></i> {{ $lead->created_at->format('d M Y, g:i A') }}</small></p>
+                            </div>
+                            <div class="timeline-body">
+                                <p class="mb-1"><strong>Customer:</strong> {{ $lead->customer_name }}</p>
+                                <p class="mb-1"><strong>Phone:</strong> {{ $lead->phone_number }}</p>
+                                <p class="mb-1"><strong>Email:</strong> {{ $lead->email ?? 'N/A' }}</p>
+                                <p class="mb-1"><strong>Source:</strong> {{ ucfirst($lead->platform_custom ?? $lead->platform) }}</p>
+                                <p class="mb-1"><strong>Project Type:</strong> {{ ucfirst(str_replace('_', ' ', $lead->project_type)) }}</p>
+                                @if($lead->project_valuation)
+                                    <p class="mb-0"><strong>Valuation:</strong> ₹{{ number_format($lead->project_valuation, 2) }}</p>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Not Interested Reason (if applicable) -->
+                    @if($lead->status === 'not_interested' && $lead->not_interested_reason)
+                    <div class="timeline-item">
+                        <div class="timeline-badge bg-danger">
+                            <i class="fa fa-times-circle"></i>
+                        </div>
+                        <div class="timeline-panel">
+                            <div class="timeline-heading">
+                                <h5 class="timeline-title text-danger">Marked as Not Interested</h5>
+                                <p class="text-muted"><small><i class="fa fa-clock"></i> {{ $lead->updated_at->format('d M Y, g:i A') }}</small></p>
+                            </div>
+                            <div class="timeline-body">
+                                <p class="mb-0"><strong>Reason:</strong> {{ $lead->not_interested_reason }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Callback Scheduled -->
+                    @if($lead->callback_time)
+                    <div class="timeline-item">
+                        <div class="timeline-badge bg-warning">
+                            <i class="fa fa-phone"></i>
+                        </div>
+                        <div class="timeline-panel">
+                            <div class="timeline-heading">
+                                <h5 class="timeline-title">Callback Scheduled</h5>
+                                <p class="text-muted"><small><i class="fa fa-clock"></i> For: {{ \Carbon\Carbon::parse($lead->callback_time)->format('d M Y, g:i A') }}</small></p>
+                            </div>
+                            <div class="timeline-body">
+                                @if($lead->call_notes)
+                                    <p class="mb-0"><strong>Notes:</strong> {{ $lead->call_notes }}</p>
+                                @endif
+                                @if($lead->callback_completed)
+                                    <span class="badge badge-success mt-2">Completed</span>
+                                @else
+                                    <span class="badge badge-warning mt-2">Pending</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Meeting Scheduled -->
+                    @if($lead->meeting_time)
+                    <div class="timeline-item">
+                        <div class="timeline-badge bg-info">
+                            <i class="fa fa-calendar"></i>
+                        </div>
+                        <div class="timeline-panel">
+                            <div class="timeline-heading">
+                                <h5 class="timeline-title">Meeting Scheduled</h5>
+                                <p class="text-muted"><small><i class="fa fa-clock"></i> {{ \Carbon\Carbon::parse($lead->meeting_time)->format('d M Y, g:i A') }}</small></p>
+                            </div>
+                            <div class="timeline-body">
+                                <p class="mb-1"><strong>Location:</strong> {{ $lead->meeting_address }}</p>
+                                <p class="mb-1"><strong>Contact Person:</strong> {{ $lead->meeting_person_name }}</p>
+                                <p class="mb-1"><strong>Phone:</strong> {{ $lead->meeting_phone_number }}</p>
+                                @if($lead->meeting_summary)
+                                    <p class="mb-0"><strong>Agenda:</strong> {{ $lead->meeting_summary }}</p>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Status Changes -->
+                    <div class="timeline-item">
+                        <div class="timeline-badge {{ $lead->status === 'converted' ? 'bg-success' : 'bg-secondary' }}">
+                            <i class="fa {{ $lead->status === 'converted' ? 'fa-check-circle' : 'fa-info-circle' }}"></i>
+                        </div>
+                        <div class="timeline-panel">
+                            <div class="timeline-heading">
+                                <h5 class="timeline-title">Current Status: {{ ucfirst(str_replace('_', ' ', $lead->status)) }}</h5>
+                                <p class="text-muted"><small><i class="fa fa-clock"></i> Last updated: {{ $lead->updated_at->format('d M Y, g:i A') }}</small></p>
+                            </div>
+                            <div class="timeline-body">
+                                @if($lead->remarks)
+                                    <p class="mb-0"><strong>Latest Remarks:</strong> {{ $lead->remarks }}</p>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Converted to Customer -->
+                    @if($lead->status === 'converted')
+                    <div class="timeline-item">
+                        <div class="timeline-badge bg-success">
+                            <i class="fa fa-trophy"></i>
+                        </div>
+                        <div class="timeline-panel">
+                            <div class="timeline-heading">
+                                <h5 class="timeline-title text-success">Successfully Converted to Customer</h5>
+                                <p class="text-muted"><small><i class="fa fa-clock"></i> {{ $lead->updated_at->format('d M Y, g:i A') }}</small></p>
+                            </div>
+                            <div class="timeline-body">
+                                <p class="mb-0 text-success">🎉 This lead has been successfully converted into a customer!</p>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
+
+@push('styles')
+<style>
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 30px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e0e0e0;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 80px;
+    margin-bottom: 30px;
+}
+
+.timeline-badge {
+    position: absolute;
+    left: 15px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    z-index: 1;
+}
+
+.timeline-panel {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.timeline-heading h5 {
+    margin-bottom: 5px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.timeline-body p {
+    font-size: 14px;
+}
+</style>
+@endpush
 
 @push('scripts')
 <script>

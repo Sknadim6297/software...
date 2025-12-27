@@ -1,136 +1,176 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-100">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Admin Login - Konnectix</title>
+    <title>Admin Login - Konnectix Software</title>
     
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Favicon icon -->
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('template/images/favicon.png') }}">
+    <link href="{{ asset('template/vendor/jquery-nice-select/css/nice-select.css') }}" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Momo+Trust+Display&display=swap" rel="stylesheet">
+    
+    <link href="{{ asset('template/css/style.css') }}" rel="stylesheet">
     
     <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        html, body { overflow: hidden; height: 100%; }
+        * { font-family: "Momo Trust Display", sans-serif; }
+        h1, h2, h3, h4, h5, h6 { font-family: "DM Serif Display", serif; }
+        .sign { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .sign .text-center a img { max-height: 80px; width: auto; }
+        .img-fix { max-width: 100%; height: auto; }
+        .mobile-logo { display: none; }
+        @media (max-width: 767px) {
+            .sign { display: none !important; }
+            .mobile-logo { display: block !important; text-align: center; margin-bottom: 30px; }
+            .mobile-logo img { max-height: 60px; width: auto; }
         }
-        .login-card {
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-        .login-header {
-            background: #2c3e50;
-            color: white;
-            border-radius: 15px 15px 0 0;
-            padding: 30px;
-            text-align: center;
-        }
-        .login-header h3 {
-            margin: 0;
-            font-weight: bold;
-        }
-        .login-body {
-            padding: 40px;
-        }
-        .btn-login {
-            background: #667eea;
-            color: white;
-            padding: 12px;
-            font-weight: bold;
-        }
-        .btn-login:hover {
-            background: #764ba2;
-            color: white;
-        }
+        /* Password toggle */
+        .input-group .btn-toggle-pass { border: 1px solid #ced4da; border-left: none; }
+        .input-group .form-control { border-right: none; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-5">
-                <div class="card login-card">
-                    <div class="login-header">
-                        <i class="fas fa-user-shield fa-3x mb-3"></i>
-                        <h3>Admin Panel</h3>
-                        <p class="mb-0">Konnectix Software</p>
+
+<body class="body h-100">
+    <div class="container h-100">
+        <div class="row h-100 align-items-center justify-contain-center">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="row m-0">
+                            <!-- Left Side - Logo & Illustration -->
+                            <div class="col-xl-6 col-md-6 sign text-center">
+                                <div>
+                                    <div class="text-center my-5">
+                                        <a href="{{ route('admin.dashboard') }}">
+                                            <img src="{{ asset('template/images/logo/logo_konnectix.webp') }}" alt="Konnectix Logo">
+                                        </a>
+                                    </div>
+                                    <img src="{{ asset('template/images/log.png') }}" class="img-fix bitcoin-img sd-shape7" alt="Login Illustration">
+                                </div>
+                            </div>
+                            
+                            <!-- Right Side - Login Form -->
+                            <div class="col-xl-6 col-md-6">
+                                <div class="sign-in-your py-4 px-2">
+                                    <!-- Mobile Logo -->
+                                    <div class="mobile-logo">
+                                        <a href="{{ route('admin.dashboard') }}">
+                                            <img src="{{ asset('template/images/logo/logo_konnectix.webp') }}" alt="Konnectix Logo">
+                                        </a>
+                                    </div>
+                                    
+                                    <h4 class="fs-20">Admin Login</h4>
+                                    <span>Use your administrator credentials to sign in</span>
+                                    
+                                    <!-- Error Messages -->
+                                    @if(session('error'))
+                                        <div class="alert alert-danger alert-dismissible fade show mt-3">
+                                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="me-2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                                            <strong>Error!</strong> {{ session('error') }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="btn-close"></button>
+                                        </div>
+                                    @endif
+                                    @if ($errors->any())
+                                        <div class="alert alert-danger alert-dismissible fade show mt-3">
+                                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="me-2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                                            <strong>Error!</strong>
+                                            @foreach ($errors->all() as $error)
+                                                {{ $error }}
+                                            @endforeach
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="btn-close"></button>
+                                        </div>
+                                    @endif
+                                    
+                                    <form method="POST" action="{{ route('admin.login.post') }}">
+                                        @csrf
+                                        
+                                        <div class="mb-3">
+                                            <label class="mb-1"><strong>Email</strong></label>
+                                            <input type="email" 
+                                                   class="form-control" 
+                                                   name="email" 
+                                                   value="{{ old('email') }}" 
+                                                   placeholder="admin@example.com"
+                                                   required 
+                                                   autofocus>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="mb-1"><strong>Password</strong></label>
+                                            <div class="input-group">
+                                                <input type="password" 
+                                                       class="form-control" 
+                                                       id="adminPassword" 
+                                                       name="password" 
+                                                       placeholder="Password"
+                                                       required>
+                                                <button type="button" class="btn btn-outline-secondary btn-toggle-pass" id="togglePassword" aria-label="Show/Hide password">
+                                                    <span class="material-icons" id="toggleIcon">visibility</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row d-flex justify-content-between mt-4 mb-2">
+                                            <div class="mb-3">
+                                                <div class="form-check custom-checkbox ms-1">
+                                                    <input type="checkbox" 
+                                                           class="form-check-input" 
+                                                           id="admin_remember" 
+                                                           name="remember">
+                                                    <label class="form-check-label" for="admin_remember">Remember me</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <a href="{{ route('admin.login') }}">Need help?</a>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="text-center">
+                                            <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                                        </div>
+                                    </form>
+                                    
+                                    <div class="text-center mt-3">
+                                        <a href="{{ route('login') }}" class="">
+                                            <i class="la la-arrow-left me-1"></i> Back to BDM Login
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div class="login-body">
-                        @if(session('error'))
-                            <div class="alert alert-danger">
-                                <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
-                            </div>
-                        @endif
-                        
-                        @if($errors->any())
-                            <div class="alert alert-danger">
-                                @foreach($errors->all() as $error)
-                                    <div>{{ $error }}</div>
-                                @endforeach
-                            </div>
-                        @endif
-                        
-                        <form method="POST" action="{{ route('admin.login.post') }}">
-                            @csrf
-                            
-                            <div class="mb-3">
-                                <label for="email" class="form-label">
-                                    <i class="fas fa-envelope"></i> Email Address
-                                </label>
-                                <input type="email" 
-                                       class="form-control @error('email') is-invalid @enderror" 
-                                       id="email" 
-                                       name="email" 
-                                       value="{{ old('email') }}" 
-                                       required 
-                                       autofocus>
-                                @error('email')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="password" class="form-label">
-                                    <i class="fas fa-lock"></i> Password
-                                </label>
-                                <input type="password" 
-                                       class="form-control @error('password') is-invalid @enderror" 
-                                       id="password" 
-                                       name="password" 
-                                       required>
-                                @error('password')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            
-                            <div class="mb-3 form-check">
-                                <input type="checkbox" class="form-check-input" id="remember" name="remember">
-                                <label class="form-check-label" for="remember">
-                                    Remember Me
-                                </label>
-                            </div>
-                            
-                            <button type="submit" class="btn btn-login w-100">
-                                <i class="fas fa-sign-in-alt"></i> Login to Admin Panel
-                            </button>
-                        </form>
-                    </div>
-                </div>
-                
-                <div class="text-center mt-3">
-                    <a href="{{ route('login') }}" class="text-white">
-                        <i class="fas fa-arrow-left"></i> Back to BDM Login
-                    </a>
                 </div>
             </div>
         </div>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Required vendors -->
+    <script src="{{ asset('template/vendor/global/global.min.js') }}"></script>
+    <script src="{{ asset('template/js/custom.min.js') }}"></script>
+    <script src="{{ asset('template/js/dlabnav-init.js') }}"></script>
+    <script>
+        (function(){
+            const passInput = document.getElementById('adminPassword');
+            const toggleBtn = document.getElementById('togglePassword');
+            const toggleIcon = document.getElementById('toggleIcon');
+            if (toggleBtn && passInput) {
+                toggleBtn.addEventListener('click', function(){
+                    const isHidden = passInput.getAttribute('type') === 'password';
+                    passInput.setAttribute('type', isHidden ? 'text' : 'password');
+                    toggleIcon.textContent = isHidden ? 'visibility_off' : 'visibility';
+                });
+            }
+        })();
+    </script>
 </body>
+
 </html>

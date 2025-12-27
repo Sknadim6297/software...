@@ -69,10 +69,11 @@
                                 <label for="phone_number" class="form-label">Phone Number <span class="text-danger">*</span></label>
                                 <input type="tel" class="form-control @error('phone_number') is-invalid @enderror" 
                                        id="phone_number" name="phone_number" value="{{ old('phone_number') }}" 
-                                       placeholder="+91 9876543210" maxlength="15" required>
+                                       placeholder="9876543210" maxlength="10" required>
                                 @error('phone_number')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
+                                <small class="text-muted">Enter 10 digit mobile number</small>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -203,6 +204,8 @@
                     <input type="hidden" name="meeting_person_name" id="meeting_person_name" value="{{ old('meeting_person_name') }}">
                     <input type="hidden" name="meeting_phone_number" id="meeting_phone_number" value="{{ old('meeting_phone_number') }}">
                     <input type="hidden" name="meeting_summary" id="meeting_summary" value="{{ old('meeting_summary') }}">
+                    
+                    <input type="hidden" name="not_interested_reason" id="not_interested_reason" value="{{ old('not_interested_reason') }}">
 
                     <div class="row">
                         <div class="col-12">
@@ -277,14 +280,33 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     // Auto-format phone number
     const phoneField = document.getElementById('phone_number');
+    
     if (phoneField) {
+        // Allow paste but clean the input
+        phoneField.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            const cleaned = pastedText.replace(/\D/g, '');
+            // If more than 10 digits, take last 10
+            const finalValue = cleaned.length > 10 ? cleaned.slice(-10) : cleaned;
+            phoneField.value = finalValue;
+            phoneField.dispatchEvent(new Event('input'));
+        });
+        
+        // Allow only numbers and auto-trim to 10 digits
         phoneField.addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, '');
+            // Keep only last 10 digits if more
             if (value.length > 10) {
-                value = value.substring(0, 10);
+                value = value.slice(-10);
             }
-            if (value.length === 10 && !e.target.value.includes('+91')) {
-                e.target.value = '+91 ' + value;
+            e.target.value = value;
+        });
+        
+        // Real-time duplicate check on blur
+        phoneField.addEventListener('blur', function(e) {
+            if (e.target.value) {
+                checkDuplicateContact('phone', e.target.value);
             }
         });
     }
@@ -298,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Email validation
+    // Email validation and duplicate check
     const emailField = document.getElementById('email');
     if (emailField) {
         emailField.addEventListener('blur', function(e) {
@@ -307,6 +329,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.target.classList.add('is-invalid');
             } else {
                 e.target.classList.remove('is-invalid');
+                if (e.target.value) {
+                    checkDuplicateContact('email', e.target.value);
+                }
             }
         });
     }
@@ -314,27 +339,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Phone number validation
     if (phoneField) {
         phoneField.addEventListener('blur', function(e) {
-            const phonePattern = /^\+91\s[0-9]{10}$|^[0-9]{10}$/;
+            const phonePattern = /^[0-9]{10,15}$/;
             if (e.target.value && !phonePattern.test(e.target.value)) {
                 e.target.classList.add('is-invalid');
             } else {
                 e.target.classList.remove('is-invalid');
-                // Check for duplicates
-                checkDuplicateContact('phone', e.target.value);
             }
         });
     }
 
-    // Email duplicate check
-    if (emailField) {
-        const originalBlurHandler = emailField.onblur;
-        emailField.addEventListener('blur', function(e) {
-            if (originalBlurHandler) originalBlurHandler.call(this, e);
-            if (e.target.value && !e.target.classList.contains('is-invalid')) {
-                checkDuplicateContact('email', e.target.value);
-            }
-        });
-    }
+    // Email duplicate check (removed duplicate listener)
+    // Already handled in the validation section above
 
     // Form validation before submit
     const form = document.querySelector('form');
@@ -384,6 +399,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
             }
+            if (statusVal === 'not_interested') {
+                const reason = document.getElementById('not_interested_reason').value;
+                if (!reason) {
+                    e.preventDefault();
+                    openNotInterestedModal();
+                    alert('Please provide a reason for not being interested.');
+                    return;
+                }
+            }
             if (statusVal === 'meeting_scheduled') {
                 const mt = document.getElementById('meeting_time').value;
                 const addr = document.getElementById('meeting_address').value;
@@ -419,6 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('meeting_person_name').value = '';
                 document.getElementById('meeting_phone_number').value = '';
                 document.getElementById('meeting_summary').value = '';
+                document.getElementById('not_interested_reason').value = '';
                 statusSummary.classList.add('d-none');
                 statusSummary.innerHTML = '';
         }
@@ -431,6 +456,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 openCallbackModal();
                         } else if (val === 'meeting_scheduled') {
                                 openMeetingModal();
+                        } else if (val === 'not_interested') {
+                                openNotInterestedModal();
                         } else {
                                 resetStatusSupplemental();
                         }
@@ -451,7 +478,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 const now = new Date();
                 const minDateTime = now.toISOString().slice(0,16);
                 document.getElementById('meeting_modal_time').min = minDateTime;
+                
+                // Auto-fetch customer name and phone number from lead form
+                const customerName = document.getElementById('customer_name').value;
+                const phoneNumber = document.getElementById('phone_number').value;
+                
+                if (customerName) {
+                    document.getElementById('meeting_modal_person').value = customerName;
+                }
+                if (phoneNumber) {
+                    document.getElementById('meeting_modal_phone').value = phoneNumber;
+                    // Prevent copy/paste in meeting phone field too
+                    const meetingPhoneField = document.getElementById('meeting_modal_phone');
+                    meetingPhoneField.setAttribute('readonly', 'readonly');
+                }
+                
                 const modal = new bootstrap.Modal(document.getElementById('createMeetingModal'));
+                modal.show();
+        }
+        
+        function openNotInterestedModal() {
+                const modal = new bootstrap.Modal(document.getElementById('createNotInterestedModal'));
                 modal.show();
         }
 
@@ -494,6 +541,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         statusSummary.classList.remove('d-none');
                         statusSummary.innerHTML = '<strong>Meeting Scheduled:</strong> ' + new Date(mt).toLocaleString() + '<br><em>With:</em> '+person+' ('+phone+')';
                         bootstrap.Modal.getInstance(document.getElementById('createMeetingModal')).hide();
+                });
+        }
+        
+        // Save not interested reason
+        const saveNotInterestedBtn = document.getElementById('saveNotInterestedDetails');
+        if (saveNotInterestedBtn) {
+                saveNotInterestedBtn.addEventListener('click', function() {
+                        const reason = document.getElementById('not_interested_modal_reason').value.trim();
+                        if (!reason) {
+                                alert('Please provide a reason for not being interested.');
+                                return;
+                        }
+                        document.getElementById('not_interested_reason').value = reason;
+                        statusSummary.classList.remove('d-none');
+                        statusSummary.innerHTML = '<strong>Not Interested:</strong> ' + reason;
+                        bootstrap.Modal.getInstance(document.getElementById('createNotInterestedModal')).hide();
                 });
         }
 
@@ -539,14 +602,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const field = document.getElementById(fieldId);
             const fieldGroup = field.closest('.form-group');
             
+            const viewButton = data.lead_id 
+                ? `<a href="/leads/${data.lead_id}" target="_blank" class="btn btn-sm btn-warning ms-2"><i class="fa fa-eye"></i> View Details</a>`
+                : data.customer_id 
+                ? `<a href="/customers/${data.customer_id}" target="_blank" class="btn btn-sm btn-warning ms-2"><i class="fa fa-eye"></i> View Details</a>`
+                : '';
+            
             const alertHtml = `
-                <div class="alert alert-warning mt-2" id="${type}-duplicate-alert">
-                    <small><i class="fa fa-exclamation-triangle"></i> 
-                    This ${type} already exists: <strong>${data.customer_name}</strong> 
-                    (Added: ${data.created_date})
-                    ${data.lead_id ? `<a href="/leads/${data.lead_id}" target="_blank" class="alert-link">View Lead</a>` : ''}
-                    ${data.customer_id ? `<a href="/customers/${data.customer_id}" target="_blank" class="alert-link">View Customer</a>` : ''}
-                    </small>
+                <div class="alert alert-warning mt-2 d-flex align-items-center justify-content-between" id="${type}-duplicate-alert">
+                    <div>
+                        <strong>This ${type === 'phone' ? 'phone number' : 'email'} already exists in the system:</strong><br>
+                        <small>${data.customer_name} (Added: ${data.created_date})</small>
+                    </div>
+                    ${viewButton}
                 </div>
             `;
             
@@ -612,7 +680,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Phone Number <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="meeting_modal_phone" placeholder="Contact number">
+                        <input type="text" class="form-control" id="meeting_modal_phone" placeholder="Contact number" readonly style="background-color: #f0f0f0;">
+                        <small class="text-muted">Auto-filled from lead form</small>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Meeting Address <span class="text-danger">*</span></label>
@@ -628,6 +697,29 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="saveMeetingDetails">Save Meeting</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Not Interested Modal -->
+<div class="modal fade" id="createNotInterestedModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Not Interested - Reason</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Reason for Not Being Interested <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="not_interested_modal_reason" rows="4" placeholder="Please provide a detailed reason why the customer is not interested..."></textarea>
+                    <small class="text-muted">This helps BDM understand the customer's concerns and improve future approaches.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="saveNotInterestedDetails">Save Reason</button>
             </div>
         </div>
     </div>
