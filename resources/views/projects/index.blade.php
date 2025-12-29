@@ -1,121 +1,124 @@
 @extends('layouts.app')
 
-@section('title', 'Projects - Konnectix Software')
-
-@section('page-title', 'Website, Software & Application Management')
+@section('title', 'All Projects - Website, Software & Application Management')
+@section('page-title', 'All Projects')
 
 @section('content')
 <div class="row">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
-                <h4 class="card-title">Projects</h4>
-                <a href="{{ route('projects.create') }}" class="btn btn-primary btn-sm">
-                    <i class="fa fa-plus"></i> Add New Project
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="card-title">
+                    <i class="flaticon-381-list me-2"></i>Website, Software & Application Projects
+                </h4>
+                <a href="{{ route('projects.create') }}" class="btn btn-primary">
+                    <i class="flaticon-381-add me-1"></i>Create New Project
                 </a>
             </div>
             <div class="card-body">
+                {{-- Filters --}}
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <label class="form-label">Filter by Status</label>
+                        <select class="form-control" onchange="location.href='{{ route('projects.index') }}?status=' + this.value">
+                            <option value="">All Projects</option>
+                            <option value="in-progress" {{ request('status') === 'in-progress' ? 'selected' : '' }}>In Progress</option>
+                            <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
+                        </select>
+                    </div>
+                </div>
+
+                {{-- Alert Messages --}}
                 @if(session('success'))
                     <div class="alert alert-success alert-dismissible fade show">
-                        {{ session('success') }}
+                        <i class="flaticon-381-success me-2"></i>{{ session('success') }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 @endif
                 @if(session('error'))
                     <div class="alert alert-danger alert-dismissible fade show">
-                        {{ session('error') }}
+                        <i class="flaticon-381-error me-2"></i>{{ session('error') }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 @endif
-                
+
+                {{-- Projects Table --}}
                 <div class="table-responsive">
-                    <table class="table table-responsive-md">
+                    <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th><strong>S.No</strong></th>
-                                <th><strong>Customer Name</strong></th>
-                                <th><strong>Mobile No.</strong></th>
-                                <th><strong>Project Name</strong></th>
-                                <th><strong>Project Type</strong></th>
-                                <th><strong>Start Date</strong></th>
-                                <th><strong>Valuation</strong></th>
-                                <th><strong>Total Paid</strong></th>
-                                <th><strong>Coordinator</strong></th>
-                                <th><strong>Status</strong></th>
-                                <th><strong>Actions</strong></th>
+                                <th>S. No</th>
+                                <th>Customer Name</th>
+                                <th>Project Name</th>
+                                <th>Type</th>
+                                <th>Project Value</th>
+                                <th>Status</th>
+                                <th>Payment Progress</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($projects as $index => $project)
-                            <tr>
-                                <td>{{ $projects->firstItem() + $index }}</td>
-                                <td>{{ $project->customer->name }}</td>
-                                <td>{{ $project->customer->phone }}</td>
-                                <td>{{ $project->project_name }}</td>
-                                <td><span class="badge badge-info">{{ $project->project_type }}</span></td>
-                                <td>{{ $project->start_date->format('d M, Y') }}</td>
-                                <td>₹{{ number_format($project->project_valuation, 2) }}</td>
-                                <td>
-                                    ₹{{ number_format($project->getTotalPaid(), 2) }}
-                                    <small class="text-muted d-block">
-                                        {{ number_format(($project->getTotalPaid() / $project->project_valuation) * 100, 0) }}%
-                                    </small>
-                                </td>
-                                <td>{{ $project->coordinator->name }}</td>
-                                <td>
-                                    @if($project->project_status === 'In Progress')
-                                        <span class="badge badge-warning">In Progress</span>
-                                    @else
-                                        <span class="badge badge-success">Completed</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <div class="dropdown">
-                                        <button type="button" class="btn btn-primary light sharp btn-sm" data-bs-toggle="dropdown">
-                                            <svg width="20px" height="20px" viewBox="0 0 24 24" version="1.1">
-                                                <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                                    <rect x="0" y="0" width="24" height="24"/>
-                                                    <circle fill="#000000" cx="5" cy="12" r="2"/>
-                                                    <circle fill="#000000" cx="12" cy="12" r="2"/>
-                                                    <circle fill="#000000" cx="19" cy="12" r="2"/>
-                                                </g>
-                                            </svg>
-                                        </button>
-                                        <div class="dropdown-menu">
-                                            <a class="dropdown-item" href="{{ route('projects.show', $project) }}">View Details</a>
-                                            <a class="dropdown-item" href="{{ route('projects.edit', $project) }}">Edit</a>
-                                            
-                                            @if($project->project_status === 'In Progress' && $project->getNextInstallment())
-                                                <a class="dropdown-item" href="#" onclick="event.preventDefault(); if(confirm('Generate invoice and send to customer?')) document.getElementById('take-payment-form-{{ $project->id }}').submit();">
-                                                    Take Payment
-                                                </a>
-                                            @endif
-                                            
-                                            @if($project->project_status === 'Completed' && !$project->maintenanceContract)
-                                                <a class="dropdown-item" href="{{ route('projects.maintenance-contract.create', $project) }}">
-                                                    Create Maintenance Contract
-                                                </a>
-                                            @endif
-                                            
-                                            <form id="take-payment-form-{{ $project->id }}" action="{{ route('projects.take-payment', $project) }}" method="POST" style="display: none;">
-                                                @csrf
-                                            </form>
+                                <tr>
+                                    <td>{{ $projects->firstItem() + $index }}</td>
+                                    <td>
+                                        <strong>{{ $project->customer_name }}</strong><br>
+                                        <small class="text-muted">{{ $project->customer_mobile }}</small>
+                                    </td>
+                                    <td>{{ $project->project_name }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ $project->project_type === 'Website' ? 'info' : ($project->project_type === 'Software' ? 'success' : 'warning') }}">
+                                            {{ $project->project_type }}
+                                        </span>
+                                    </td>
+                                    <td><strong>₹{{ number_format($project->project_valuation, 2) }}</strong></td>
+                                    <td>
+                                        <span class="badge badge-{{ $project->status === 'In Progress' ? 'warning' : 'success' }}">
+                                            {{ $project->status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" role="progressbar" style="width: {{ $project->payment_progress }}%" 
+                                                aria-valuenow="{{ $project->payment_progress }}" aria-valuemin="0" aria-valuemax="100">
+                                                {{ $project->payment_progress }}%
+                                            </div>
                                         </div>
-                                    </div>
-                                </td>
-                            </tr>
+                                        <small class="text-muted">₹{{ number_format($project->total_paid, 2) }} / ₹{{ number_format($project->project_valuation, 2) }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ route('projects.show', $project->id) }}" class="btn btn-sm btn-info" title="View Details">
+                                                <i class="flaticon-381-eye"></i>
+                                            </a>
+                                            <a href="{{ route('projects.edit', $project->id) }}" class="btn btn-sm btn-primary" title="Edit Project">
+                                                <i class="flaticon-381-edit"></i>
+                                            </a>
+                                            @if($project->status === 'In Progress' && $project->next_pending_installment)
+                                                <a href="{{ route('projects.take-payment', $project->id) }}" class="btn btn-sm btn-success" title="Take Payment">
+                                                    <i class="flaticon-381-coin"></i>
+                                                </a>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
                             @empty
-                            <tr>
-                                <td colspan="11" class="text-center">No projects found.</td>
-                            </tr>
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">
+                                        <p><i class="flaticon-381-inbox me-2"></i>No projects found</p>
+                                    </td>
+                                </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
-                
-                <div class="d-flex justify-content-center mt-3">
-                    {{ $projects->links() }}
-                </div>
+
+                {{-- Pagination --}}
+                @if($projects->hasPages())
+                    <nav>
+                        {{ $projects->links() }}
+                    </nav>
+                @endif
             </div>
         </div>
     </div>

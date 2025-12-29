@@ -213,11 +213,14 @@ class ProposalController extends Controller
             'project_type' => 'required|string',
             'project_title' => 'required|string|max:500',
             'project_description' => 'nullable|string',
+            'objectives' => 'nullable|string',
+            'scope_of_work' => 'nullable|string',
             'total_cost' => 'required|numeric|min:1000',
             'gst_percentage' => 'required|numeric|min:0|max:100',
-            'advance_percentage' => 'required|numeric|min:0|max:100',
-            'development_percentage' => 'required|numeric|min:0|max:100',
-            'deployment_percentage' => 'required|numeric|min:0|max:100',
+            'payment_descriptions' => 'required|array|min:1',
+            'payment_descriptions.*' => 'required|string|max:255',
+            'payment_percentages' => 'required|array|min:1',
+            'payment_percentages.*' => 'required|numeric|min:0|max:100',
             'timeline_weeks' => 'required|integer|min:1',
             'features' => 'nullable|array',
             'features.*' => 'string',
@@ -281,24 +284,28 @@ class ProposalController extends Controller
             'lead_type' => 'required|in:incoming,outgoing',
             'project_type' => 'required|string',
             'project_title' => 'required|string|max:255',
+            'project_description' => 'required|string',
+            'objectives' => 'required|string',
+            'scope_of_work' => 'required|string',
             'total_cost' => 'required|numeric|min:1000',
-            'timeline' => 'required|string',
-            'services' => 'nullable|array',
-            'services.*' => 'string',
-            'additional_features' => 'nullable|string',
-            'upfront_percentage' => 'required|numeric|min:0|max:100',
-            'upfront_amount' => 'required|numeric',
-            'final_percentage' => 'required|numeric|min:0|max:100',
-            'final_amount' => 'required|numeric',
-            'payment_note' => 'nullable|string',
+            'gst_percentage' => 'required|numeric|min:0|max:100',
+            'timeline_weeks' => 'required|integer|min:1',
+            'support_months' => 'nullable|integer|min:0',
+            'payment_descriptions' => 'required|array|min:1',
+            'payment_descriptions.*' => 'required|string',
+            'payment_percentages' => 'required|array|min:1',
+            'payment_percentages.*' => 'required|numeric|min:0|max:100',
             'domain_provided_by' => 'nullable|string',
             'hosting_duration' => 'nullable|string',
-            'support_period' => 'nullable|string',
-            'post_support_charges' => 'nullable|string',
             'client_responsibilities' => 'nullable|array',
             'client_responsibilities.*' => 'string',
             'additional_terms' => 'nullable|string'
         ]);
+
+        $paymentTotal = array_sum($validated['payment_percentages']);
+        if (abs($paymentTotal - 100) > 0.01) {
+            return back()->withInput()->withErrors(['payment_percentages' => 'Payment percentages must total 100%.']);
+        }
 
         $lead = Lead::findOrFail($request->lead_id);
         
@@ -315,6 +322,10 @@ class ProposalController extends Controller
         
         $projectTypeName = $projectTypeMap[$lead->project_type] ?? $validated['project_title'];
         
+        // Calculate final amount with GST
+        $gstAmount = ($validated['total_cost'] * $validated['gst_percentage']) / 100;
+        $finalAmount = $validated['total_cost'] + $gstAmount;
+        
         // Create proposal record
         $proposal = Proposal::create([
             'lead_id' => $request->lead_id,
@@ -325,9 +336,9 @@ class ProposalController extends Controller
             'project_type' => $projectTypeName,
             'project_description' => $validated['project_title'],
             'proposal_content' => $proposalContent,
-            'proposed_amount' => $validated['total_cost'],
+            'proposed_amount' => $finalAmount,
             'currency' => 'INR',
-            'estimated_days' => $this->estimateDaysFromTimeline($validated['timeline']),
+            'estimated_days' => $validated['timeline_weeks'] * 7,
             'deliverables' => $this->generateAppWebsiteDeliverables($validated),
             'payment_terms' => $this->generateAppWebsitePaymentTerms($validated),
             'status' => 'draft',
@@ -411,13 +422,17 @@ The project will be executed in phases to ensure quality and timely delivery.
 **Final Amount:** ₹" . number_format($finalAmount) . "/-
 
 **Payment Schedule:**
-
-* **{$data['advance_percentage']}% Advance** (Project Kickoff) - ₹" . number_format(($finalAmount * $data['advance_percentage']) / 100) . "/-
-* **{$data['development_percentage']}%** After Completion of Development - ₹" . number_format(($finalAmount * $data['development_percentage']) / 100) . "/-
-* **{$data['deployment_percentage']}%** After Final Deployment - ₹" . number_format(($finalAmount * $data['deployment_percentage']) / 100) . "/-
-
-## 7. Deliverables
 ";
+        if (isset($data['payment_descriptions']) && isset($data['payment_percentages'])) {
+            foreach ($data['payment_descriptions'] as $index => $description) {
+                $percentage = $data['payment_percentages'][$index] ?? 0;
+                $amountForStage = ($finalAmount * $percentage) / 100;
+                $content .= "* **{$percentage}%** {$description} - ₹" . number_format($amountForStage) . "/-\n";
+            }
+        }
+
+        $content .= "\n## 7. Deliverables
+    ";
 
         if (!empty($deliverables)) {
             foreach ($deliverables as $deliverable) {
@@ -497,13 +512,20 @@ Phone: 9123354003
         $gstAmount = ($data['total_cost'] * $data['gst_percentage']) / 100;
         $finalAmount = $data['total_cost'] + $gstAmount;
         
-        return "Total Cost: ₹" . number_format($data['total_cost']) . "/-\n" .
+        $paymentSchedule = "Total Cost: ₹" . number_format($data['total_cost']) . "/-\n" .
                "GST ({$data['gst_percentage']}%): ₹" . number_format($gstAmount) . "/-\n" .
                "Final Amount: ₹" . number_format($finalAmount) . "/-\n\n" .
-               "Payment Schedule:\n" .
-               "- {$data['advance_percentage']}% Advance (Project Kickoff)\n" .
-               "- {$data['development_percentage']}% After Development Completion\n" .
-               "- {$data['deployment_percentage']}% After Final Deployment";
+               "Payment Schedule:\n";
+        
+        // Add dynamic payment terms
+        if (isset($data['payment_descriptions']) && isset($data['payment_percentages'])) {
+            foreach ($data['payment_descriptions'] as $index => $description) {
+                $percentage = $data['payment_percentages'][$index] ?? 0;
+                $paymentSchedule .= "- {$percentage}% {$description}\n";
+            }
+        }
+        
+        return $paymentSchedule;
     }
 
     /**
@@ -866,136 +888,9 @@ We look forward to helping {$data['company_name']} achieve digital marketing suc
      */
     public function markViewed(Proposal $proposal)
     {
-        if ($proposal->status === 'sent' && !$proposal->viewed_at) {
-            $proposal->update([
-                'status' => 'viewed',
-                'viewed_at' => now()
-            ]);
-        }
-        
-        return response()->json(['success' => true]);
-    }
-
-    /**
-     * Accept proposal and generate contract & invoice
-     */
-    public function accept(Request $request, Proposal $proposal)
-    {
-        $validated = $request->validate([
-            'final_amount' => 'required|numeric|min:0',
-            'start_date' => 'required|date',
-            'expected_completion_date' => 'required|date|after:start_date',
-            'deliverables' => 'nullable|string',
-            'milestones' => 'nullable|string',
-            'payment_schedule' => 'nullable|string',
-            'terms_and_conditions' => 'nullable|string',
-        ]);
-
-        try {
-            DB::beginTransaction();
-            
-            // Update proposal status
-            $proposal->update([
-                'status' => 'accepted',
-                'responded_at' => now()
-            ]);
-            
-            // 1. Generate Contract automatically
-            $contract = Contract::create([
-                'proposal_id' => $proposal->id,
-                'contract_number' => Contract::generateContractNumber(),
-                'customer_name' => $proposal->customer_name,
-                'customer_email' => $proposal->customer_email,
-                'customer_phone' => $proposal->customer_phone,
-                'contract_content' => $this->generateContractContent($proposal, $validated),
-                'project_type' => $proposal->project_type,
-                'final_amount' => $validated['final_amount'],
-                'currency' => $proposal->currency,
-                'start_date' => $validated['start_date'],
-                'expected_completion_date' => $validated['expected_completion_date'],
-                'deliverables' => $validated['deliverables'] ?? $proposal->deliverables,
-                'milestones' => $validated['milestones'] ?? null,
-                'payment_schedule' => $validated['payment_schedule'] ?? $proposal->payment_terms,
-                'terms_and_conditions' => $validated['terms_and_conditions'] ?? null,
-                'status' => 'active',
-                'sent_to_customer_at' => now(),
-                'sent_to_admin_at' => now(),
-            ]);
-            
-            // 2. Add customer to Customer Management Portal (if not exists)
-            // Customer identification is based on mobile number (primary unique identifier)
-            $customer = Customer::where('number', $proposal->customer_phone)->first();
-            
-            if (!$customer) {
-                $customer = Customer::create([
-                    'customer_name' => $proposal->customer_name,
-                    'email' => $proposal->customer_email,
-                    'number' => $proposal->customer_phone,
-                    'project_type' => $proposal->project_type,
-                    'payment_terms' => $proposal->payment_terms ?? 'Net 30',
-                    'added_date' => now(),
-                ]);
-            }
-            
-            // 3. Generate Invoice automatically
-            $invoice = Invoice::create([
-                'customer_id' => $customer->id,
-                'proposal_id' => $proposal->id,
-                'contract_id' => $contract->id,
-                'invoice_number' => Invoice::generateInvoiceNumber('regular'),
-                'invoice_type' => 'regular',
-                'invoice_date' => now(),
-                'due_date' => now()->addDays(30),
-                'subtotal' => $validated['final_amount'],
-                'discount_amount' => 0,
-                'tax_total' => $validated['final_amount'] * 0.18, // 18% GST
-                'grand_total' => $validated['final_amount'] * 1.18,
-                'payment_status' => 'pending',
-                'notes' => 'Invoice generated from accepted proposal #' . $proposal->id,
-            ]);
-            
-            // Add invoice item
-            $taxAmount = $validated['final_amount'] * 0.18;
-            InvoiceItem::create([
-                'invoice_id' => $invoice->id,
-                'product_description' => $proposal->project_type . ' - ' . $proposal->project_description,
-                'quantity' => 1,
-                'rate' => $validated['final_amount'],
-                'cgst_percentage' => 9,
-                'sgst_percentage' => 9,
-                'igst_percentage' => 0,
-                'tax_amount' => $taxAmount,
-                'total_amount' => $validated['final_amount'] + $taxAmount,
-            ]);
-            
-            // 4. Send emails to customer and admin
-            Mail::send('emails.proposal-accepted-customer', [
-                'proposal' => $proposal,
-                'contract' => $contract,
-                'invoice' => $invoice
-            ], function($message) use ($proposal) {
-                $message->to($proposal->customer_email)
-                    ->subject('Proposal Accepted - Contract & Invoice - Konnectix');
-            });
-            
-            Mail::send('emails.proposal-accepted-admin', [
-                'proposal' => $proposal,
-                'contract' => $contract,
-                'invoice' => $invoice
-            ], function($message) use ($proposal) {
-                $message->to('bdm.konnectixtech@gmail.com')
-                    ->subject('Proposal Accepted by ' . $proposal->customer_name);
-            });
-            
-            DB::commit();
-            
-            return redirect()->route('contracts.show', $contract->id)
-                ->with('success', 'Proposal accepted! Contract and Invoice have been generated and sent automatically.');
-                
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Failed to accept proposal: ' . $e->getMessage());
-        }
+        $proposal->update(['viewed_at' => now()]);
+        return redirect()->route('proposals.show', $proposal->id)
+            ->with('success', 'Proposal marked as viewed.');
     }
 
     /**
@@ -1076,13 +971,28 @@ We look forward to helping {$data['company_name']} achieve digital marketing suc
      */
     private function generateAppWebsiteProposalContent($data, $lead)
     {
+        $gstAmount = ($data['total_cost'] * $data['gst_percentage']) / 100;
+        $finalAmount = $data['total_cost'] + $gstAmount;
+        
         $services = isset($data['services']) && is_array($data['services']) ? $data['services'] : [];
         $clientResponsibilities = isset($data['client_responsibilities']) && is_array($data['client_responsibilities']) ? $data['client_responsibilities'] : [];
         
         $servicesText = !empty($services) ? "\n- " . implode("\n- ", $services) : '';
-        $additionalFeatures = isset($data['additional_features']) && $data['additional_features'] ? "\n\n**Additional Features:**\n{$data['additional_features']}" : '';
         $responsibilitiesText = !empty($clientResponsibilities) ? "\n- " . implode("\n- ", $clientResponsibilities) : '';
         $additionalTerms = isset($data['additional_terms']) && $data['additional_terms'] ? "\n\n## 13. ADDITIONAL TERMS\n{$data['additional_terms']}" : '';
+        
+        // Build payment schedule from dynamic arrays
+        $paymentSchedule = "";
+        if (isset($data['payment_descriptions']) && isset($data['payment_percentages'])) {
+            foreach ($data['payment_descriptions'] as $index => $description) {
+                $percentage = $data['payment_percentages'][$index] ?? 0;
+                $amount = ($finalAmount * $percentage) / 100;
+                $paymentSchedule .= "- {$percentage}% {$description} (₹" . number_format($amount) . ")\n";
+            }
+        }
+        
+        // Format timeline
+        $timelineText = "{$data['timeline_weeks']} weeks";
         
         $content = "
 # {$data['project_title']} AGREEMENT
@@ -1107,38 +1017,48 @@ The Client and the Service Provider shall collectively be referred to as the **\
 
 The purpose of this Agreement is to define the terms and conditions under which the Service Provider shall design and develop a {$data['project_title']} for the Client.
 
+" . (isset($data['project_description']) && $data['project_description'] ? "## 1.1 PROJECT OVERVIEW\n\n{$data['project_description']}\n\n" : "") . "
+
+" . (isset($data['objectives']) && $data['objectives'] ? "## 1.2 OBJECTIVES\n\n{$data['objectives']}\n\n" : "") . "
+
 ## 2. SCOPE OF WORK
 
 The Service Provider agrees to provide the following services:
 {$servicesText}
-{$additionalFeatures}
+
+" . (isset($data['scope_of_work']) && $data['scope_of_work'] ? "{$data['scope_of_work']}\n\n" : "") . "
 
 **Note:** Any features or changes beyond the above scope shall be considered additional work and charged separately upon mutual agreement.
 
 ## 3. PROJECT TIMELINE
 
-- The project shall commence after receipt of the upfront payment and required materials from the Client
-- Estimated project completion timeline: **{$data['timeline']}**
+- The project shall commence after receipt of the initial payment and required materials from the Client
+- Estimated project completion timeline: **{$timelineText}**
 - Any delay due to late content, approvals, or feedback from the Client shall extend the timeline accordingly
 
 ## 4. FEES & PAYMENT TERMS
 
-- **Total Project Cost:** ₹" . number_format($data['total_cost']) . " (Rupees " . $this->convertToWords($data['total_cost']) . " Only)
-- **Upfront Payment:** {$data['upfront_percentage']}% of the total amount (₹" . number_format($data['upfront_amount']) . ") payable before commencement of work
-- **Final Payment:** {$data['final_percentage']}% of the total amount (₹" . number_format($data['final_amount']) . ") payable after completion of the website/app and before the website/app goes live
+- **Base Project Cost:** ₹" . number_format($data['total_cost']) . " (Rupees " . $this->convertToWords($data['total_cost']) . " Only)
+- **GST ({$data['gst_percentage']}%):** ₹" . number_format($gstAmount) . "/-
+- **Total Project Cost:** ₹" . number_format($finalAmount) . " (Rupees " . $this->convertToWords($finalAmount) . " Only)
 
-" . (isset($data['payment_note']) && $data['payment_note'] ? "**Important:** {$data['payment_note']}" : "The website/app shall not be made live until the full and final payment is received.") . "
+**Payment Schedule:**
+{$paymentSchedule}
+
+The website/app shall not be made live until the full and final payment is received.
 
 ## 5. DOMAIN & HOSTING
 
-- The domain name shall be provided by the **{$data['domain_provided_by']}**
-- {$data['hosting_duration']}
+- The domain name shall be provided by the **" . (isset($data['domain_provided_by']) ? $data['domain_provided_by'] : 'Client') . "**
+- " . (isset($data['hosting_duration']) ? $data['hosting_duration'] : 'Hosting details to be confirmed') . "
 - The Service Provider shall not be responsible for delays caused due to domain-related issues from the Client's end
 
 ## 6. CLIENT RESPONSIBILITIES
 
 The Client agrees to:
 {$responsibilitiesText}
+- Provide timely feedback and approval on deliverables
+- Provide necessary content, images, and other materials
 
 ## 7. INTELLECTUAL PROPERTY RIGHTS
 
@@ -1147,19 +1067,20 @@ The Client agrees to:
 
 ## 8. WARRANTY & SUPPORT
 
-- {$data['support_period']}
-- {$data['post_support_charges']}
+" . (isset($data['support_months']) && $data['support_months'] > 0 ? "- The Service Provider shall provide {$data['support_months']} months of technical support and maintenance from the date of project completion\n" : "- Technical support and maintenance shall be provided as mutually agreed upon\n") . "
+- Support shall include bug fixes, minor updates, and server-related issues
+- Additional support beyond the stipulated period shall be charged separately
 
 ## 9. TERMINATION
 
 - Either Party may terminate this Agreement with written notice
 - Payments made shall be non-refundable
-- In case of termination after project commencement, the upfront payment shall be forfeited
+- In case of termination after project commencement, the initial payment shall be forfeited
 
 ## 10. LIMITATION OF LIABILITY
 
 The Service Provider shall not be liable for:
-- Downtime or failure caused by third-party services including domain registrars and payment gateways
+- Downtime or failure caused by third-party services including domain registrars and hosting providers
 - Any indirect loss of business, revenue, or data
 
 ## 11. GOVERNING LAW & JURISDICTION
@@ -1210,10 +1131,16 @@ Konnectix Technologies Pvt. Ltd.
         
         if (isset($data['services']) && is_array($data['services'])) {
             $deliverables = $data['services'];
+        } else {
+            $deliverables = [
+                "Fully functional website/app as per the agreed scope",
+                "Responsive design for mobile and desktop",
+                "Source code delivery"
+            ];
         }
         
-        if (isset($data['additional_features']) && $data['additional_features']) {
-            $deliverables[] = $data['additional_features'];
+        if (isset($data['support_months']) && $data['support_months'] > 0) {
+            $deliverables[] = "{$data['support_months']} months of free technical support";
         }
         
         return implode("\n", $deliverables);
@@ -1224,7 +1151,23 @@ Konnectix Technologies Pvt. Ltd.
      */
     private function generateAppWebsitePaymentTerms($data)
     {
-        return "{$data['upfront_percentage']}% Upfront (₹" . number_format($data['upfront_amount']) . ") + {$data['final_percentage']}% on Completion (₹" . number_format($data['final_amount']) . ")";
+        $gstAmount = ($data['total_cost'] * $data['gst_percentage']) / 100;
+        $finalAmount = $data['total_cost'] + $gstAmount;
+        
+        $paymentSchedule = "Total Cost: ₹" . number_format($data['total_cost']) . "/-\n" .
+               "GST ({$data['gst_percentage']}%): ₹" . number_format($gstAmount) . "/-\n" .
+               "Final Amount: ₹" . number_format($finalAmount) . "/-\n\n" .
+               "Payment Schedule:\n";
+        
+        // Add dynamic payment terms
+        if (isset($data['payment_descriptions']) && isset($data['payment_percentages'])) {
+            foreach ($data['payment_descriptions'] as $index => $description) {
+                $percentage = $data['payment_percentages'][$index] ?? 0;
+                $paymentSchedule .= "- {$percentage}% {$description}\n";
+            }
+        }
+        
+        return $paymentSchedule;
     }
 
     /**
@@ -1303,7 +1246,7 @@ Konnectix Technologies Pvt. Ltd.
         $ecommerceKeywords = ['e-commerce', 'ecommerce'];
         foreach ($ecommerceKeywords as $keyword) {
             if (strpos($projectType, $keyword) !== false) {
-                $view = 'proposals.web.ecommerce-agreement';
+                $view = 'proposals.web.app-website-agreement';
                 break;
             }
         }

@@ -949,6 +949,109 @@ $(document).ready(function() {
             cleanupModalBackdrops();
         }, 300);
     });
+
+    // Handle Interested/GST form submission
+    $('#interestedGstForm').on('submit', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (!currentLeadId) {
+            showAlert('error', 'No lead selected');
+            return false;
+        }
+
+        // Collect form data
+        const formData = new FormData(this);
+        const gstData = {
+            status: 'interested',
+            confirmed_email: formData.get('confirmed_email'),
+            has_gst: formData.get('has_gst'),
+            gst_number: formData.get('gst_number') || '',
+            wants_gst: formData.get('wants_gst')
+        };
+
+        console.log('Submitting GST data:', gstData);
+
+        fetch(`{{ url('/') }}/leads/${currentLeadId}/update-interested-status`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': window.Laravel.csrfToken,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(gstData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(text || 'Server error');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Clear saved draft
+                localStorage.removeItem('gst_modal_draft_' + window.location.pathname);
+                
+                showAlert('success', 'Lead marked as interested with GST details saved!');
+                var modalInstance = bootstrap.Modal.getInstance(document.getElementById('interestedGstModal'));
+                if (modalInstance) modalInstance.hide();
+                cleanupModalBackdrops();
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', 'Error updating status: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', error.message || 'An error occurred while updating the status.');
+        });
+        
+        return false;
+    });
+
+    // GST Modal Logic
+    $(document).on('change', 'input[name="has_gst"]', function() {
+        if ($(this).val() === 'yes') {
+            $('#gst_number_group').show();
+            $('#gst_number').prop('required', true);
+        } else {
+            $('#gst_number_group').hide();
+            $('#gst_number').prop('required', false).val('');
+        }
+    });
+
+    // Auto-save GST modal data to localStorage on input change
+    $('#interestedGstModal').on('input change', 'input, select, textarea', function() {
+        const formData = {
+            confirmed_email: $('#confirmed_email').val(),
+            has_gst: $('input[name="has_gst"]:checked').val(),
+            gst_number: $('#gst_number').val(),
+            wants_gst: $('input[name="wants_gst"]:checked').val()
+        };
+        localStorage.setItem('gst_modal_draft_' + window.location.pathname, JSON.stringify(formData));
+    });
+
+    // Restore GST modal data when modal opens
+    $('#interestedGstModal').on('show.bs.modal', function() {
+        const savedData = localStorage.getItem('gst_modal_draft_' + window.location.pathname);
+        if (savedData) {
+            try {
+                const formData = JSON.parse(savedData);
+                $('#confirmed_email').val(formData.confirmed_email || '');
+                if (formData.has_gst) {
+                    $('input[name="has_gst"][value="' + formData.has_gst + '"]').prop('checked', true).trigger('change');
+                    $('#gst_number').val(formData.gst_number || '');
+                }
+                if (formData.wants_gst) {
+                    $('input[name="wants_gst"][value="' + formData.wants_gst + '"]').prop('checked', true).trigger('change');
+                }
+            } catch (e) {
+                console.error('Error restoring GST modal data:', e);
+            }
+        }
+    });
 });
 
 // Apply filters when search button is clicked
@@ -1005,120 +1108,6 @@ window.clearAllFilters = function() {
         });
     }
 }
-
-// Handle Interested/GST form submission
-$('#interestedGstForm').on('submit', function(e) {
-    e.preventDefault();
-    
-    if (!currentLeadId) {
-        alert('No lead selected');
-        return;
-    }
-
-    // Collect form data
-    const formData = new FormData(this);
-    const gstData = {
-        status: 'interested',
-        confirmed_email: formData.get('confirmed_email'),
-        has_gst: formData.get('has_gst'),
-        gst_number: formData.get('gst_number'),
-        wants_gst: formData.get('wants_gst'),
-        invoice_gst_number: formData.get('invoice_gst_number'),
-        gst_email: formData.get('gst_email')
-    };
-
-    fetch(`{{ url('/') }}/leads/${currentLeadId}/update-interested-status`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': window.Laravel.csrfToken,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify(gstData)
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.text().then(text => {
-                throw new Error(text || 'Server error');
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            alert('Lead marked as interested with GST details saved!');
-            $('#interestedGstModal').modal('hide');
-            setTimeout(() => location.reload(), 1500);
-        } else {
-            alert('Error updating status: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert(error.message || 'An error occurred while updating the status.');
-    });
-});
-
-// GST Modal Logic
-$(document).on('change', 'input[name="has_gst"]', function() {
-    if ($(this).val() === 'yes') {
-        $('#gst_number_group').show();
-        $('#gst_number').prop('required', true);
-    } else {
-        $('#gst_number_group').hide();
-        $('#gst_number').prop('required', false).val('');
-    }
-});
-
-$(document).on('change', 'input[name="wants_gst"]', function() {
-    if ($(this).val() === 'yes') {
-        $('#gst_payment_group').show();
-        $('#invoice_gst_number, #gst_email').prop('required', false);
-    } else {
-        $('#gst_payment_group').hide();
-        $('#invoice_gst_number, #gst_email').prop('required', false).val('');
-    }
-});
-
-// Auto-save GST modal data to localStorage on input change
-$('#interestedGstModal').on('input change', 'input, select, textarea', function() {
-    const formData = {
-        confirmed_email: $('#confirmed_email').val(),
-        has_gst: $('input[name="has_gst"]:checked').val(),
-        gst_number: $('#gst_number').val(),
-        wants_gst: $('input[name="wants_gst"]:checked').val(),
-        invoice_gst_number: $('#invoice_gst_number').val(),
-        gst_email: $('#gst_email').val()
-    };
-    localStorage.setItem('gst_modal_draft_' + window.location.pathname, JSON.stringify(formData));
-});
-
-// Restore GST modal data when modal opens
-$('#interestedGstModal').on('show.bs.modal', function() {
-    const savedData = localStorage.getItem('gst_modal_draft_' + window.location.pathname);
-    if (savedData) {
-        try {
-            const formData = JSON.parse(savedData);
-            $('#confirmed_email').val(formData.confirmed_email || '');
-            if (formData.has_gst) {
-                $('input[name="has_gst"][value="' + formData.has_gst + '"]').prop('checked', true).trigger('change');
-                $('#gst_number').val(formData.gst_number || '');
-            }
-            if (formData.wants_gst) {
-                $('input[name="wants_gst"][value="' + formData.wants_gst + '"]').prop('checked', true).trigger('change');
-                $('#invoice_gst_number').val(formData.invoice_gst_number || '');
-                $('#gst_email').val(formData.gst_email || '');
-            }
-        } catch (e) {
-            console.error('Error restoring GST modal data:', e);
-        }
-    }
-});
-
-// Clear saved data when form is successfully submitted
-$('#interestedGstForm').on('submit', function() {
-    localStorage.removeItem('gst_modal_draft_' + window.location.pathname);
-});
 </script>
 
 <!-- GST Modal -->
@@ -1129,7 +1118,7 @@ $('#interestedGstForm').on('submit', function() {
                 <h5 class="modal-title">Customer Interest & GST Information</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="interestedGstForm">
+            <form id="interestedGstForm" method="post" action="javascript:void(0)" onsubmit="return false;">
                 <div class="modal-body">
                     <div class="alert alert-info">
                         <i class="fa fa-info-circle"></i> Please collect the following information since the customer is interested:

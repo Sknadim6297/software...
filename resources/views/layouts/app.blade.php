@@ -187,6 +187,9 @@
 		}
 	</style>
 	
+	<!-- intl-tel-input CSS -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/css/intlTelInput.css">
+	
 	@stack('styles')
 </head>
 <body>
@@ -424,7 +427,7 @@
                             <li><a href="{{ route('bdm.profile') }}">
                                 <i class="flaticon-381-user text-primary me-2"></i>My Profile
                             </a></li>
-                            {{-- <li><a href="{{ route('bdm.documents') }}">
+                            <li><a href="{{ route('bdm.documents') }}">
                                 <i class="flaticon-381-file-1 text-info me-2"></i>My Documents
                             </a></li>
                             <li><a href="{{ route('bdm.salary') }}">
@@ -434,17 +437,39 @@
                                 <i class="flaticon-381-calendar-1 text-warning me-2"></i>Leave Management
                             </a></li>
                         </ul>
-                    </li> --}}
+                    </li>
                     
-                    {{-- <li>
+                    <li>
                         <a class="ai-icon" href="{{ route('bdm.targets') }}" aria-expanded="false">
                             <i class="flaticon-381-diploma"></i>
                             <span class="nav-text">Target Management</span>
                         </a>
-                    </li> --}}
+                    </li>
+
+                    {{-- Website, Software & Application Management --}}
+                    <li class="{{ request()->routeIs('projects.*') ? 'mm-active' : '' }}">
+                        <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
+                            <i class="flaticon-381-settings-1"></i>
+                            <span class="nav-text">Website, Software & Application Management</span>
+                        </a>
+                        <ul aria-expanded="false">
+                            <li><a href="{{ route('projects.index') }}">
+                                <i class="flaticon-381-list text-primary me-2"></i>All Projects
+                            </a></li>
+                            <li><a href="{{ route('projects.create') }}">
+                                <i class="flaticon-381-add text-success me-2"></i>Create Project
+                            </a></li>
+                            <li><a href="{{ route('projects.index', ['status' => 'in-progress']) }}">
+                                <i class="flaticon-381-hourglass text-warning me-2"></i>In Progress
+                            </a></li>
+                            <li><a href="{{ route('projects.index', ['status' => 'completed']) }}">
+                                <i class="flaticon-381-success text-success me-2"></i>Completed
+                            </a></li>
+                        </ul>
+                    </li>
 
                     {{-- Renewal & Service Management --}}
-                    {{-- <li class="{{ request()->routeIs('service-renewals.*') ? 'mm-active' : '' }}">
+                    <li class="{{ request()->routeIs('service-renewals.*') ? 'mm-active' : '' }}">
                         <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
                             <i class="flaticon-381-refresh"></i>
                             <span class="nav-text">Renewal & Service Management</span>
@@ -466,7 +491,7 @@
                                 <i class="flaticon-381-settings-1 text-secondary me-2"></i>Projects
                             </a></li>
                         </ul>
-                    </li> --}}
+                    </li>
                    
                 </ul>
 			</div>
@@ -528,6 +553,9 @@
 	<script src="{{ asset('template/vendor/bootstrap-select/dist/js/bootstrap-select.min.js') }}"></script>
     <script src="{{ asset('template/js/custom.min.js') }}"></script>
 	<script src="{{ asset('template/js/dlabnav-init.js') }}"></script>
+	
+	<!-- intl-tel-input JS -->
+	<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/js/intlTelInput.min.js"></script>
 
     @stack('scripts')
 </body>

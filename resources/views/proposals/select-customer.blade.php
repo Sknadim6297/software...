@@ -49,9 +49,9 @@
                                     @foreach($eligibleLeads as $lead)
                                         <tr>
                                             <td>
-                                                <strong>{{ $lead->name }}</strong>
+                                                <strong>{{ $lead->customer_name }}</strong>
                                             </td>
-                                            <td>{{ $lead->email }}</td>
+                                            <td>{{ !empty($lead->email) ? $lead->email : 'Email is not provided' }}</td>
                                             <td>{{ $lead->phone_number }}</td>
                                             <td>
                                                 <span class="badge badge-primary">

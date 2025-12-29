@@ -26,15 +26,15 @@
                         <table class="table table-borderless">
                             <tr>
                                 <th width="40%">Customer Name:</th>
-                                <td>{{ $project->customer->name }}</td>
+                                <td>{{ $project->customer_name ?? $project->customer->name }}</td>
                             </tr>
                             <tr>
                                 <th>Mobile No.:</th>
-                                <td>{{ $project->customer->phone }}</td>
+                                <td>{{ $project->customer_mobile ?? $project->customer->phone }}</td>
                             </tr>
                             <tr>
                                 <th>Email:</th>
-                                <td>{{ $project->customer->email }}</td>
+                                <td>{{ $project->customer_email ?? $project->customer->email }}</td>
                             </tr>
                         </table>
                     </div>
@@ -48,16 +48,20 @@
                             </tr>
                             <tr>
                                 <th>Start Date:</th>
-                                <td>{{ $project->start_date->format('d M, Y') }}</td>
+                                <td>{{ ($project->project_start_date ?? $project->start_date)->format('d M, Y') }}</td>
                             </tr>
                             <tr>
                                 <th>Project Coordinator:</th>
-                                <td>{{ $project->coordinator->name }}</td>
+                                <td>{{ $project->project_coordinator ?? ($project->coordinator->name ?? 'N/A') }}</td>
+                            </tr>
+                            <tr>
+                                <th>Project Valuation:</th>
+                                <td><strong>₹{{ number_format($project->project_valuation, 2) }}</strong></td>
                             </tr>
                             <tr>
                                 <th>Status:</th>
                                 <td>
-                                    @if($project->project_status === 'In Progress')
+                                    @if(($project->status ?? $project->project_status) === 'In Progress')
                                         <span class="badge badge-warning">In Progress</span>
                                     @else
                                         <span class="badge badge-success">Completed</span>
@@ -65,6 +69,22 @@
                                 </td>
                             </tr>
                         </table>
+                    </div>
+                </div>
+
+                <!-- Payment Progress Bar -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5>Payment Progress</h5>
+                        <div class="progress" style="height: 30px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ $project->payment_progress }}%;" 
+                                 aria-valuenow="{{ $project->payment_progress }}" 
+                                 aria-valuemin="0" aria-valuemax="100">
+                                {{ $project->payment_progress }}% (₹{{ number_format($project->total_paid, 2) }} / ₹{{ number_format($project->project_valuation, 2) }})
+                            </div>
+                        </div>
+                        <small class="text-muted">Remaining: ₹{{ number_format($project->remaining_amount, 2) }}</small>
                     </div>
                 </div>
                 
@@ -90,14 +110,16 @@
                                     <td>
                                         @if($project->upfront_paid)
                                             <span class="badge badge-success">Paid</span>
+                                            <br><small>{{ $project->upfront_paid_date ? $project->upfront_paid_date->format('d M, Y') : '' }}</small>
                                         @else
                                             <span class="badge badge-warning">Pending</span>
                                         @endif
                                     </td>
                                     <td>
-                                        @if(!$project->upfront_paid)
-                                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#paymentModal" data-type="Upfront" data-amount="{{ $project->upfront_payment }}">
-                                                Mark as Paid
+                                        @if(!$project->upfront_paid && $project->next_pending_installment && $project->next_pending_installment['type'] == 'upfront')
+                                            <a href="{{ route('projects.take-payment', $project->id) }}" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-money-bill me-1"></i>Take Payment
+                                            </a>
                                             </button>
                                         @endif
                                     </td>

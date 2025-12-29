@@ -325,9 +325,10 @@
         
         $totalCost = $proposal->total_cost ?? $meta['total_cost'] ?? 900000;
         $gstPercentage = $meta['gst_percentage'] ?? 18;
-        $advancePercentage = $meta['advance_percentage'] ?? 30;
-        $developmentPercentage = $meta['development_percentage'] ?? 40;
-        $deploymentPercentage = $meta['deployment_percentage'] ?? 30;
+        
+        // Dynamic payment terms
+        $paymentDescriptions = $meta['payment_descriptions'] ?? ['Advance (Project Kickoff)', 'After Completion of Development', 'After Final Deployment'];
+        $paymentPercentages = $meta['payment_percentages'] ?? [30, 40, 30];
         
         $timelineWeeks = $meta['timeline_weeks'] ?? '8-10';
         $supportMonths = $meta['support_months'] ?? 6;
@@ -390,7 +391,7 @@
 
                 <div class="letter-body">
                     @if($introduction)
-                        {!! nl2br(e($introduction)) !!}
+                        {!! $introduction !!}
                     @else
                         <p>
                             We, at Konnectix Technologies Pvt Ltd, are pleased to present our proposal for developing
@@ -469,7 +470,7 @@
 
         <div class="content">
             <div class="content-inner">
-                <h1>ERP SOFTWARE PROPOSAL</h1>
+                <h1>{{ strtoupper($projectTitle) }}</h1>
 
                 <h2>1. Introduction</h2>
                 <p>
@@ -485,7 +486,7 @@
 
                 <h2>2. Objectives</h2>
                 @if($objectives)
-                    {!! nl2br(e($objectives)) !!}
+                    {!! $objectives !!}
                 @else
                     <ul>
                         <li>Automate and streamline day-to-day operations</li>
@@ -498,7 +499,7 @@
 
                 <h2>3. Scope of Work</h2>
                 @if($scopeOfWork)
-                    <div style="white-space: pre-wrap;">{!! nl2br(e($scopeOfWork)) !!}</div>
+                    {!! $scopeOfWork !!}
                 @else
                     <p><strong>Modules to be Developed:</strong></p>
                     <h3>1. User Management & Access Control</h3>
@@ -567,13 +568,16 @@
                 <p><strong>Total Duration:</strong> Approximately {{ $timelineWeeks }} weeks</p>
 
                 <h2>8. Pricing & Payment Terms</h2>
-                <p><strong>Total Project Cost:</strong> ₹{{ number_format($totalCost) }} + {{ $gstPercentage }}%</p>
+                <p><strong>Total Project Cost:</strong> ₹{{ number_format($totalCost) }} + {{ $gstPercentage }}% GST</p>
 
                 <p style="margin-top: 15px;"><strong>Payment Schedule:</strong></p>
                 <ul>
-                    <li>{{ $advancePercentage }}% Advance (Project Kickoff)</li>
-                    <li>{{ $developmentPercentage }}% After Completion of Development</li>
-                    <li>{{ $deploymentPercentage }}% After Final Deployment</li>
+                    @foreach($paymentDescriptions as $index => $description)
+                        @php
+                            $percentage = $paymentPercentages[$index] ?? 0;
+                        @endphp
+                        <li>{{ $percentage }}% {{ $description }}</li>
+                    @endforeach
                 </ul>
 
                 <h2>9. Deliverables</h2>

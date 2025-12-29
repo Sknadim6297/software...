@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<link href="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.css" rel="stylesheet">
 <div class="container-fluid">
     <div class="row">
         <div class="col-xl-12">
@@ -50,7 +51,7 @@
                             </div>
                         </div>
                         
-                        <!-- Project Details -->
+                        <!-- Project Details + Financials -->
                         <div class="card mb-3">
                             <div class="card-header">
                                 <h6 class="card-title mb-0">
@@ -68,107 +69,142 @@
                                 </div>
                                 
                                 <div class="row">
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label class="form-label">Total Project Cost (₹) <span class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" name="total_cost" id="totalCost"
+                                        <input type="number" class="form-control" name="total_cost" id="total_cost"
                                                value="{{ $lead->project_valuation ?? 7000 }}"
                                                placeholder="7000" min="1000" required>
                                         @if($lead->project_valuation)
                                             <small class="text-muted">Auto-fetched from lead valuation</small>
                                         @endif
                                     </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">GST Percentage (%) <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" name="gst_percentage" id="gst_percentage"
+                                               value="18" min="0" max="100" step="0.01" required>
+                                    </div>
+                                    <div class="col-md-4 mb-3 d-flex align-items-end">
+                                        <div class="alert alert-info w-100 mb-0">
+                                            <strong>Final Amount (with GST):</strong>
+                                            <div id="final_amount" class="mt-1">₹0</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Estimated Timeline <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" name="timeline" 
-                                               value="3 working days" placeholder="e.g., 3 working days" required>
+                                        <label class="form-label">Project Timeline (Weeks) <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" name="timeline_weeks" 
+                                               value="4" min="1" placeholder="e.g., 4" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Free Support Period (Months)</label>
+                                        <input type="number" class="form-control" name="support_months" 
+                                               value="1" min="0" placeholder="1">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Scope of Work -->
+                        <!-- Narrative Sections (same as Software form) -->
                         <div class="card mb-3">
                             <div class="card-header">
                                 <h6 class="card-title mb-0">
-                                    <i class="fas fa-tasks me-2"></i>Scope of Work
+                                    <i class="fas fa-info-circle me-2"></i>Introduction & Objectives
                                 </h6>
                             </div>
                             <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-label">Development Services (Check all that apply)</label>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-check mb-2">
-                                                <input class="form-check-input" type="checkbox" name="services[]" 
-                                                       value="Design and development of website/app" id="service1" checked>
-                                                <label class="form-check-label" for="service1">
-                                                    Design and development of website/app
-                                                </label>
-                                            </div>
-                                            <div class="form-check mb-2">
-                                                <input class="form-check-input" type="checkbox" name="services[]" 
-                                                       value="Mobile-responsive design" id="service2" checked>
-                                                <label class="form-check-label" for="service2">
-                                                    Mobile-responsive design (desktop, tablet, mobile)
-                                                </label>
-                                            </div>
-                                            <div class="form-check mb-2">
-                                                <input class="form-check-input" type="checkbox" name="services[]" 
-                                                       value="Product listing and detail pages" id="service3">
-                                                <label class="form-check-label" for="service3">
-                                                    Product listing and detail pages
-                                                </label>
-                                            </div>
-                                            <div class="form-check mb-2">
-                                                <input class="form-check-input" type="checkbox" name="services[]" 
-                                                       value="Shopping cart and checkout" id="service4">
-                                                <label class="form-check-label" for="service4">
-                                                    Shopping cart and checkout functionality
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-check mb-2">
-                                                <input class="form-check-input" type="checkbox" name="services[]" 
-                                                       value="Payment gateway integration" id="service5">
-                                                <label class="form-check-label" for="service5">
-                                                    Payment gateway integration
-                                                </label>
-                                            </div>
-                                            <div class="form-check mb-2">
-                                                <input class="form-check-input" type="checkbox" name="services[]" 
-                                                       value="Admin panel" id="service6">
-                                                <label class="form-check-label" for="service6">
-                                                    Admin panel for managing products/orders
-                                                </label>
-                                            </div>
-                                            <div class="form-check mb-2">
-                                                <input class="form-check-input" type="checkbox" name="services[]" 
-                                                       value="Testing and deployment" id="service7" checked>
-                                                <label class="form-check-label" for="service7">
-                                                    Website/App testing and deployment
-                                                </label>
-                                            </div>
-                                            <div class="form-check mb-2">
-                                                <input class="form-check-input" type="checkbox" name="services[]" 
-                                                       value="SEO optimization" id="service8">
-                                                <label class="form-check-label" for="service8">
-                                                    SEO optimization
-                                                </label>
-                                            </div>
-                                        </div>
+                                <div class="row">
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label">Project Overview/Introduction</label>
+                                        <textarea class="form-control" id="project_description" name="project_description" rows="6"
+                                                  placeholder="We, at Konnectix Technologies Pvt Ltd, are pleased to present our proposal...">{{ old('project_description', 'We, at Konnectix Technologies Pvt Ltd, are pleased to present our proposal for developing and implementing a comprehensive website/mobile application solution for your business. This proposal outlines our approach, deliverables, timeline, and investment required to bring your vision to reality. Our team specializes in creating user-friendly, scalable, and feature-rich digital solutions tailored to your specific business needs.') }}</textarea>
+                                        <small class="text-muted">This will appear in the introduction section of the agreement</small>
                                     </div>
                                 </div>
 
-                                <div class="mb-3">
-                                    <label class="form-label">Additional Features/Services</label>
-                                    <textarea class="form-control" name="additional_features" rows="3" 
-                                              placeholder="Add any custom features or services beyond the above scope"></textarea>
+                                <div class="row">
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label">Objectives</label>
+                                        <textarea class="form-control" id="objectives" name="objectives" rows="5"
+                                                  placeholder="* Automate and streamline day-to-day operations...">{{ old('objectives', '• Create a user-friendly interface that enhances customer engagement and experience\n• Implement robust security measures to protect sensitive customer and business data\n• Enable real-time analytics and reporting for better business insights\n• Ensure seamless integration with existing business processes\n• Provide scalable architecture for future growth and feature additions') }}</textarea>
+                                        <small class="text-muted">List the key objectives</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Payment Terms -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-list-check me-2"></i>Scope of Work
+                                </h6>
+                                <p class="mb-0 mt-2 text-muted small">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Describe all modules, features, and functionality in detail. Use headings and formatting as needed.
+                                </p>
+                            </div>
+                            <div class="card-body">
+                                <textarea class="form-control" id="scope_of_work" name="scope_of_work" rows="18"
+                                          placeholder="Modules to be Developed:&#10;&#10;1. Website/App UI & UX...">{{ old('scope_of_work', '## MODULES & FEATURES TO BE DEVELOPED
+
+### 1. Website/App User Interface & User Experience
+- Professional, responsive design compatible with all devices (Desktop, Tablet, Mobile)
+- Intuitive navigation with clear call-to-action buttons
+- Fast loading times and optimized performance
+- Accessibility features for users with disabilities
+
+### 2. User Authentication & Account Management
+- Secure user registration and login system
+- Email verification and password reset functionality
+- User profile management with editable information
+- Social login integration (Google, Facebook)
+
+### 3. Product/Service Catalog
+- Dynamic product/service listing with search and filter capabilities
+- Detailed product pages with images, descriptions, and specifications
+- Category-based organization and navigation
+- Customer reviews and ratings system
+
+### 4. Shopping Cart & Checkout
+- Intuitive shopping cart with add/remove functionality
+- Cart persistence across sessions
+- Secure checkout process with multiple payment options
+- Order summary and confirmation
+
+### 5. Payment Gateway Integration
+- Secure payment processing with industry-standard encryption
+- Support for multiple payment methods (Credit/Debit Cards, Wallets, UPI)
+- Payment success/failure handling and notifications
+- Transaction history and receipts
+
+### 6. Admin Dashboard
+- Comprehensive dashboard with key metrics and analytics
+- Product/Service management (Create, Read, Update, Delete)
+- Order management and fulfillment tracking
+- User management and role-based access control
+- Reports and analytics generation
+
+### 7. Customer Support System
+- Contact form and inquiry management
+- Ticketing system for customer issues
+- Live chat support integration (optional)
+- FAQ section and knowledge base
+
+### 8. Additional Features
+- Email notifications for order confirmations and updates
+- SMS alerts for order status (optional)
+- Newsletter subscription management
+- Social media integration
+- SEO optimization') }}</textarea>
+                                <small class="text-muted mt-2 d-block">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    Tip: Use formatting tools above. This content can span multiple pages.
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Payment Terms (same as Software form) -->
                         <div class="card mb-3">
                             <div class="card-header">
                                 <h6 class="card-title mb-0">
@@ -176,34 +212,73 @@
                                 </h6>
                             </div>
                             <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">Upfront Payment (%) <span class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" name="upfront_percentage" 
-                                               id="upfrontPercentage" value="30" min="0" max="100" required>
+                                <div class="alert alert-info">
+                                    <strong>Note:</strong> Payment percentages must total 100%. Add as many stages as you need.
+                                </div>
+                                <div id="payment-terms-container">
+                                    <div class="payment-term-item mb-3">
+                                        <div class="row align-items-end">
+                                            <div class="col-md-7">
+                                                <label class="form-label">Payment Stage Description</label>
+                                                <input type="text" class="form-control" name="payment_descriptions[]" 
+                                                       value="Advance Payment (Project Kickoff)" placeholder="e.g., Advance Payment" required>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Percentage (%)</label>
+                                                <input type="number" class="form-control payment-percentage" name="payment_percentages[]" 
+                                                       value="30" min="0" max="100" step="0.01" required>
+                                            </div>
+                                            <div class="col-md-1">
+                                                <button type="button" class="btn btn-sm btn-danger remove-payment-term" style="display:none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">Upfront Amount (₹)</label>
-                                        <input type="number" class="form-control" name="upfront_amount" 
-                                               id="upfrontAmount" readonly>
+                                    <div class="payment-term-item mb-3">
+                                        <div class="row align-items-end">
+                                            <div class="col-md-7">
+                                                <label class="form-label">Payment Stage Description</label>
+                                                <input type="text" class="form-control" name="payment_descriptions[]" 
+                                                       value="After Development Completion" placeholder="e.g., After Development" required>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Percentage (%)</label>
+                                                <input type="number" class="form-control payment-percentage" name="payment_percentages[]" 
+                                                       value="40" min="0" max="100" step="0.01" required>
+                                            </div>
+                                            <div class="col-md-1">
+                                                <button type="button" class="btn btn-sm btn-danger remove-payment-term">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">Final Payment (%) <span class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" name="final_percentage" 
-                                               id="finalPercentage" value="70" min="0" max="100" readonly>
+                                    <div class="payment-term-item mb-3">
+                                        <div class="row align-items-end">
+                                            <div class="col-md-7">
+                                                <label class="form-label">Payment Stage Description</label>
+                                                <input type="text" class="form-control" name="payment_descriptions[]" 
+                                                       value="After Final Deployment" placeholder="e.g., After Final Deployment" required>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Percentage (%)</label>
+                                                <input type="number" class="form-control payment-percentage" name="payment_percentages[]" 
+                                                       value="30" min="0" max="100" step="0.01" required>
+                                            </div>
+                                            <div class="col-md-1">
+                                                <button type="button" class="btn btn-sm btn-danger remove-payment-term">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Final Amount (₹)</label>
-                                        <input type="number" class="form-control" name="final_amount" 
-                                               id="finalAmount" readonly>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Payment Note</label>
-                                        <input type="text" class="form-control" name="payment_note" 
-                                               value="Website shall not be made live until full payment is received">
-                                    </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="add-payment-term">
+                                    <i class="fas fa-plus me-1"></i>Add Another Payment Term
+                                </button>
+                                <div class="alert alert-warning mt-3" id="payment-total-warning" style="display:none;">
+                                    <strong>Warning:</strong> Total payment percentages must equal 100%. Current total: <span id="payment-total">100</span>%
                                 </div>
                             </div>
                         </div>
@@ -232,8 +307,7 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Warranty & Support -->
+                        <!-- Warranty & Support - NOTE: support_months is handled in Project Details section above -->
                         <div class="card mb-3">
                             <div class="card-header">
                                 <h6 class="card-title mb-0">
@@ -241,18 +315,12 @@
                                 </h6>
                             </div>
                             <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Free Support Period</label>
-                                        <input type="text" class="form-control" name="support_period" 
-                                               value="7 days free bug support after delivery">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Post-Support Charges</label>
-                                        <input type="text" class="form-control" name="post_support_charges" 
-                                               value="Future updates/maintenance shall be chargeable separately">
-                                    </div>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    The free support period (in months) is configured in the <strong>"Project Details"</strong> section above.
                                 </div>
+                            </div>
+
                             </div>
                         </div>
 
@@ -403,180 +471,239 @@
 </style>
 
 @push('scripts')
+<script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Calculate payment amounts
-    function calculatePayments() {
-        const totalCost = parseFloat(document.getElementById('totalCost').value) || 0;
-        const upfrontPercentage = parseFloat(document.getElementById('upfrontPercentage').value) || 0;
-        const finalPercentage = 100 - upfrontPercentage;
-        
-        const upfrontAmount = Math.round(totalCost * upfrontPercentage / 100);
-        const finalAmount = totalCost - upfrontAmount;
-        
-        document.getElementById('upfrontAmount').value = upfrontAmount;
-        document.getElementById('finalAmount').value = finalAmount;
-        document.getElementById('finalPercentage').value = finalPercentage;
+    // CKEditor setup (same as software form)
+    CKEDITOR.replace('project_description', {
+        height: 200,
+        toolbar: [
+            { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline'] },
+            { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'Blockquote'] },
+            { name: 'insert', items: ['Table'] },
+            { name: 'styles', items: ['Format'] }
+        ]
+    });
+    CKEDITOR.replace('objectives', {
+        height: 150,
+        toolbar: [
+            { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline'] },
+            { name: 'paragraph', items: ['NumberedList', 'BulletedList'] }
+        ]
+    });
+    CKEDITOR.replace('scope_of_work', {
+        height: 400,
+        toolbar: [
+            { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline'] },
+            { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'Blockquote'] },
+            { name: 'insert', items: ['Table'] },
+            { name: 'styles', items: ['Format', 'Styles'] }
+        ]
+    });
+
+    // Calculate final amount with GST
+    function calculateFinalAmount() {
+        const totalCost = parseFloat(document.getElementById('total_cost').value) || 0;
+        const gstPercentage = parseFloat(document.getElementById('gst_percentage').value) || 0;
+        const gstAmount = (totalCost * gstPercentage) / 100;
+        const finalAmount = totalCost + gstAmount;
+        document.getElementById('final_amount').textContent = '₹' + finalAmount.toLocaleString('en-IN');
+        return { totalCost, gstAmount, finalAmount };
     }
-    
-    // Initial calculation
-    calculatePayments();
-    
-    // Recalculate on changes
-    document.getElementById('totalCost').addEventListener('input', calculatePayments);
-    document.getElementById('upfrontPercentage').addEventListener('input', calculatePayments);
-    
-    // Generate Preview
+
+    document.getElementById('total_cost').addEventListener('input', calculateFinalAmount);
+    document.getElementById('gst_percentage').addEventListener('input', calculateFinalAmount);
+    calculateFinalAmount();
+
+    // Payment term helpers
+    function calculatePaymentTotal() {
+        const percentages = document.querySelectorAll('.payment-percentage');
+        let total = 0;
+        percentages.forEach(function(input) {
+            total += parseFloat(input.value) || 0;
+        });
+        document.getElementById('payment-total').textContent = total.toFixed(2);
+        const warning = document.getElementById('payment-total-warning');
+        warning.style.display = Math.abs(total - 100) > 0.01 ? 'block' : 'none';
+        return total;
+    }
+
+    function updateRemoveButtons() {
+        const items = document.querySelectorAll('.payment-term-item');
+        items.forEach(function(item) {
+            const removeBtn = item.querySelector('.remove-payment-term');
+            removeBtn.style.display = items.length === 1 ? 'none' : 'block';
+        });
+    }
+
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('payment-percentage')) {
+            calculatePaymentTotal();
+        }
+    });
+
+    document.getElementById('add-payment-term').addEventListener('click', function() {
+        const container = document.getElementById('payment-terms-container');
+        const newTerm = document.createElement('div');
+        newTerm.className = 'payment-term-item mb-3';
+        newTerm.innerHTML = `
+            <div class="row align-items-end">
+                <div class="col-md-7">
+                    <label class="form-label">Payment Stage Description</label>
+                    <input type="text" class="form-control" name="payment_descriptions[]" 
+                           placeholder="e.g., After Testing, After Training" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Percentage (%)</label>
+                    <input type="number" class="form-control payment-percentage" name="payment_percentages[]" 
+                           value="0" min="0" max="100" step="0.01" required>
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-sm btn-danger remove-payment-term">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        container.appendChild(newTerm);
+        calculatePaymentTotal();
+        updateRemoveButtons();
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-payment-term')) {
+            e.target.closest('.payment-term-item').remove();
+            calculatePaymentTotal();
+            updateRemoveButtons();
+        }
+    });
+
+    calculatePaymentTotal();
+    updateRemoveButtons();
+
+    // Auto-generate preview on page load
+    setTimeout(function() {
+        const generateBtn = document.getElementById('generatePreviewBtn');
+        if (generateBtn) {
+            generateBtn.click();
+        }
+    }, 1000);
+
+    // Generate Preview (mirrors software form output)
     document.getElementById('generatePreviewBtn').addEventListener('click', function() {
+        // Sync CKEditor fields
+        Object.values(CKEDITOR.instances).forEach(instance => instance.updateElement());
+
         const form = document.getElementById('appWebsiteForm');
         const formData = new FormData(form);
-        
-        // Get all checked services
-        const services = [];
-        document.querySelectorAll('input[name="services[]"]:checked').forEach(function(checkbox) {
-            services.push(checkbox.nextElementSibling.textContent.trim());
-        });
-        
-        // Get all checked client responsibilities
-        const clientResponsibilities = [];
-        document.querySelectorAll('input[name="client_responsibilities[]"]:checked').forEach(function(checkbox) {
-            clientResponsibilities.push(checkbox.nextElementSibling.textContent.trim());
-        });
-        
-        const projectTitle = formData.get('project_title') || 'WEBSITE DEVELOPMENT';
-        const totalCost = formData.get('total_cost') || '7000';
-        const timeline = formData.get('timeline') || '3 working days';
-        const upfrontPercentage = formData.get('upfront_percentage') || '30';
-        const upfrontAmount = formData.get('upfront_amount') || '0';
-        const finalPercentage = formData.get('final_percentage') || '70';
-        const finalAmount = formData.get('final_amount') || '0';
-        
+
+        const { totalCost, gstAmount, finalAmount } = calculateFinalAmount();
+        const projectTitle = formData.get('project_title') || 'APP & WEBSITE DEVELOPMENT';
+        const timelineWeeks = formData.get('timeline_weeks') || '4';
+        const supportMonths = formData.get('support_months') || '0';
+
+        const paymentDescriptions = formData.getAll('payment_descriptions[]');
+        const paymentPercentages = formData.getAll('payment_percentages[]');
+
+        const paymentList = paymentDescriptions.map((desc, index) => {
+            const pct = parseFloat(paymentPercentages[index] || 0);
+            const amt = (finalAmount * pct) / 100;
+            return `<li>${pct}% - ${desc} (₹${amt.toLocaleString('en-IN')})</li>`;
+        }).join('');
+
         const previewHTML = `
             <div class="proposal-preview" style="font-family: 'Times New Roman', serif; max-width: 800px;">
                 <div class="text-center mb-4">
                     <h2 class="text-primary">${projectTitle} AGREEMENT</h2>
                     <p class="text-muted">This Agreement is made on ${new Date().toLocaleDateString('en-GB')}</p>
                 </div>
-                
+
                 <div class="mb-4">
                     <h5>BETWEEN</h5>
                     <p><strong>{{ $lead->customer_name }}</strong>,<br>
                     hereinafter referred to as the <strong>"Client"</strong>,</p>
-                    
+
                     <p><strong>AND</strong></p>
-                    
+
                     <p><strong>Konnectix Technologies Pvt. Ltd.</strong>,<br>
                     hereinafter referred to as the <strong>"Service Provider."</strong></p>
-                    
+
                     <p>The Client and the Service Provider shall collectively be referred to as the <strong>"Parties."</strong></p>
                 </div>
-                
+
                 <hr class="my-4">
-                
+
                 <div class="mb-4">
-                    <h5 class="text-success">1. PURPOSE OF THE AGREEMENT</h5>
-                    <p>The purpose of this Agreement is to define the terms and conditions under which the Service Provider shall design and develop a ${projectTitle.toLowerCase()} for the Client.</p>
+                    <h5 class="text-success">1. INTRODUCTION</h5>
+                    <div>${formData.get('project_description') || ''}</div>
                 </div>
-                
+
                 <div class="mb-4">
-                    <h5 class="text-success">2. SCOPE OF WORK</h5>
-                    <p>The Service Provider agrees to provide the following services:</p>
-                    <ul>
-                        ${services.map(service => `<li>${service}</li>`).join('')}
-                    </ul>
-                    ${formData.get('additional_features') ? `<p><strong>Additional Features:</strong> ${formData.get('additional_features')}</p>` : ''}
-                    <p class="alert alert-info">Any features or changes beyond the above scope shall be considered additional work and charged separately upon mutual agreement.</p>
+                    <h5 class="text-success">2. OBJECTIVES</h5>
+                    <div>${formData.get('objectives') || ''}</div>
                 </div>
-                
+
                 <div class="mb-4">
-                    <h5 class="text-success">3. PROJECT TIMELINE</h5>
-                    <ul>
-                        <li>The project shall commence after receipt of the upfront payment and required materials from the Client</li>
-                        <li>Estimated project completion timeline: <strong>${timeline}</strong></li>
-                        <li>Any delay due to late content, approvals, or feedback from the Client shall extend the timeline accordingly</li>
-                    </ul>
+                    <h5 class="text-success">3. SCOPE OF WORK</h5>
+                    <div>${formData.get('scope_of_work') || ''}</div>
+                    <p class="alert alert-info mt-2">Any features or changes beyond the above scope shall be considered additional work and charged separately upon mutual agreement.</p>
                 </div>
-                
+
                 <div class="mb-4">
-                    <h5 class="text-success">4. FEES & PAYMENT TERMS</h5>
+                    <h5 class="text-success">4. PROJECT TIMELINE</h5>
                     <ul>
-                        <li><strong>Total Project Cost:</strong> ₹${parseInt(totalCost).toLocaleString()} (Rupees ${convertNumberToWords(totalCost)} Only)</li>
-                        <li><strong>Upfront Payment:</strong> ${upfrontPercentage}% of the total amount (₹${parseInt(upfrontAmount).toLocaleString()}) payable before commencement of work</li>
-                        <li><strong>Final Payment:</strong> ${finalPercentage}% of the total amount (₹${parseInt(finalAmount).toLocaleString()}) payable after completion and before the website/app goes live</li>
-                        <li class="text-danger">${formData.get('payment_note')}</li>
+                        <li>Project commencement after kickoff payment and required materials from the Client</li>
+                        <li>Estimated completion timeline: <strong>${timelineWeeks} weeks</strong></li>
+                        <li>Delays due to late content/approvals extend the timeline accordingly</li>
                     </ul>
                 </div>
-                
+
                 <div class="mb-4">
-                    <h5 class="text-success">5. DOMAIN & HOSTING</h5>
+                    <h5 class="text-success">5. FEES & PAYMENT TERMS</h5>
+                    <ul>
+                        <li><strong>Base Cost:</strong> ₹${totalCost.toLocaleString('en-IN')} (Rupees ${convertNumberToWords(totalCost)} Only)</li>
+                        <li><strong>GST (${formData.get('gst_percentage')}%):</strong> ₹${gstAmount.toLocaleString('en-IN')}</li>
+                        <li><strong>Final Amount:</strong> ₹${finalAmount.toLocaleString('en-IN')}</li>
+                        <li><strong>Payment Schedule:</strong>
+                            <ul>${paymentList}</ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="mb-4">
+                    <h5 class="text-success">6. DOMAIN & HOSTING</h5>
                     <ul>
                         <li>The domain name shall be provided by the <strong>${formData.get('domain_provided_by')}</strong></li>
                         <li>${formData.get('hosting_duration')}</li>
                         <li>The Service Provider shall not be responsible for delays caused due to domain-related issues from the Client's end</li>
                     </ul>
                 </div>
-                
+
                 <div class="mb-4">
-                    <h5 class="text-success">6. CLIENT RESPONSIBILITIES</h5>
+                    <h5 class="text-success">7. WARRANTY & SUPPORT</h5>
+                    <ul>
+                        <li>${supportMonths} month(s) of free support</li>
+                        <li>Future updates/maintenance shall be chargeable separately</li>
+                    </ul>
+                </div>
+
+                <div class="mb-4">
+                    <h5 class="text-success">8. CLIENT RESPONSIBILITIES</h5>
                     <p>The Client agrees to:</p>
                     <ul>
-                        ${clientResponsibilities.map(resp => `<li>${resp}</li>`).join('')}
+                        ${Array.from(document.querySelectorAll('input[name="client_responsibilities[]"]:checked')).map(cb => `<li>${cb.nextElementSibling.textContent.trim()}</li>`).join('')}
                     </ul>
                 </div>
-                
-                <div class="mb-4">
-                    <h5 class="text-success">7. INTELLECTUAL PROPERTY RIGHTS</h5>
-                    <ul>
-                        <li>Ownership of the website/app and related files shall be transferred to the Client only after full payment</li>
-                        <li>The Service Provider retains the right to display the completed project in its portfolio unless restricted in writing</li>
-                    </ul>
-                </div>
-                
-                <div class="mb-4">
-                    <h5 class="text-success">8. WARRANTY & SUPPORT</h5>
-                    <ul>
-                        <li>${formData.get('support_period')}</li>
-                        <li>${formData.get('post_support_charges')}</li>
-                    </ul>
-                </div>
-                
-                <div class="mb-4">
-                    <h5 class="text-success">9. TERMINATION</h5>
-                    <ul>
-                        <li>Either Party may terminate this Agreement with written notice</li>
-                        <li>Payments made shall be non-refundable</li>
-                        <li>In case of termination after project commencement, the upfront payment shall be forfeited</li>
-                    </ul>
-                </div>
-                
-                <div class="mb-4">
-                    <h5 class="text-success">10. LIMITATION OF LIABILITY</h5>
-                    <p>The Service Provider shall not be liable for:</p>
-                    <ul>
-                        <li>Downtime or failure caused by third-party services including domain registrars and payment gateways</li>
-                        <li>Any indirect loss of business, revenue, or data</li>
-                    </ul>
-                </div>
-                
-                <div class="mb-4">
-                    <h5 class="text-success">11. GOVERNING LAW & JURISDICTION</h5>
-                    <p>This Agreement shall be governed by and construed in accordance with the laws of India, and courts of Kolkata shall have exclusive jurisdiction.</p>
-                </div>
-                
-                <div class="mb-4">
-                    <h5 class="text-success">12. ENTIRE AGREEMENT</h5>
-                    <p>This Agreement constitutes the entire understanding between the Parties and supersedes all prior discussions or communications.</p>
-                </div>
-                
+
                 ${formData.get('additional_terms') ? `
                 <div class="mb-4">
-                    <h5 class="text-success">13. ADDITIONAL TERMS</h5>
-                    <p>${formData.get('additional_terms')}</p>
+                    <h5 class="text-success">9. ADDITIONAL TERMS</h5>
+                    <div>${formData.get('additional_terms')}</div>
                 </div>
                 ` : ''}
-                
+
                 <hr class="my-4">
-                
+
                 <div class="row">
                     <div class="col-md-6">
                         <h6>For {{ $lead->customer_name }} (Client)</h6>
@@ -594,19 +721,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `;
-        
+
         document.getElementById('proposalPreview').innerHTML = previewHTML;
     });
-    
-    // Helper function to convert number to words (Indian system)
+
+    // Helper: number to words (Indian system)
     function convertNumberToWords(num) {
         const a = ['','One ','Two ','Three ','Four ', 'Five ','Six ','Seven ','Eight ','Nine ','Ten ','Eleven ','Twelve ','Thirteen ','Fourteen ','Fifteen ','Sixteen ','Seventeen ','Eighteen ','Nineteen '];
         const b = ['', '', 'Twenty','Thirty','Forty','Fifty', 'Sixty','Seventy','Eighty','Ninety'];
-        
-        if (num === 0) return 'Zero';
-        
+
+        if (!num || isNaN(num)) return '';
         num = parseInt(num);
-        
+        if (num === 0) return 'Zero';
         if (num < 20) return a[num];
         if (num < 100) return b[Math.floor(num/10)] + ' ' + a[num%10];
         if (num < 1000) return a[Math.floor(num/100)] + 'Hundred ' + convertNumberToWords(num%100);
@@ -614,6 +740,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (num < 10000000) return convertNumberToWords(Math.floor(num/100000)) + 'Lakh ' + convertNumberToWords(num%100000);
         return convertNumberToWords(Math.floor(num/10000000)) + 'Crore ' + convertNumberToWords(num%10000000);
     }
+
+    // Form validation to enforce 100%
+    document.getElementById('appWebsiteForm').addEventListener('submit', function(e) {
+        Object.values(CKEDITOR.instances).forEach(instance => instance.updateElement());
+        const total = calculatePaymentTotal();
+        if (Math.abs(total - 100) > 0.01) {
+            e.preventDefault();
+            alert('Payment percentages must add up to 100%. Current total: ' + total.toFixed(2) + '%');
+            return false;
+        }
+    });
 });
 </script>
 @endpush

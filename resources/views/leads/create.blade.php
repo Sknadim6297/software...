@@ -69,11 +69,12 @@
                                 <label for="phone_number" class="form-label">Phone Number <span class="text-danger">*</span></label>
                                 <input type="tel" class="form-control @error('phone_number') is-invalid @enderror" 
                                        id="phone_number" name="phone_number" value="{{ old('phone_number') }}" 
-                                       placeholder="9876543210" maxlength="10" required>
+                                       placeholder="9876543210" required>
+                                <input type="hidden" id="phone_number_full" name="phone_number_full">
                                 @error('phone_number')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <small class="text-muted">Enter 10 digit mobile number</small>
+                                <small class="text-muted">Enter mobile number with country code</small>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -278,35 +279,60 @@ document.addEventListener('DOMContentLoaded', function() {
             // Initialize on load (in case of old input)
             toggleProjectTypeOther();
         }
-    // Auto-format phone number
+    
+    // Initialize International Phone Input
     const phoneField = document.getElementById('phone_number');
+    let iti = null;
     
     if (phoneField) {
-        // Allow paste but clean the input
-        phoneField.addEventListener('paste', function(e) {
-            e.preventDefault();
-            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-            const cleaned = pastedText.replace(/\D/g, '');
-            // If more than 10 digits, take last 10
-            const finalValue = cleaned.length > 10 ? cleaned.slice(-10) : cleaned;
-            phoneField.value = finalValue;
-            phoneField.dispatchEvent(new Event('input'));
+        iti = window.intlTelInput(phoneField, {
+            initialCountry: "in",
+            preferredCountries: ["in", "us", "gb"],
+            separateDialCode: false,  // Show dial code inside the input
+            autoPlaceholder: "aggressive",
+            formatOnDisplay: true,
+            nationalMode: false,  // Use international format
+            utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/js/utils.js"
         });
         
-        // Allow only numbers and auto-trim to 10 digits
+        // Format number on input and clear duplicate alert in real-time
         phoneField.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            // Keep only last 10 digits if more
-            if (value.length > 10) {
-                value = value.slice(-10);
+            phoneField.classList.remove('is-invalid');
+            clearContactAlert('phone');
+            // Auto-format the number as user types
+            if (iti.isValidNumber()) {
+                const formattedNumber = iti.getNumber();
+                phoneField.value = formattedNumber;
             }
-            e.target.value = value;
         });
         
         // Real-time duplicate check on blur
         phoneField.addEventListener('blur', function(e) {
-            if (e.target.value) {
-                checkDuplicateContact('phone', e.target.value);
+            if (phoneField.value) {
+                if (iti.isValidNumber()) {
+                    const fullNumber = iti.getNumber(); // E.164 format
+                    document.getElementById('phone_number_full').value = fullNumber;
+                    checkDuplicateContact('phone', fullNumber);
+                } else {
+                    phoneField.classList.add('is-invalid');
+                }
+            }
+        });
+        
+        // On form submit, set the full E.164 number
+        document.querySelector('form').addEventListener('submit', function(e) {
+            if (phoneField.value) {
+                if (iti && iti.isValidNumber()) {
+                    const fullNumber = iti.getNumber();
+                    document.getElementById('phone_number_full').value = fullNumber;
+                    // Also update the main field for backend
+                    phoneField.value = fullNumber;
+                } else {
+                    e.preventDefault();
+                    phoneField.classList.add('is-invalid');
+                    alert('Please enter a valid phone number');
+                    return false;
+                }
             }
         });
     }
@@ -323,6 +349,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Email validation and duplicate check
     const emailField = document.getElementById('email');
     if (emailField) {
+        // Clear duplicate alert as user edits email
+        emailField.addEventListener('input', function(e) {
+            clearContactAlert('email');
+            if (!e.target.value) {
+                e.target.classList.remove('is-invalid');
+            }
+        });
+        
         emailField.addEventListener('blur', function(e) {
             const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (e.target.value && !emailPattern.test(e.target.value)) {

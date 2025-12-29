@@ -79,6 +79,15 @@ Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
     Route::get('reports/leave', [ReportController::class, 'leaveReport'])->name('reports.leave');
     Route::get('reports/performance', [ReportController::class, 'performanceReport'])->name('reports.performance');
     Route::get('reports/attendance', [ReportController::class, 'attendanceReport'])->name('reports.attendance');
+    
+    // Project Management (Admin)
+    Route::prefix('projects')->name('projects.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ProjectController::class, 'index'])->name('index');
+        Route::get('/payments', [\App\Http\Controllers\Admin\ProjectController::class, 'payments'])->name('payments');
+        Route::get('/maintenance', [\App\Http\Controllers\Admin\ProjectController::class, 'maintenance'])->name('maintenance');
+        Route::get('/statistics', [\App\Http\Controllers\Admin\ProjectController::class, 'statistics'])->name('statistics');
+        Route::get('/{project}', [\App\Http\Controllers\Admin\ProjectController::class, 'show'])->name('show');
+    });
 });
 
 // Authentication Routes
@@ -135,12 +144,15 @@ Route::middleware(['auth', 'bdm.check'])->group(function () {
         Route::post('/{lead}/schedule-callback', [LeadController::class, 'scheduleCallback'])->name('schedule-callback');
         Route::post('/{lead}/complete-callback', [LeadController::class, 'completeCallback'])->name('complete-callback');
         Route::post('/{lead}/cancel-callback', [LeadController::class, 'cancelCallback'])->name('cancel-callback');
+        Route::post('/{lead}/postpone-callback', [LeadController::class, 'postponeCallback'])->name('postpone-callback');
         Route::post('/{lead}/schedule-meeting', [LeadController::class, 'scheduleMeeting'])->name('schedule-meeting');
         Route::post('/{lead}/complete-meeting', [LeadController::class, 'completeMeeting'])->name('complete-meeting');
         Route::post('/{lead}/cancel-meeting', [LeadController::class, 'cancelMeeting'])->name('cancel-meeting');
+        Route::patch('/{lead}/update-meeting', [LeadController::class, 'updateMeeting'])->name('update-meeting');
+        Route::post('/{lead}/postpone-meeting', [LeadController::class, 'postponeMeeting'])->name('postpone-meeting');
 
         // Additional Lead Actions
-        Route::post('/{lead}/update-status', [LeadController::class, 'updateStatus'])->name('update-status');
+        Route::patch('/{lead}/update-status', [LeadController::class, 'updateStatus'])->name('update-status');
         Route::post('/{lead}/update-interested-status', [LeadController::class, 'updateInterestedStatus'])->name('update-interested-status');
         Route::post('/{lead}/convert-to-customer', [LeadController::class, 'convertToCustomer'])->name('convert-to-customer');
     });
@@ -255,13 +267,13 @@ Route::middleware(['auth', 'bdm.check'])->group(function () {
         Route::put('/{project}', [ProjectController::class, 'update'])->name('update');
         Route::delete('/{project}', [ProjectController::class, 'destroy'])->name('destroy');
         
-        // Project Actions
-        Route::post('/{project}/take-payment', [ProjectController::class, 'takePayment'])->name('take-payment');
-        Route::post('/{project}/mark-installment-paid', [ProjectController::class, 'markInstallmentPaid'])->name('mark-installment-paid');
+        // Project Payment Actions
+        Route::get('/{project}/take-payment', [ProjectController::class, 'takePayment'])->name('take-payment');
+        Route::post('/{project}/process-payment', [ProjectController::class, 'processPayment'])->name('process-payment');
         
-        // Maintenance Contract
-        Route::get('/{project}/maintenance-contract/create', [ProjectController::class, 'createMaintenanceContract'])->name('maintenance-contract.create');
-        Route::post('/{project}/maintenance-contract/store', [ProjectController::class, 'storeMaintenanceContract'])->name('maintenance-contract.store');
+        // Project Completion
+        Route::get('/{project}/complete', [ProjectController::class, 'complete'])->name('complete');
+        Route::post('/{project}/store-completion', [ProjectController::class, 'storeCompletion'])->name('store-completion');
     });
 
 });

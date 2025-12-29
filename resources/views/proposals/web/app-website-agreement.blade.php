@@ -249,6 +249,121 @@
             font-family: 'Poppins', sans-serif;
         }
 
+        /* Markdown content styling */
+        .agreement-content h1,
+        .agreement-content h2,
+        .agreement-content h3 {
+            margin-top: 18px;
+            margin-bottom: 10px;
+            font-weight: 700;
+            color: #000;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .agreement-content h1 {
+            font-size: 24px;
+            color: #000;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 12px;
+        }
+
+        .agreement-content h2 {
+            font-size: 19px;
+            color: #33973a;
+            margin-top: 18px;
+            margin-bottom: 10px;
+        }
+
+        .agreement-content h3 {
+            font-size: 17px;
+            color: #000;
+            margin-top: 12px;
+            margin-bottom: 8px;
+        }
+
+        .agreement-content p {
+            font-size: 17px;
+            line-height: 1.4;
+            color: #000;
+            text-align: justify;
+            margin-bottom: 10px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .agreement-content ul,
+        .agreement-content ol {
+            margin-left: 25px;
+            margin-bottom: 10px;
+            font-size: 17px;
+            line-height: 1.4;
+            color: #000;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .agreement-content li {
+            margin-bottom: 6px;
+            text-align: justify;
+            color: #000;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .agreement-content strong {
+            font-weight: 700;
+            color: #000;
+        }
+
+        .agreement-content em {
+            font-style: italic;
+        }
+
+        .agreement-content hr {
+            border: none;
+            border-top: 2px solid #33973a;
+            margin: 20px 0;
+        }
+
+        .agreement-content blockquote {
+            border-left: 4px solid #33973a;
+            padding-left: 15px;
+            margin-left: 0;
+            margin-bottom: 10px;
+            font-style: italic;
+            color: #333;
+        }
+
+        /* Contact Information Styling */
+        .agreement-content > p:last-child,
+        .contact-info {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        .contact-info strong,
+        .agreement-content > p:last-child strong {
+            color: #000;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 17px;
+        }
+
+        .contact-info-item {
+            display: block;
+            margin-bottom: 6px;
+            word-break: break-word;
+        }
+
+        .contact-info-item span {
+            margin-right: 8px;
+            font-size: 18px;
+        }
+
         .footer-wrapper {
             position: absolute;
             bottom: 0;
@@ -402,6 +517,14 @@
             .page-header {
                 position: static;
             }
+
+            .contact-info {
+                page-break-inside: avoid;
+            }
+
+            .agreement-content > p:last-child {
+                page-break-inside: avoid;
+            }
         }
     </style>
 </head>
@@ -432,192 +555,176 @@
 
         <div class="content">
             <div class="agreement-content">
-                <h1 class="agreement-title">{{ strtoupper($proposal->project_title) }}</h1>
-
-                <p class="agreement-date">This Agreement is made on {{ \Carbon\Carbon::parse($proposal->created_at)->format('d.m.Y') }}</p>
-
-                <div class="parties-section">
-                    <p class="between-label"><strong>BETWEEN</strong></p>
-
-                    <p class="party-info">
-                        <strong>{{ $proposal->lead->customer_name }},</strong><br>
-                        hereinafter referred to as the "Client",
-                    </p>
-
-                    <p class="between-label"><strong>AND</strong></p>
-
-                    <p class="party-info">
-                        <strong>Konnectix Technologies Pvt. Ltd.,</strong><br>
-                        hereinafter referred to as the "Service Provider."
-                    </p>
-
-                    <p class="parties-collective">
-                        The Client and the Service Provider shall collectively be referred to as the "Parties."
-                    </p>
-                </div>
-
-                <div class="agreement-section">
-                    <h2 class="section-title">1. PURPOSE OF THE AGREEMENT</h2>
-                    <p class="section-content">
-                        The purpose of this Agreement is to define the terms and conditions under which the
-                        Service Provider shall design and develop {{ strtolower($proposal->project_title) }} for the Client.
-                    </p>
-                </div>
-
-                <div class="agreement-section">
-                    <h2 class="section-title">2. SCOPE OF WORK</h2>
-                    <p class="section-content">
-                        The Service Provider agrees to provide the following services:
-                    </p>
-                    <ul class="scope-list">
-                        @if(!empty($proposal->services))
-                            @foreach(json_decode($proposal->services, true) as $service)
-                                <li>{{ $service }}</li>
-                            @endforeach
-                        @endif
-                    </ul>
-                    @if($proposal->additional_features)
-                        <p class="section-content">
-                            <strong>Additional Features:</strong> {{ $proposal->additional_features }}
-                        </p>
-                    @endif
-                    <p class="section-content">
-                        Any features or changes beyond the above scope shall be considered additional work and
-                        charged separately upon mutual agreement.
-                    </p>
-                </div>
-
-                <div class="agreement-section">
-                    <h2 class="section-title">3. PROJECT TIMELINE</h2>
-                    <ul class="section-list">
-                        <li>The project shall commence after receipt of the upfront payment and required materials from the Client</li>
-                        <li>Estimated project completion timeline: {{ $proposal->timeline }}</li>
-                        <li>Any delay due to late content, approvals, or feedback from the Client shall extend the timeline accordingly</li>
-                    </ul>
-                </div>
-
-                <div class="agreement-section">
-                    <h2 class="section-title">4. FEES & PAYMENT TERMS</h2>
-                    <ul class="section-list">
-                        <li><strong>Total Project Cost:</strong> ₹{{ number_format($proposal->total_cost) }} (Rupees {{ ucwords(\App\Helpers\NumberToWords::convert($proposal->total_cost)) }} Only)</li>
-                        <li><strong>Upfront Payment:</strong> {{ $proposal->upfront_percentage }}% of the total amount (₹{{ number_format($proposal->upfront_amount) }}) payable before commencement of work</li>
-                        <li><strong>Final Payment:</strong> {{ $proposal->final_percentage }}% of the total amount (₹{{ number_format($proposal->final_amount) }}) payable after completion of the website and before the website goes live</li>
-                    </ul>
-                    @if($proposal->payment_note)
-                        <p class="section-content">
-                            <strong>Note:</strong> {{ $proposal->payment_note }}
-                        </p>
-                    @endif
-                </div>
-
-                <div class="agreement-section">
-                    <h2 class="section-title">5. DOMAIN & HOSTING</h2>
-                    <ul class="section-list">
-                        <li>The domain name shall be provided by the {{ $proposal->domain_provided_by }}</li>
-                        <li>{{ $proposal->hosting_duration }}</li>
-                        <li>The Service Provider shall not be responsible for delays caused due to domain-related issues from the Client's end</li>
-                    </ul>
-                </div>
-
-                <div class="agreement-section">
-                    <h2 class="section-title">6. CLIENT RESPONSIBILITIES</h2>
-                    <p class="section-content">
-                        The Client agrees to:
-                    </p>
-                    <ul class="section-list">
-                        @if(!empty($proposal->client_responsibilities))
-                            @foreach(json_decode($proposal->client_responsibilities, true) as $responsibility)
-                                <li>{{ $responsibility }}</li>
-                            @endforeach
-                        @endif
-                    </ul>
-                </div>
-
-                <div class="agreement-section">
-                    <h2 class="section-title">7. INTELLECTUAL PROPERTY RIGHTS</h2>
-                    <ul class="section-list">
-                        <li>Ownership of the website/app and related files shall be transferred to the Client only after full payment</li>
-                        <li>The Service Provider retains the right to display the completed project in its portfolio unless restricted in writing</li>
-                    </ul>
-                </div>
-
-                <div class="agreement-section">
-                    <h2 class="section-title">8. WARRANTY & SUPPORT</h2>
-                    <ul class="section-list">
-                        <li>{{ $proposal->support_period }}</li>
-                        <li>{{ $proposal->post_support_charges }}</li>
-                    </ul>
-                </div>
-
-                <div class="agreement-section">
-                    <h2 class="section-title">9. TERMINATION</h2>
-                    <ul class="section-list">
-                        <li>Either Party may terminate this Agreement with written notice</li>
-                        <li>Payments made shall be non-refundable</li>
-                        <li>In case of termination after project commencement, the upfront payment shall be forfeited</li>
-                    </ul>
-                </div>
-
-                <div class="agreement-section">
-                    <h2 class="section-title">10. LIMITATION OF LIABILITY</h2>
-                    <p class="section-content">
-                        The Service Provider shall not be liable for:
-                    </p>
-                    <ul class="section-list">
-                        <li>Any data loss due to third-party hosting or internet service provider issues</li>
-                        <li>Website downtime due to factors beyond our control</li>
-                        <li>Third-party plugin or service failures</li>
-                    </ul>
-                </div>
-
-                <div class="agreement-section">
-                    <h2 class="section-title">11. GOVERNING LAW & JURISDICTION</h2>
-                    <p class="section-content">
-                        This Agreement shall be governed by and construed in accordance with the laws of India,
-                        and courts of Kolkata shall have exclusive jurisdiction.
-                    </p>
-                </div>
-
-                <div class="agreement-section">
-                    <h2 class="section-title">12. ENTIRE AGREEMENT</h2>
-                    <p class="section-content">
-                        This Agreement constitutes the entire understanding between the Parties and supersedes
-                        all prior agreements or understandings, written or oral.
-                    </p>
-                </div>
-
-                @if($proposal->additional_terms)
-                    <div class="agreement-section">
-                        <h2 class="section-title">13. ADDITIONAL TERMS</h2>
-                        <p class="section-content">
-                            {{ $proposal->additional_terms }}
-                        </p>
-                    </div>
-                @endif
-
-                <div class="agreement-section signature-section-wrapper">
-                    <h2 class="section-title">{{ $proposal->additional_terms ? '14' : '13' }}. ACCEPTANCE & SIGNATURES</h2>
-                    <p class="section-content">
-                        By signing below, both Parties agree to the terms and conditions stated herein.
-                    </p>
-
-                    <div class="signature-section">
-                        <div class="signature-block">
-                            <p class="signature-label">For {{ $proposal->lead->customer_name }} (Client)</p>
-                            <p class="signature-detail">Name: {{ $proposal->lead->customer_name }}</p>
-                            <p class="signature-detail">Signature: _____________________</p>
-                            <p class="signature-detail">Date: _____________________</p>
-                        </div>
-
-                        <div class="signature-block">
-                            <p class="signature-label">For Konnectix Technologies Pvt. Ltd. (Service Provider)</p>
-                            <p class="signature-detail">Name: Ishita Banerjee</p>
-                            <p class="signature-detail">Designation: Director</p>
-                            <p class="signature-detail">Signature: _____________________</p>
-                            <p class="signature-detail">Date: {{ \Carbon\Carbon::parse($proposal->created_at)->format('d.m.Y') }}</p>
-                        </div>
-                    </div>
-                </div>
+                @php
+                    // Try to use proposal_content if available
+                    $content = $proposal->proposal_content;
+                    
+                    // If proposal_content is empty or missing, try to reconstruct from metadata
+                    if (empty($content)) {
+                        $metadata = json_decode($proposal->metadata, true) ?? [];
+                        
+                        // Get GST info from proposed_amount if needed
+                        $totalCost = $metadata['total_cost'] ?? $proposal->proposed_amount ?? 0;
+                        $gstPercentage = $metadata['gst_percentage'] ?? 18;
+                        $gstAmount = ($totalCost * $gstPercentage) / 100;
+                        $finalAmount = $totalCost + $gstAmount;
+                        
+                        // Get other fields
+                        $projectTitle = $metadata['project_title'] ?? $proposal->project_description ?? 'APP & WEBSITE DEVELOPMENT';
+                        $projectDescription = $metadata['project_description'] ?? '';
+                        $objectives = $metadata['objectives'] ?? '';
+                        $scopeOfWork = $metadata['scope_of_work'] ?? '';
+                        $timelineWeeks = $metadata['timeline_weeks'] ?? 4;
+                        $supportMonths = $metadata['support_months'] ?? 0;
+                        $domainProvidedBy = $metadata['domain_provided_by'] ?? 'Client';
+                        $hostingDuration = $metadata['hosting_duration'] ?? '';
+                        $clientResponsibilities = $metadata['client_responsibilities'] ?? [];
+                        $paymentDescriptions = $metadata['payment_descriptions'] ?? [];
+                        $paymentPercentages = $metadata['payment_percentages'] ?? [];
+                        $additionalTerms = $metadata['additional_terms'] ?? '';
+                        
+                        // Build payment schedule
+                        $paymentSchedule = "";
+                        if (!empty($paymentDescriptions)) {
+                            foreach ($paymentDescriptions as $index => $description) {
+                                $percentage = $paymentPercentages[$index] ?? 0;
+                                $amount = ($finalAmount * $percentage) / 100;
+                                $paymentSchedule .= "- {$percentage}% {$description} (₹" . number_format($amount) . ")\n";
+                            }
+                        }
+                        
+                        // Reconstruct the full agreement content
+                        $content = "# " . strtoupper($projectTitle) . " AGREEMENT\n\n";
+                        $content .= "This Agreement is made on " . date('d.m.Y') . "\n\n";
+                        
+                        $content .= "**BETWEEN**\n\n";
+                        $content .= "**" . $proposal->lead->customer_name . "**,  \n";
+                        $content .= "hereinafter referred to as the **\"Client\"**,\n\n";
+                        
+                        $content .= "**AND**\n\n";
+                        $content .= "**Konnectix Technologies Pvt. Ltd.**,  \n";
+                        $content .= "hereinafter referred to as the **\"Service Provider.\"**\n\n";
+                        
+                        $content .= "The Client and the Service Provider shall collectively be referred to as the **\"Parties.\"**\n\n";
+                        $content .= "---\n\n";
+                        
+                        $content .= "## 1. PURPOSE OF THE AGREEMENT\n\n";
+                        $content .= "The purpose of this Agreement is to define the terms and conditions under which the Service Provider shall design and develop a " . $projectTitle . " for the Client.\n\n";
+                        
+                        if (!empty($projectDescription)) {
+                            $content .= "## 1.1 PROJECT OVERVIEW\n\n" . $projectDescription . "\n\n";
+                        }
+                        
+                        if (!empty($objectives)) {
+                            $content .= "## 1.2 OBJECTIVES\n\n" . $objectives . "\n\n";
+                        }
+                        
+                        $content .= "## 2. SCOPE OF WORK\n\n";
+                        $content .= "The Service Provider agrees to provide the following services:\n\n";
+                        
+                        if (!empty($scopeOfWork)) {
+                            $content .= $scopeOfWork . "\n\n";
+                        } else {
+                            $content .= "- Professional website/app design and development\n";
+                            $content .= "- Responsive design for all devices\n";
+                            $content .= "- User-friendly interface\n\n";
+                        }
+                        
+                        $content .= "**Note:** Any features or changes beyond the above scope shall be considered additional work and charged separately upon mutual agreement.\n\n";
+                        
+                        $content .= "## 3. PROJECT TIMELINE\n\n";
+                        $content .= "- The project shall commence after receipt of the initial payment and required materials from the Client\n";
+                        $content .= "- Estimated project completion timeline: **" . $timelineWeeks . " weeks**\n";
+                        $content .= "- Any delay due to late content, approvals, or feedback from the Client shall extend the timeline accordingly\n\n";
+                        
+                        $content .= "## 4. FEES & PAYMENT TERMS\n\n";
+                        $content .= "- **Base Project Cost:** ₹" . number_format($totalCost) . "\n";
+                        $content .= "- **GST (" . $gstPercentage . "%):** ₹" . number_format($gstAmount) . "/-\n";
+                        $content .= "- **Total Project Cost:** ₹" . number_format($finalAmount) . "\n\n";
+                        
+                        if (!empty($paymentSchedule)) {
+                            $content .= "**Payment Schedule:**\n" . $paymentSchedule . "\n";
+                        }
+                        
+                        $content .= "The website/app shall not be made live until the full and final payment is received.\n\n";
+                        
+                        $content .= "## 5. DOMAIN & HOSTING\n\n";
+                        $content .= "- The domain name shall be provided by the **" . $domainProvidedBy . "**\n";
+                        if (!empty($hostingDuration)) {
+                            $content .= "- " . $hostingDuration . "\n";
+                        }
+                        $content .= "- The Service Provider shall not be responsible for delays caused due to domain-related issues from the Client's end\n\n";
+                        
+                        $content .= "## 6. CLIENT RESPONSIBILITIES\n\n";
+                        $content .= "The Client agrees to:\n";
+                        if (!empty($clientResponsibilities)) {
+                            foreach ($clientResponsibilities as $responsibility) {
+                                $content .= "- " . $responsibility . "\n";
+                            }
+                        } else {
+                            $content .= "- Provide all necessary content and materials\n";
+                            $content .= "- Ensure timely approvals and feedback\n";
+                        }
+                        $content .= "\n";
+                        
+                        $content .= "## 7. INTELLECTUAL PROPERTY RIGHTS\n\n";
+                        $content .= "- Ownership of the website/app and related files shall be transferred to the Client only after full payment\n";
+                        $content .= "- The Service Provider retains the right to display the completed project in its portfolio unless restricted in writing\n\n";
+                        
+                        $content .= "## 8. WARRANTY & SUPPORT\n\n";
+                        if ($supportMonths > 0) {
+                            $content .= "- The Service Provider shall provide " . $supportMonths . " months of technical support and maintenance from the date of project completion\n";
+                        } else {
+                            $content .= "- Technical support and maintenance shall be provided as mutually agreed upon\n";
+                        }
+                        $content .= "- Support shall include bug fixes, minor updates, and server-related issues\n";
+                        $content .= "- Additional support beyond the stipulated period shall be charged separately\n\n";
+                        
+                        $content .= "## 9. TERMINATION\n\n";
+                        $content .= "- Either Party may terminate this Agreement with written notice\n";
+                        $content .= "- Payments made shall be non-refundable\n";
+                        $content .= "- In case of termination after project commencement, the initial payment shall be forfeited\n\n";
+                        
+                        $content .= "## 10. LIMITATION OF LIABILITY\n\n";
+                        $content .= "The Service Provider shall not be liable for:\n";
+                        $content .= "- Downtime or failure caused by third-party services including domain registrars and hosting providers\n";
+                        $content .= "- Any indirect loss of business, revenue, or data\n\n";
+                        
+                        $content .= "## 11. GOVERNING LAW & JURISDICTION\n\n";
+                        $content .= "This Agreement shall be governed by and construed in accordance with the laws of India, and courts of Kolkata shall have exclusive jurisdiction.\n\n";
+                        
+                        $content .= "## 12. ENTIRE AGREEMENT\n\n";
+                        $content .= "This Agreement constitutes the entire understanding between the Parties and supersedes all prior discussions or communications.\n";
+                        
+                        if (!empty($additionalTerms)) {
+                            $content .= "\n## 13. ADDITIONAL TERMS\n\n" . $additionalTerms . "\n";
+                        }
+                        
+                        $content .= "\n---\n\n";
+                        $content .= "## " . (!empty($additionalTerms) ? "14" : "13") . ". ACCEPTANCE & SIGNATURES\n\n";
+                        $content .= "By signing below, both Parties agree to the terms and conditions stated herein.\n\n";
+                        $content .= "**For " . $proposal->lead->customer_name . " (Client)**  \n";
+                        $content .= "Name: " . $proposal->lead->customer_name . "  \n";
+                        $content .= "Signature: _________________  \n";
+                        $content .= "Date: _________________\n\n";
+                        
+                        $content .= "**For Konnectix Technologies Pvt. Ltd. (Service Provider)**  \n";
+                        $content .= "Name: Ishita Banerjee  \n";
+                        $content .= "Designation: Director  \n";
+                        $content .= "Signature: _________________  \n";
+                        $content .= "Date: " . date('d.m.Y') . "\n\n";
+                        
+                        $content .= "---\n\n";
+                        $content .= "**Contact Information:**  \n";
+                        $content .= "Konnectix Technologies Pvt. Ltd.  \n";
+                        $content .= "📞 7003228913 / 9123354003  \n";
+                        $content .= "✉ info@konnectixtech.com  \n";
+                        $content .= "🌐 www.konnectixtech.com  \n";
+                        $content .= "📍 Dum Dum, Kolkata - 700 074";
+                    }
+                @endphp
+                
+                {!! \Illuminate\Support\Str::markdown($content) !!}
             </div>
         </div>
 

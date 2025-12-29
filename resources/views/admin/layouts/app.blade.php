@@ -284,6 +284,30 @@
                         </ul>
                     </li>
                     
+                    <li class="{{ request()->routeIs('admin.projects.*') ? 'mm-active' : '' }}">
+                        <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
+                            <i class="flaticon-381-settings-1"></i>
+                            <span class="nav-text">Project Management</span>
+                        </a>
+                        <ul aria-expanded="false">
+                            <li><a href="{{ route('admin.projects.index') }}">
+                                <i class="flaticon-381-list text-primary me-2"></i>All Projects
+                            </a></li>
+                            <li><a href="{{ route('admin.projects.index', ['status' => 'in-progress']) }}">
+                                <i class="flaticon-381-loading text-warning me-2"></i>In Progress
+                            </a></li>
+                            <li><a href="{{ route('admin.projects.index', ['status' => 'completed']) }}">
+                                <i class="flaticon-381-success text-success me-2"></i>Completed
+                            </a></li>
+                            <li><a href="{{ route('admin.projects.payments') }}">
+                                <i class="flaticon-381-coin text-info me-2"></i>Payment Tracking
+                            </a></li>
+                            <li><a href="{{ route('admin.projects.maintenance') }}">
+                                <i class="flaticon-381-heart text-danger me-2"></i>Maintenance Contracts
+                            </a></li>
+                        </ul>
+                    </li>
+                    
                     <li class="{{ request()->routeIs('admin.reports.*') ? 'mm-active' : '' }}">
                         <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
                             <i class="flaticon-381-notepad"></i>

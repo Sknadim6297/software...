@@ -46,6 +46,7 @@
                                         <label for="customer_phone">Phone *</label>
                                         <input type="tel" class="form-control @error('customer_phone') is-invalid @enderror" 
                                                id="customer_phone" name="customer_phone" value="{{ old('customer_phone', $lead->customer_phone) }}" required>
+                                        <input type="hidden" id="customer_phone_full" name="customer_phone_full">
                                         @error('customer_phone')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -374,6 +375,62 @@
 <script>
 // Toggle Other source input in Edit form
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize International Phone Input
+    const phoneField = document.getElementById('customer_phone');
+    let iti = null;
+    
+    if (phoneField) {
+        iti = window.intlTelInput(phoneField, {
+            initialCountry: "in",
+            preferredCountries: ["in", "us", "gb"],
+            separateDialCode: false,  // Show dial code inside the input
+            autoPlaceholder: "aggressive",
+            formatOnDisplay: true,
+            nationalMode: false,  // Use international format
+            utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/js/utils.js"
+        });
+        
+        // Format number on input
+        phoneField.addEventListener('input', function(e) {
+            phoneField.classList.remove('is-invalid');
+            // Auto-format the number as user types
+            if (iti.isValidNumber()) {
+                const formattedNumber = iti.getNumber();
+                phoneField.value = formattedNumber;
+            }
+        });
+        
+        // Real-time duplicate check on blur
+        phoneField.addEventListener('blur', function(e) {
+            if (phoneField.value) {
+                if (iti.isValidNumber()) {
+                    const fullNumber = iti.getNumber(); // E.164 format
+                    document.getElementById('customer_phone_full').value = fullNumber;
+                    checkDuplicateContact('phone', fullNumber, {{ $lead->id }});
+                } else {
+                    phoneField.classList.add('is-invalid');
+                }
+            }
+        });
+        
+        // On form submit, set the full E.164 number
+        document.querySelector('form').addEventListener('submit', function(e) {
+            if (phoneField.value) {
+                if (iti && iti.isValidNumber()) {
+                    const fullNumber = iti.getNumber();
+                    document.getElementById('customer_phone_full').value = fullNumber;
+                    // Also update the main field for backend
+                    phoneField.value = fullNumber;
+                } else {
+                    e.preventDefault();
+                    phoneField.classList.add('is-invalid');
+                    alert('Please enter a valid phone number');
+                    return false;
+                }
+            }
+        });
+    }
+
     var sourceSelect = document.getElementById('source');
     var otherGroup = document.getElementById('source_other_group');
     var otherInput = document.getElementById('source_other');
@@ -588,6 +645,16 @@ function clearContactAlert(type) {
         if (meetingTime) {
             checkMeetingAvailability(meetingTime);
         }
+    });
+
+    // Clear duplicate alerts while editing phone/email
+    document.getElementById('customer_phone').addEventListener('input', function() {
+        clearContactAlert('phone');
+        this.classList.remove('is-invalid');
+    });
+    document.getElementById('customer_email').addEventListener('input', function() {
+        clearContactAlert('email');
+        this.classList.remove('is-invalid');
     });
 
     // Check for duplicate phone number

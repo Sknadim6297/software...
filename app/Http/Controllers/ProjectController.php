@@ -7,11 +7,15 @@ use App\Models\ProjectInstallment;
 use App\Models\MaintenanceContract;
 use App\Models\Customer;
 use App\Models\User;
+use App\Models\BDM;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\Contract;
 use App\Mail\PaymentRequestMail;
 use App\Mail\MaintenanceContractMail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 
@@ -20,11 +24,25 @@ class ProjectController extends Controller
     /**
      * Display a listing of the projects.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $projects = Project::with(['customer', 'coordinator'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        $query = Project::with(['customer', 'coordinator', 'bdm']);
+
+        // Filter by status
+        if ($request->has('status')) {
+            if ($request->status === 'in-progress') {
+                $query->inProgress();
+            } elseif ($request->status === 'completed') {
+                $query->completed();
+            }
+        }
+
+        // Filter by BDM (if not admin)
+        if (Auth::user()->bdm) {
+            $query->where('bdm_id', Auth::user()->bdm->id);
+        }
+
+        $projects = $query->latest()->paginate(15);
         
         return view('projects.index', compact('projects'));
     }
@@ -45,7 +63,10 @@ class ProjectController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'customer_id' => 'required|exists:customers,id',
+            'customer_id' => 'nullable|exists:customers,id',
+            'customer_name' => 'required|string|max:255',
+            'customer_mobile' => 'required|string|max:20',
+            'customer_email' => 'nullable|email',
             'project_name' => 'required|string|max:255',
             'project_type' => 'required|in:Website,Software,Application',
             'start_date' => 'required|date',
@@ -54,43 +75,24 @@ class ProjectController extends Controller
             'first_installment' => 'nullable|numeric|min:0',
             'second_installment' => 'nullable|numeric|min:0',
             'third_installment' => 'nullable|numeric|min:0',
-            'project_coordinator_id' => 'required|exists:users,id',
+            'project_coordinator_id' => 'nullable|exists:users,id',
+            'project_coordinator' => 'nullable|string|max:255',
+            'notes' => 'nullable|string'
         ]);
+
+        // Add BDM ID
+        if (Auth::user()->bdm) {
+            $validated['bdm_id'] = Auth::user()->bdm->id;
+        }
+
+        $validated['status'] = 'In Progress';
+        $validated['project_status'] = 'In Progress';
+        $validated['project_start_date'] = $validated['start_date'];
 
         $project = Project::create($validated);
 
-        // Create installment records
-        if ($validated['upfront_payment'] > 0) {
-            ProjectInstallment::create([
-                'project_id' => $project->id,
-                'installment_type' => 'Upfront',
-                'amount' => $validated['upfront_payment'],
-            ]);
-        }
-        if ($validated['first_installment'] > 0) {
-            ProjectInstallment::create([
-                'project_id' => $project->id,
-                'installment_type' => 'First',
-                'amount' => $validated['first_installment'],
-            ]);
-        }
-        if ($validated['second_installment'] > 0) {
-            ProjectInstallment::create([
-                'project_id' => $project->id,
-                'installment_type' => 'Second',
-                'amount' => $validated['second_installment'],
-            ]);
-        }
-        if ($validated['third_installment'] > 0) {
-            ProjectInstallment::create([
-                'project_id' => $project->id,
-                'installment_type' => 'Third',
-                'amount' => $validated['third_installment'],
-            ]);
-        }
-
-        return redirect()->route('projects.index')
-            ->with('success', 'Project created successfully.');
+        return redirect()->route('projects.show', $project->id)
+            ->with('success', 'Project created successfully!');
     }
 
     /**
@@ -98,7 +100,7 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
-        $project->load(['customer', 'coordinator', 'installments', 'maintenanceContract']);
+        $project->load(['customer', 'coordinator', 'bdm', 'invoices', 'maintenanceContract']);
         return view('projects.show', compact('project'));
     }
 
@@ -118,7 +120,10 @@ class ProjectController extends Controller
     public function update(Request $request, Project $project)
     {
         $validated = $request->validate([
-            'customer_id' => 'required|exists:customers,id',
+            'customer_id' => 'nullable|exists:customers,id',
+            'customer_name' => 'required|string|max:255',
+            'customer_mobile' => 'required|string|max:20',
+            'customer_email' => 'nullable|email',
             'project_name' => 'required|string|max:255',
             'project_type' => 'required|in:Website,Software,Application',
             'start_date' => 'required|date',
@@ -127,14 +132,16 @@ class ProjectController extends Controller
             'first_installment' => 'nullable|numeric|min:0',
             'second_installment' => 'nullable|numeric|min:0',
             'third_installment' => 'nullable|numeric|min:0',
-            'project_coordinator_id' => 'required|exists:users,id',
-            'project_status' => 'required|in:In Progress,Completed',
+            'project_coordinator' => 'nullable|string|max:255',
+            'notes' => 'nullable|string'
         ]);
+
+        $validated['project_start_date'] = $validated['start_date'];
 
         $project->update($validated);
 
-        return redirect()->route('projects.index')
-            ->with('success', 'Project updated successfully.');
+        return redirect()->route('projects.show', $project->id)
+            ->with('success', 'Project updated successfully!');
     }
 
     /**
@@ -153,55 +160,204 @@ class ProjectController extends Controller
      */
     public function takePayment(Project $project)
     {
-        $nextInstallment = $project->getNextInstallment();
+        $nextInstallment = $project->next_pending_installment;
         
         if (!$nextInstallment) {
             return redirect()->back()
                 ->with('error', 'All installments have been paid.');
         }
 
-        // Create invoice for the installment
-        $invoice = Invoice::create([
-            'customer_id' => $project->customer_id,
-            'invoice_number' => Invoice::generateInvoiceNumber('tax_invoice'),
-            'invoice_type' => 'tax_invoice',
-            'invoice_date' => Carbon::now(),
-            'due_date' => Carbon::now()->addDays(15),
-            'payment_status' => 'unpaid',
-            'subtotal' => $nextInstallment['amount'],
-            'tax_total' => 0,
-            'grand_total' => $nextInstallment['amount'],
-            'notes' => "Project: {$project->project_name} - {$nextInstallment['type']} Installment",
+        return view('projects.take-payment', compact('project', 'nextInstallment'));
+    }
+
+    /**
+     * Process Payment
+     */
+    public function processPayment(Request $request, Project $project)
+    {
+        $validated = $request->validate([
+            'installment_type' => 'required|in:upfront,first,second,third',
+            'payment_date' => 'required|date',
+            'payment_method' => 'nullable|string',
+            'transaction_reference' => 'nullable|string'
         ]);
 
-        // Create invoice item
-        InvoiceItem::create([
-            'invoice_id' => $invoice->id,
-            'product_description' => "{$project->project_name} - {$nextInstallment['type']} Installment Payment",
-            'quantity' => 1,
-            'rate' => $nextInstallment['amount'],
-            'total_amount' => $nextInstallment['amount'],
-        ]);
-
-        // Update installment record
-        $installment = ProjectInstallment::where('project_id', $project->id)
-            ->where('installment_type', $nextInstallment['type'])
-            ->first();
-        
-        if ($installment) {
-            $installment->update(['invoice_id' => $invoice->id]);
-        }
-
-        // Send payment request email
+        DB::beginTransaction();
         try {
-            Mail::to($project->customer->email)
-                ->send(new PaymentRequestMail($project, $invoice, $nextInstallment));
+            $installmentType = $validated['installment_type'];
+            $paymentDate = $validated['payment_date'];
+
+            // Mark installment as paid
+            $project->{$installmentType . '_paid'} = true;
+            $project->{$installmentType . '_paid_date'} = $paymentDate;
+
+            // Get installment amount
+            $amount = $project->{$installmentType . '_payment'};
+            if ($installmentType != 'upfront') {
+                $amount = $project->{$installmentType . '_installment'};
+            }
+
+            // Generate Invoice
+            $invoice = Invoice::create([
+                'customer_id' => $project->customer_id,
+                'project_id' => $project->id,
+                'invoice_number' => 'INV-' . strtoupper(uniqid()),
+                'invoice_date' => $paymentDate,
+                'due_date' => $paymentDate,
+                'subtotal' => $amount,
+                'tax' => $amount * 0.18, // 18% GST
+                'total_amount' => $amount * 1.18,
+                'status' => 'paid',
+                'payment_status' => 'Paid',
+                'paid_date' => $paymentDate,
+                'payment_method' => $validated['payment_method'] ?? 'Cash',
+                'notes' => ucfirst($installmentType) . ' payment for ' . $project->project_name
+            ]);
+
+            // Store invoice ID in project
+            $invoices = $project->payment_invoices ?? [];
+            $invoices[$installmentType] = $invoice->id;
+            $project->payment_invoices = $invoices;
+
+            // Check if all payments completed
+            if ($project->is_fully_paid) {
+                $project->status = 'Completed';
+                $project->project_status = 'Completed';
+            }
+
+            $project->save();
+
+            DB::commit();
+
+            // If fully paid, redirect to completion form
+            if ($project->is_fully_paid) {
+                return redirect()->route('projects.complete', $project->id)
+                    ->with('success', 'Final payment received! Please complete project details.');
+            }
+
+            return redirect()->route('projects.show', $project->id)
+                ->with('success', 'Payment processed successfully! Invoice #' . $invoice->invoice_number . ' generated.');
+
         } catch (\Exception $e) {
-            // Continue even if email fails
+            DB::rollBack();
+            return back()->with('error', 'Payment processing failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Show completion form (for domain, hosting, and maintenance)
+     */
+    public function complete(Project $project)
+    {
+        if (!$project->is_fully_paid) {
+            return redirect()->route('projects.show', $project->id)
+                ->with('error', 'Project must be fully paid before completion.');
         }
 
-        return redirect()->route('projects.show', $project)
-            ->with('success', 'Invoice generated and sent to customer for ' . $nextInstallment['type'] . ' installment.');
+        return view('projects.complete', compact('project'));
+    }
+
+    /**
+     * Store completion details and create maintenance contract
+     */
+    public function storeCompletion(Request $request, Project $project)
+    {
+        $validated = $request->validate([
+            'domain_name' => 'nullable|string|max:255',
+            'domain_purchase_date' => 'nullable|date',
+            'domain_amount' => 'nullable|numeric|min:0',
+            'domain_renewal_cycle' => 'nullable|in:Monthly,Yearly',
+            'domain_renewal_date' => 'nullable|date',
+            'hosting_provider' => 'nullable|string|max:255',
+            'hosting_purchase_date' => 'nullable|date',
+            'hosting_amount' => 'nullable|numeric|min:0',
+            'hosting_renewal_cycle' => 'nullable|in:Monthly,Yearly',
+            'hosting_renewal_date' => 'nullable|date',
+            'maintenance_enabled' => 'required|boolean',
+            'maintenance_type' => 'required_if:maintenance_enabled,1|in:Free,Chargeable',
+            'maintenance_months' => 'required_if:maintenance_type,Free|nullable|integer|min:1',
+            'maintenance_charge' => 'required_if:maintenance_type,Chargeable|nullable|numeric|min:0',
+            'maintenance_billing_cycle' => 'required_if:maintenance_type,Chargeable|nullable|in:Monthly,Quarterly,Annually'
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Update project with domain/hosting details
+            $project->update($validated);
+            $project->status = 'Completed';
+            $project->project_status = 'Completed';
+            $project->save();
+
+            // Create Maintenance Contract if enabled
+            if ($validated['maintenance_enabled']) {
+                $this->createMaintenanceContract($project, $validated);
+            }
+
+            DB::commit();
+
+            return redirect()->route('projects.show', $project->id)
+                ->with('success', 'Project completed successfully! Maintenance contract has been created.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Completion failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Create Maintenance Contract
+     */
+    private function createMaintenanceContract(Project $project, array $data)
+    {
+        $startDate = Carbon::now();
+        $endDate = null;
+
+        if ($data['maintenance_type'] === 'Free') {
+            $endDate = $startDate->copy()->addMonths($data['maintenance_months']);
+        }
+
+        // Create Contract
+        $contract = Contract::create([
+            'customer_id' => $project->customer_id,
+            'project_id' => $project->id,
+            'contract_type' => 'Maintenance',
+            'contract_number' => 'MC-' . strtoupper(uniqid()),
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'total_amount' => $data['maintenance_type'] === 'Free' ? 0 : $data['maintenance_charge'],
+            'payment_terms' => $data['maintenance_type'] === 'Free' 
+                ? 'Free maintenance for ' . $data['maintenance_months'] . ' months'
+                : 'Chargeable - ' . $data['maintenance_billing_cycle'],
+            'status' => 'active',
+            'terms_and_conditions' => 'Standard maintenance terms apply.'
+        ]);
+
+        // Update project with contract ID
+        $project->maintenance_contract_id = $contract->id;
+        $project->maintenance_start_date = $startDate;
+        $project->save();
+
+        // If chargeable, create invoice
+        if ($data['maintenance_type'] === 'Chargeable') {
+            $amount = $data['maintenance_charge'];
+            
+            Invoice::create([
+                'customer_id' => $project->customer_id,
+                'project_id' => $project->id,
+                'contract_id' => $contract->id,
+                'invoice_number' => 'INV-MC-' . strtoupper(uniqid()),
+                'invoice_date' => Carbon::now(),
+                'due_date' => Carbon::now()->addDays(30),
+                'subtotal' => $amount,
+                'tax' => $amount * 0.18,
+                'total_amount' => $amount * 1.18,
+                'status' => 'pending',
+                'payment_status' => 'Pending',
+                'notes' => 'Maintenance contract - ' . $data['maintenance_billing_cycle'] . ' billing'
+            ]);
+        }
+
+        return $contract;
     }
 
     /**
@@ -260,104 +416,5 @@ class ProjectController extends Controller
 
         return redirect()->route('projects.show', $project)
             ->with('success', 'Installment marked as paid successfully.');
-    }
-
-    /**
-     * Show form to create maintenance contract.
-     */
-    public function createMaintenanceContract(Project $project)
-    {
-        if ($project->project_status !== 'Completed') {
-            return redirect()->route('projects.show', $project)
-                ->with('error', 'Project must be completed before creating maintenance contract.');
-        }
-
-        if ($project->maintenanceContract) {
-            return redirect()->route('projects.show', $project)
-                ->with('error', 'Maintenance contract already exists for this project.');
-        }
-
-        return view('projects.maintenance-contract', compact('project'));
-    }
-
-    /**
-     * Store maintenance contract.
-     */
-    public function storeMaintenanceContract(Request $request, Project $project)
-    {
-        $validated = $request->validate([
-            'contract_type' => 'required|in:Free,Chargeable',
-            'free_months' => 'required_if:contract_type,Free|nullable|integer|min:1',
-            'charges' => 'required_if:contract_type,Chargeable|nullable|numeric|min:0',
-            'charge_frequency' => 'required_if:contract_type,Chargeable|nullable|in:Monthly,Quarterly,Annually',
-            'domain_purchase_date' => 'nullable|date',
-            'domain_amount' => 'nullable|numeric|min:0',
-            'domain_renewal_date' => 'nullable|date|after:domain_purchase_date',
-            'hosting_purchase_date' => 'nullable|date',
-            'hosting_amount' => 'nullable|numeric|min:0',
-            'hosting_renewal_date' => 'nullable|date|after:hosting_purchase_date',
-        ]);
-
-        $contractStartDate = Carbon::now();
-        $contractEndDate = null;
-
-        if ($validated['contract_type'] === 'Free') {
-            $contractEndDate = $contractStartDate->copy()->addMonths($validated['free_months']);
-        }
-
-        $maintenanceContract = MaintenanceContract::create([
-            'project_id' => $project->id,
-            'customer_id' => $project->customer_id,
-            'contract_type' => $validated['contract_type'],
-            'free_months' => $validated['free_months'] ?? null,
-            'charges' => $validated['charges'] ?? null,
-            'charge_frequency' => $validated['charge_frequency'] ?? null,
-            'domain_purchase_date' => $validated['domain_purchase_date'] ?? null,
-            'domain_amount' => $validated['domain_amount'] ?? null,
-            'domain_renewal_date' => $validated['domain_renewal_date'] ?? null,
-            'hosting_purchase_date' => $validated['hosting_purchase_date'] ?? null,
-            'hosting_amount' => $validated['hosting_amount'] ?? null,
-            'hosting_renewal_date' => $validated['hosting_renewal_date'] ?? null,
-            'contract_start_date' => $contractStartDate,
-            'contract_end_date' => $contractEndDate,
-            'status' => 'Active',
-        ]);
-
-        // Create invoice for chargeable maintenance
-        if ($validated['contract_type'] === 'Chargeable') {
-            $invoice = Invoice::create([
-                'customer_id' => $project->customer_id,
-                'invoice_number' => Invoice::generateInvoiceNumber('tax_invoice'),
-                'invoice_type' => 'tax_invoice',
-                'invoice_date' => Carbon::now(),
-                'due_date' => Carbon::now()->addDays(15),
-                'payment_status' => 'unpaid',
-                'subtotal' => $validated['charges'],
-                'tax_total' => 0,
-                'grand_total' => $validated['charges'],
-                'notes' => "Maintenance Contract: {$project->project_name}",
-            ]);
-
-            InvoiceItem::create([
-                'invoice_id' => $invoice->id,
-                'product_description' => "{$project->project_name} - {$validated['charge_frequency']} Maintenance",
-                'quantity' => 1,
-                'rate' => $validated['charges'],
-                'total_amount' => $validated['charges'],
-            ]);
-
-            $maintenanceContract->update(['invoice_id' => $invoice->id]);
-
-            // Send email to admin and customer
-            try {
-                Mail::to($project->customer->email)
-                    ->send(new MaintenanceContractMail($maintenanceContract, $invoice));
-            } catch (\Exception $e) {
-                // Continue even if email fails
-            }
-        }
-
-        return redirect()->route('projects.show', $project)
-            ->with('success', 'Maintenance contract created successfully.');
     }
 }

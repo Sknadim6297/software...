@@ -345,21 +345,36 @@ class LeadController extends Controller
             'meeting_summary.required_if' => 'Meeting summary is required for Calendar status.',
         ]);
 
-        // Normalize phone number - remove country code prefixes and keep only 10 digits
-        $phoneNumber = preg_replace('/\D/', '', $validated['phone_number']); // Remove non-digits
-        // If starts with 91 and is 12 digits, remove the 91 prefix
-        if (strlen($phoneNumber) === 12 && substr($phoneNumber, 0, 2) === '91') {
-            $phoneNumber = substr($phoneNumber, 2);
+        // Handle phone number - accept E.164 format or normalize it
+        $phoneNumber = $validated['phone_number'];
+        
+        // If it's already in E.164 format (starts with +), keep it
+        if (substr($phoneNumber, 0, 1) !== '+') {
+            // Otherwise, normalize it
+            $phoneNumber = preg_replace('/\D/', '', $phoneNumber); // Remove non-digits
+            // If starts with 91 and is 12 digits, remove the 91 prefix
+            if (strlen($phoneNumber) === 12 && substr($phoneNumber, 0, 2) === '91') {
+                $phoneNumber = substr($phoneNumber, 2);
+            }
+            // Keep only last 10 digits
+            if (strlen($phoneNumber) > 10) {
+                $phoneNumber = substr($phoneNumber, -10);
+            }
+            // Add +91 prefix for storage
+            $phoneNumber = '+91' . $phoneNumber;
         }
-        // Keep only last 10 digits
-        if (strlen($phoneNumber) > 10) {
-            $phoneNumber = substr($phoneNumber, -10);
-        }
+        
         $validated['phone_number'] = $phoneNumber;
 
-        // Check for duplicate phone number - search for phone ending with these 10 digits
-        $existingLead = Lead::where('phone_number', 'LIKE', '%' . $phoneNumber)->first();
-        $existingCustomer = Customer::where('phone_number', 'LIKE', '%' . $phoneNumber)->first();
+        // Check for duplicate phone number - normalize and compare
+        $normalizedForCheck = preg_replace('/\D/', '', $phoneNumber);
+        // Take last 10 digits for comparison
+        if (strlen($normalizedForCheck) > 10) {
+            $normalizedForCheck = substr($normalizedForCheck, -10);
+        }
+        
+        $existingLead = Lead::where('phone_number', 'LIKE', '%' . $normalizedForCheck)->first();
+        $existingCustomer = Customer::where('number', 'LIKE', '%' . $normalizedForCheck)->first();
         
         if ($existingLead) {
             return redirect()->back()
@@ -830,7 +845,7 @@ class LeadController extends Controller
 
         // Check in customers table
         if ($type === 'phone') {
-            $customerQuery = Customer::where('phone_number', 'LIKE', '%' . $value);
+            $customerQuery = Customer::where('number', 'LIKE', '%' . $value);
         } else {
             $customerQuery = Customer::where('email', $value);
         }
@@ -869,8 +884,8 @@ class LeadController extends Controller
     public function updateStatus(Request $request, Lead $lead)
     {
         $request->validate([
-            'status' => 'required|string|in:pending,contacted,callback_scheduled,did_not_receive,not_required,meeting_scheduled,not_interested,interested,qualified,converted,rejected',
-            'notes' => 'nullable|string|max:500',
+            'status' => 'required|string|in:new,pending,contacted,callback_scheduled,did_not_receive,not_required,meeting_scheduled,not_interested,interested,qualified,proposal_sent,negotiation,won,lost,converted,rejected',
+            'remarks' => 'nullable|string|max:500',
             'not_interested_reason' => 'nullable|required_if:status,not_interested|string|max:500'
         ]);
 
@@ -886,17 +901,22 @@ class LeadController extends Controller
             $updateData['not_interested_reason'] = $request->not_interested_reason;
         }
         
-        // Update remarks/notes if provided
-        if ($request->has('notes') && !empty($request->notes)) {
-            $updateData['remarks'] = $request->notes;
+        // Update remarks if provided
+        if ($request->has('remarks') && !empty($request->remarks)) {
+            $updateData['remarks'] = $request->remarks;
         }
         
         $lead->update($updateData);
         
-        return response()->json([
-            'success' => true, 
-            'message' => 'Status updated successfully!'
-        ]);
+        // Check if it's an AJAX request
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true, 
+                'message' => 'Status updated successfully!'
+            ]);
+        }
+        
+        return redirect()->back()->with('success', 'Status updated successfully!');
     }
 
     /**
@@ -1040,20 +1060,16 @@ class LeadController extends Controller
                 'confirmed_email' => 'required|email|max:255',
                 'has_gst' => 'required|string|in:yes,no',
                 'gst_number' => 'nullable|required_if:has_gst,yes|string|max:15',
-                'wants_gst' => 'required|string|in:yes,no',
-                'invoice_gst_number' => 'nullable|required_if:wants_gst,yes|string|max:15',
-                'gst_email' => 'nullable|required_if:wants_gst,yes|email|max:255'
+                'wants_gst' => 'required|string|in:yes,no'
             ]);
 
             // Update the lead with interested status and GST information
             $lead->update([
                 'status' => 'interested',
-                'customer_email' => $validated['confirmed_email'], // Update/confirm email
+                'email' => $validated['confirmed_email'], // Update/confirm email
                 'has_gst' => $validated['has_gst'],
-                'gst_number' => $validated['gst_number'],
+                'gst_number' => $validated['gst_number'] ?? null,
                 'wants_gst' => $validated['wants_gst'],
-                'invoice_gst_number' => $validated['invoice_gst_number'],
-                'gst_email' => $validated['gst_email'],
                 'updated_at' => now()
             ]);
 
@@ -1073,5 +1089,76 @@ class LeadController extends Controller
                 'message' => 'Failed to update lead status. Please try again.'
             ], 500);
         }
+    }
+
+    /**
+     * Postpone a scheduled callback
+     */
+    public function postponeCallback(Request $request, Lead $lead)
+    {
+        $request->validate([
+            'callback_time' => 'required|date|after:now',
+            'postpone_reason' => 'nullable|string|max:500'
+        ]);
+
+        $notes = $lead->call_notes ?? '';
+        if ($request->postpone_reason) {
+            $notes .= ($notes ? "\n\n" : '') . now()->format('Y-m-d H:i') . ' - Postponed: ' . $request->postpone_reason;
+        }
+
+        $lead->update([
+            'callback_time' => $request->callback_time,
+            'call_notes' => $notes,
+            'callback_completed' => false
+        ]);
+
+        return redirect()->back()->with('success', 'Callback postponed successfully!');
+    }
+
+    /**
+     * Update meeting details
+     */
+    public function updateMeeting(Request $request, Lead $lead)
+    {
+        $request->validate([
+            'meeting_time' => 'required|date',
+            'meeting_person_name' => 'nullable|string|max:100',
+            'meeting_phone_number' => 'nullable|string|max:20',
+            'meeting_address' => 'nullable|string|max:255',
+            'meeting_summary' => 'nullable|string|max:500'
+        ]);
+
+        $lead->update([
+            'meeting_time' => $request->meeting_time,
+            'meeting_person_name' => $request->meeting_person_name,
+            'meeting_phone_number' => $request->meeting_phone_number,
+            'meeting_address' => $request->meeting_address,
+            'meeting_summary' => $request->meeting_summary
+        ]);
+
+        return redirect()->back()->with('success', 'Meeting updated successfully!');
+    }
+
+    /**
+     * Postpone a scheduled meeting
+     */
+    public function postponeMeeting(Request $request, Lead $lead)
+    {
+        $request->validate([
+            'meeting_time' => 'required|date|after:now',
+            'postpone_reason' => 'nullable|string|max:500'
+        ]);
+
+        $summary = $lead->meeting_summary ?? '';
+        if ($request->postpone_reason) {
+            $summary .= ($summary ? "\n\n" : '') . now()->format('Y-m-d H:i') . ' - Postponed: ' . $request->postpone_reason;
+        }
+
+        $lead->update([
+            'meeting_time' => $request->meeting_time,
+            'meeting_summary' => $summary
+        ]);
+
+        return redirect()->back()->with('success', 'Meeting postponed successfully!');
     }
 }
