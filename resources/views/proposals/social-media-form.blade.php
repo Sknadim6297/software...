@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<link href="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.css" rel="stylesheet">
 <div class="container-fluid">
     <div class="row">
         <div class="col-xl-12">
@@ -142,52 +143,45 @@
                             </div>
                         </div>
 
-                        <!-- Services Included -->
+                        <!-- Scope of Work -->
                         <div class="card mb-3">
                             <div class="card-header">
                                 <h6 class="card-title mb-0">
-                                    <i class="fas fa-cogs me-2"></i>Services Included
+                                    <i class="fas fa-list-check me-2"></i>Scope of Work
                                 </h6>
+                                <p class="mb-0 mt-2 text-muted small">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Describe all services, platforms, and deliverables in detail. Use headings and formatting as needed.
+                                </p>
                             </div>
                             <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox" name="services[]" value="platform_management" id="platform_mgmt" checked>
-                                            <label class="form-check-label" for="platform_mgmt">Platform Management & Optimization</label>
-                                        </div>
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox" name="services[]" value="daily_posting" id="daily_posting" checked>
-                                            <label class="form-check-label" for="daily_posting">Daily Posting & Caption Writing</label>
-                                        </div>
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox" name="services[]" value="hashtag_research" id="hashtag_research" checked>
-                                            <label class="form-check-label" for="hashtag_research">Hashtag Research & Implementation</label>
-                                        </div>
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox" name="services[]" value="story_management" id="story_mgmt" checked>
-                                            <label class="form-check-label" for="story_mgmt">Profile Highlights & Story Management</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox" name="services[]" value="lead_generation" id="lead_gen" checked>
-                                            <label class="form-check-label" for="lead_gen">Lead Generation Setup & Monitoring</label>
-                                        </div>
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox" name="services[]" value="paid_ads" id="paid_ads" checked>
-                                            <label class="form-check-label" for="paid_ads">Paid Ad Management</label>
-                                        </div>
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox" name="services[]" value="ad_creative" id="ad_creative" checked>
-                                            <label class="form-check-label" for="ad_creative">Ad Creative Designs</label>
-                                        </div>
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox" name="services[]" value="monthly_reports" id="monthly_reports" checked>
-                                            <label class="form-check-label" for="monthly_reports">Monthly Performance Reports</label>
-                                        </div>
-                                    </div>
-                                </div>
+                                <textarea class="form-control" id="scope_of_work" name="scope_of_work" rows="20"
+                                          placeholder="Social Media Platforms to be Managed:&#10;&#10;1. Facebook & Instagram&#10;&#10;* Page optimization and branding&#10;* Daily content posting and engagement&#10;* Hashtag research and implementation&#10;&#10;2. Content Creation&#10;&#10;* Static posts, carousels, and infographics&#10;* Video reels and stories&#10;* Ad creative designs&#10;&#10;Describe your scope of work with all services and deliverables here...">{{ old('scope_of_work') }}</textarea>
+                                <small class="text-muted mt-2 d-block">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    Tip: Use formatting tools above. This content can span multiple pages.
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Marketing Strategy -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-bullseye me-2"></i>Marketing Strategy
+                                </h6>
+                                <p class="mb-0 mt-2 text-muted small">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Outline the marketing approach, target audience, content strategy, and growth objectives.
+                                </p>
+                            </div>
+                            <div class="card-body">
+                                <textarea class="form-control" id="marketing_strategy" name="marketing_strategy" rows="20"
+                                          placeholder="Target Audience Analysis:&#10;&#10;* Primary audience: [Describe target demographics]&#10;* Pain points and interests&#10;* Online behavior and platform preferences&#10;&#10;Content Strategy:&#10;&#10;* Brand storytelling approach&#10;* Content pillars and themes&#10;* Posting schedule and frequency&#10;* Engagement and community building&#10;&#10;Growth Objectives:&#10;&#10;* Follower growth targets&#10;* Engagement rate goals&#10;* Lead generation objectives&#10;&#10;Outline your complete marketing strategy here...">{{ old('marketing_strategy') }}</textarea>
+                                <small class="text-muted mt-2 d-block">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    Tip: Use formatting tools above. Include detailed strategy and measurable goals.
+                                </small>
                             </div>
                         </div>
 
@@ -559,4 +553,40 @@ small.text-muted {
 .text-info { color: #0dcaf0 !important; }
 .text-warning { color: #ffc107 !important; }
 </style>
+
+@push('scripts')
+<script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize CKEditor for Scope of Work
+    CKEDITOR.replace('scope_of_work', {
+        height: 400,
+        toolbar: [
+            { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline'] },
+            { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'Blockquote'] },
+            { name: 'insert', items: ['Table'] },
+            { name: 'styles', items: ['Format', 'Styles'] }
+        ]
+    });
+
+    // Initialize CKEditor for Marketing Strategy
+    CKEDITOR.replace('marketing_strategy', {
+        height: 400,
+        toolbar: [
+            { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline'] },
+            { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'Blockquote'] },
+            { name: 'insert', items: ['Table'] },
+            { name: 'styles', items: ['Format', 'Styles'] }
+        ]
+    });
+
+    // Form validation - Update CKEditor instances before submit
+    document.getElementById('socialMediaForm').addEventListener('submit', function(e) {
+        for (var instance in CKEDITOR.instances) {
+            CKEDITOR.instances[instance].updateElement();
+        }
+    });
+});
+</script>
+@endpush
 @endsection

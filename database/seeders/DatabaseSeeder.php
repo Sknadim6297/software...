@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
         // Seed leads data
         $this->call([
             LeadSeeder::class,
+            AttendanceRuleSeeder::class,
         ]);
     }
 }

@@ -8,6 +8,7 @@
         .content { background: #f8f9fa; padding: 30px; margin-top: 20px; }
         .details { background: white; padding: 15px; margin: 15px 0; border-left: 4px solid #28a745; }
         .success { background: #d4edda; padding: 15px; border: 1px solid #c3e6cb; border-radius: 5px; margin: 20px 0; }
+        .button { display: inline-block; padding: 12px 24px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
     </style>
 </head>
 <body>
@@ -21,53 +22,42 @@
             
             <div class="success">
                 <h3>✅ Congratulations! Your proposal has been accepted.</h3>
-                <p>We are excited to start working on your <strong>{{ $proposal->project_type }}</strong> project!</p>
+                <p>We are excited to start working on your <strong>{{ $proposalTitle }}</strong> project!</p>
             </div>
             
             <h3>What Happens Next:</h3>
-            <p>We have automatically generated the following documents for you:</p>
+            <p>We have automatically generated your contract and invoice:</p>
             
             <div class="details">
                 <h4>📄 Contract Details:</h4>
-                <p><strong>Contract Number:</strong> {{ $contract->contract_number }}</p>
-                <p><strong>Final Amount:</strong> {{ $contract->currency }} {{ number_format($contract->final_amount, 2) }}</p>
-                <p><strong>Start Date:</strong> {{ \Carbon\Carbon::parse($contract->start_date)->format('d M Y') }}</p>
-                <p><strong>Expected Completion:</strong> {{ \Carbon\Carbon::parse($contract->expected_completion_date)->format('d M Y') }}</p>
+                <p><strong>Contract Number:</strong> {{ $contractNumber }}</p>
+                <p><strong>Total Amount:</strong> ₹{{ number_format($totalAmount, 2) }}</p>
+                <p><strong>Start Date:</strong> {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }}</p>
+                @if($isSocialMedia)
+                    <p><strong>Agreement Duration:</strong> {{ $endDate }}</p>
+                @else
+                    <p><strong>Expected Completion:</strong> {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}</p>
+                @endif
             </div>
             
-            <div class="details">
-                <h4>🧾 Invoice Details:</h4>
-                <p><strong>Invoice Number:</strong> {{ $invoice->invoice_number }}</p>
-                <p><strong>Amount:</strong> {{ $invoice->currency }} {{ number_format($invoice->grand_total, 2) }}</p>
-                <p><strong>Due Date:</strong> {{ $invoice->due_date->format('d M Y') }}</p>
-                <p><strong>Payment Status:</strong> {{ ucfirst($invoice->payment_status) }}</p>
+            <div style="text-align: center;">
+                <a href="{{ $contractUrl }}" class="button">View Your Contract</a>
             </div>
             
-            <h3>Project Timeline:</h3>
-            @if($contract->deliverables)
-                <p><strong>Deliverables:</strong></p>
-                <p style="white-space: pre-line;">{{ $contract->deliverables }}</p>
-            @endif
-            
-            @if($contract->milestones)
-                <p><strong>Milestones:</strong></p>
-                <p style="white-space: pre-line;">{{ $contract->milestones }}</p>
-            @endif
-            
-            @if($contract->payment_schedule)
-                <p><strong>Payment Schedule:</strong></p>
-                <p style="white-space: pre-line;">{{ $contract->payment_schedule }}</p>
-            @endif
+            <h3>Next Steps:</h3>
+            <ul>
+                <li>Review the contract document</li>
+                <li>Our team will contact you shortly for project kickoff</li>
+                <li>You will receive the invoice for the first payment milestone</li>
+            </ul>
             
             <p style="margin-top: 30px;">
-                Our team will contact you shortly to discuss the next steps and project kickoff.
-            </p>
-            
-            <p>
                 <strong>Thank you for choosing Konnectix Technologies!</strong><br><br>
                 Best regards,<br>
                 Konnectix Technologies Team<br>
-                Email: bdm.konnectixtech@gmail.com
+                📞 7003228913 / 9123354003<br>
+                ✉ info@konnectixtech.com<br>
+                🌐 www.konnectixtech.com
             </p>
         </div>
     </div>

@@ -204,6 +204,32 @@
                             </div>
                         </div>
 
+                        <!-- Deliverables Section -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-box-open me-2"></i>Deliverables
+                                </h6>
+                                <p class="mb-0 mt-2 text-muted small">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Specify what will be delivered to the client upon project completion.
+                                </p>
+                            </div>
+                            <div class="card-body">
+                                <textarea class="form-control" id="deliverables" name="deliverables" rows="10"
+                                          placeholder="List all deliverables...">{{ old('deliverables', '- Fully Functional and Live Website
+- Admin Panel Access (if CMS-based)
+- 1-Month Complimentary Support Post-Launch
+- Basic Training Session for Admin Use (if applicable)
+- Source Code and Documentation
+- User Manual/Guide') }}</textarea>
+                                <small class="text-muted mt-2 d-block">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    Tip: Use formatting tools to create a clear list of deliverables.
+                                </small>
+                            </div>
+                        </div>
+
                         <!-- Payment Terms (same as Software form) -->
                         <div class="card mb-3">
                             <div class="card-header">
@@ -283,94 +309,7 @@
                             </div>
                         </div>
 
-                        <!-- Domain & Hosting -->
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h6 class="card-title mb-0">
-                                    <i class="fas fa-server me-2"></i>Domain & Hosting
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Domain Name Provided By</label>
-                                        <select class="form-control" name="domain_provided_by">
-                                            <option value="Client">Client</option>
-                                            <option value="Service Provider">Service Provider</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Hosting Duration</label>
-                                        <input type="text" class="form-control" name="hosting_duration" 
-                                               value="One (1) year provided by Service Provider">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Warranty & Support - NOTE: support_months is handled in Project Details section above -->
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h6 class="card-title mb-0">
-                                    <i class="fas fa-shield-alt me-2"></i>Warranty & Support
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="alert alert-info">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    The free support period (in months) is configured in the <strong>"Project Details"</strong> section above.
-                                </div>
-                            </div>
 
-                            </div>
-                        </div>
-
-                        <!-- Client Responsibilities -->
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h6 class="card-title mb-0">
-                                    <i class="fas fa-user-check me-2"></i>Client Responsibilities
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" name="client_responsibilities[]" 
-                                           value="Provide content, images, branding materials" id="resp1" checked>
-                                    <label class="form-check-label" for="resp1">
-                                        Provide all necessary content, product details, images, and branding materials
-                                    </label>
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" name="client_responsibilities[]" 
-                                           value="Timely approvals and feedback" id="resp2" checked>
-                                    <label class="form-check-label" for="resp2">
-                                        Ensure timely approvals and feedback
-                                    </label>
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" name="client_responsibilities[]" 
-                                           value="Bear third-party charges" id="resp3" checked>
-                                    <label class="form-check-label" for="resp3">
-                                        Bear any third-party charges such as payment gateway fees
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Additional Terms -->
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h6 class="card-title mb-0">
-                                    <i class="fas fa-file-contract me-2"></i>Additional Terms
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-label">Additional Notes/Terms</label>
-                                    <textarea class="form-control" name="additional_terms" rows="3" 
-                                              placeholder="Any additional terms, conditions, or notes"></textarea>
-                                </div>
-                            </div>
-                        </div>
 
                         <!-- Preview Section -->
                         <div class="card mb-3">
@@ -498,6 +437,14 @@ document.addEventListener('DOMContentLoaded', function() {
             { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'Blockquote'] },
             { name: 'insert', items: ['Table'] },
             { name: 'styles', items: ['Format', 'Styles'] }
+        ]
+    });
+    CKEDITOR.replace('deliverables', {
+        height: 250,
+        toolbar: [
+            { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline'] },
+            { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'Blockquote'] },
+            { name: 'insert', items: ['Table'] }
         ]
     });
 
@@ -670,37 +617,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     </ul>
                 </div>
 
-                <div class="mb-4">
-                    <h5 class="text-success">6. DOMAIN & HOSTING</h5>
-                    <ul>
-                        <li>The domain name shall be provided by the <strong>${formData.get('domain_provided_by')}</strong></li>
-                        <li>${formData.get('hosting_duration')}</li>
-                        <li>The Service Provider shall not be responsible for delays caused due to domain-related issues from the Client's end</li>
-                    </ul>
-                </div>
+                <hr class="my-4">
 
                 <div class="mb-4">
-                    <h5 class="text-success">7. WARRANTY & SUPPORT</h5>
-                    <ul>
-                        <li>${supportMonths} month(s) of free support</li>
-                        <li>Future updates/maintenance shall be chargeable separately</li>
-                    </ul>
+                    <h5 class="text-success">6. DELIVERABLES</h5>
+                    <div>${formData.get('deliverables') || ''}</div>
                 </div>
 
+                <hr class="my-4">
+
                 <div class="mb-4">
-                    <h5 class="text-success">8. CLIENT RESPONSIBILITIES</h5>
-                    <p>The Client agrees to:</p>
-                    <ul>
-                        ${Array.from(document.querySelectorAll('input[name="client_responsibilities[]"]:checked')).map(cb => `<li>${cb.nextElementSibling.textContent.trim()}</li>`).join('')}
-                    </ul>
+                    <h5 class="text-success">7. APPROVAL</h5>
+                    <p>Please review and confirm your acceptance of the proposal.</p>
+                    <p><strong>Client Name:</strong> {{ $lead->customer_name }}<br>
+                    <strong>Company Name:</strong> {{ $lead->company_name ?? 'N/A' }}<br>
+                    <strong>Signature:</strong> _________________<br>
+                    <strong>Date:</strong> _________________</p>
                 </div>
 
-                ${formData.get('additional_terms') ? `
+                <hr class="my-4">
+
                 <div class="mb-4">
-                    <h5 class="text-success">9. ADDITIONAL TERMS</h5>
-                    <div>${formData.get('additional_terms')}</div>
+                    <h5 class="text-success">8. CONTACT INFORMATION</h5>
+                    <p><strong>Konnectix Technologies Pvt. Ltd.</strong><br>
+                    📞 Phone: 9123354003<br>
+                    📧 Email: info@konnectixtech.com<br>
+                    🌐 Website: www.konnectixtech.com</p>
                 </div>
-                ` : ''}
 
                 <hr class="my-4">
 

@@ -81,6 +81,11 @@ class BDMController extends Controller
     public function showDocuments()
     {
         $bdm = Auth::user()->bdm;
+        
+        if (!$bdm) {
+            return redirect()->back()->with('error', 'BDM record not found.');
+        }
+        
         $documents = $bdm->documents;
         $documentTypes = BDMDocument::getDocumentTypes();
         

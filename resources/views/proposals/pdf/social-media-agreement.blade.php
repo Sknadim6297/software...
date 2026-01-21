@@ -498,6 +498,26 @@
     </style>
 </head>
 <body>
+    @php
+        $meta = $proposal->metadata ? json_decode($proposal->metadata, true) : [];
+        $meta = is_array($meta) ? $meta : [];
+
+        $companyName = $meta['company_name'] ?? $proposal->lead->customer_name ?? 'Client Company';
+        $platforms = $meta['platforms'] ?? ['Instagram', 'Facebook'];
+        $platformsText = is_array($platforms) ? implode(' & ', $platforms) : 'Instagram & Facebook';
+
+        $monthlyCharges = $meta['monthly_charges'] ?? $proposal->proposed_amount ?? 19000;
+        $postersPerMonth = $meta['posters_per_month'] ?? 30;
+        $reelsPerWeek = $meta['reels_per_week'] ?? 2;
+        $reelsPerMonth = $reelsPerWeek * 4;
+
+        $services = $meta['services'] ?? [];
+        $paymentMode = $meta['payment_mode'] ?? 'Bank Transfer / UPI';
+        $gstApplicable = $meta['gst_applicable'] ?? 'Additional as applicable';
+
+        $scopeOfWork = $meta['scope_of_work'] ?? '';
+        $marketingStrategy = $meta['marketing_strategy'] ?? '';
+    @endphp
     <!-- PAGE 1 -->
     <div class="container">
         <div class="watermark">
@@ -547,20 +567,31 @@
 
                 <div class="agreement-section">
                     <h2 class="section-title">2. SCOPE OF SERVICES</h2>
-                    <p class="section-content">
-                        The Service Provider agrees to provide the following services:
-                    </p>
-                    <ul class="section-list">
-                        <li>Professional content creation and management</li>
-                        <li>Regular posting and engagement on social media platforms</li>
-                        <li>Analytics and performance reporting</li>
-                        <li>Community management and customer interaction</li>
-                        <li>Monthly strategy review and optimization</li>
-                    </ul>
-                    <p class="section-content">
-                        Any services or changes beyond the above scope shall be considered additional work and charged separately upon mutual agreement.
-                    </p>
+                    @if($scopeOfWork)
+                        {!! $scopeOfWork !!}
+                    @else
+                        <p class="section-content">
+                            The Service Provider agrees to provide the following services:
+                        </p>
+                        <ul class="section-list">
+                            <li>Professional content creation and management</li>
+                            <li>Regular posting and engagement on social media platforms</li>
+                            <li>Analytics and performance reporting</li>
+                            <li>Community management and customer interaction</li>
+                            <li>Monthly strategy review and optimization</li>
+                        </ul>
+                        <p class="section-content">
+                            Any services or changes beyond the above scope shall be considered additional work and charged separately upon mutual agreement.
+                        </p>
+                    @endif
                 </div>
+
+                @if($marketingStrategy)
+                <div class="agreement-section">
+                    <h2 class="section-title">3. MARKETING STRATEGY</h2>
+                    {!! $marketingStrategy !!}
+                </div>
+                @endif
             </div>
         </div>
 
@@ -601,7 +632,7 @@
         <div class="page-content">
             <div class="agreement-content">
                 <div class="agreement-section">
-                    <h2 class="section-title">3. SERVICE PACKAGE & DELIVERABLES</h2>
+                    <h2 class="section-title">{{ $marketingStrategy ? '4' : '3' }}. SERVICE PACKAGE & DELIVERABLES</h2>
                     <ul class="section-list">
                         <li>Monthly charges: ₹{{ number_format($proposal->proposed_amount) }}</li>
                         <li>Payment mode: Monthly subscription</li>
@@ -611,7 +642,7 @@
                 </div>
 
                 <div class="agreement-section">
-                    <h2 class="section-title">4. PAYMENT TERMS</h2>
+                    <h2 class="section-title">{{ $marketingStrategy ? '5' : '4' }}. PAYMENT TERMS</h2>
                     <ul class="section-list">
                         <li><strong>Monthly Service Fee:</strong> ₹{{ number_format($proposal->proposed_amount) }}</li>
                         <li>Payment is due at the beginning of each month</li>
@@ -621,7 +652,7 @@
                 </div>
 
                 <div class="agreement-section">
-                    <h2 class="section-title">5. CLIENT RESPONSIBILITIES</h2>
+                    <h2 class="section-title">{{ $marketingStrategy ? '6' : '5' }}. CLIENT RESPONSIBILITIES</h2>
                     <p class="section-content">The Client agrees to:</p>
                     <ul class="section-list">
                         <li>Provide timely feedback and content approval</li>
@@ -632,7 +663,7 @@
                 </div>
 
                 <div class="agreement-section">
-                    <h2 class="section-title">6. INTELLECTUAL PROPERTY RIGHTS</h2>
+                    <h2 class="section-title">{{ $marketingStrategy ? '7' : '6' }}. INTELLECTUAL PROPERTY RIGHTS</h2>
                     <ul class="section-list">
                         <li>All content created remains the property of the Service Provider until full payment is made</li>
                         <li>The Client shall have the right to use content across their brand channels</li>
@@ -641,7 +672,7 @@
                 </div>
 
                 <div class="agreement-section">
-                    <h2 class="section-title">7. TERMINATION</h2>
+                    <h2 class="section-title">{{ $marketingStrategy ? '8' : '7' }}. TERMINATION</h2>
                     <ul class="section-list">
                         <li>Either party may terminate this agreement with 30 days written notice</li>
                         <li>No refund will be provided for the current month's payment</li>
@@ -688,7 +719,7 @@
         <div class="page-content">
             <div class="agreement-content">
                 <div class="agreement-section">
-                    <h2 class="section-title">8. WARRANTY & SUPPORT</h2>
+                    <h2 class="section-title">{{ $marketingStrategy ? '9' : '8' }}. WARRANTY & SUPPORT</h2>
                     <ul class="section-list">
                         <li>The Service Provider provides 24x5 support for technical issues</li>
                         <li>Emergency support available 24x7 for critical issues</li>
@@ -697,7 +728,7 @@
                 </div>
 
                 <div class="agreement-section">
-                    <h2 class="section-title">9. LIMITATION OF LIABILITY</h2>
+                    <h2 class="section-title">{{ $marketingStrategy ? '10' : '9' }}. LIMITATION OF LIABILITY</h2>
                     <p class="section-content">The Service Provider shall not be liable for:</p>
                     <ul class="section-list">
                         <li>Third-party platform changes or algorithm updates</li>
@@ -708,28 +739,28 @@
                 </div>
 
                 <div class="agreement-section">
-                    <h2 class="section-title">10. CONFIDENTIALITY</h2>
+                    <h2 class="section-title">{{ $marketingStrategy ? '11' : '10' }}. CONFIDENTIALITY</h2>
                     <p class="section-content">
                         Both parties agree to maintain confidentiality of sensitive business information shared during the engagement. This includes brand strategy, customer data, and performance metrics not meant for public disclosure.
                     </p>
                 </div>
 
                 <div class="agreement-section">
-                    <h2 class="section-title">11. GOVERNING LAW & JURISDICTION</h2>
+                    <h2 class="section-title">{{ $marketingStrategy ? '12' : '11' }}. GOVERNING LAW & JURISDICTION</h2>
                     <p class="section-content">
                         This Agreement shall be governed by and construed in accordance with the laws of India, and courts of Kolkata shall have exclusive jurisdiction.
                     </p>
                 </div>
 
                 <div class="agreement-section">
-                    <h2 class="section-title">12. ENTIRE AGREEMENT</h2>
+                    <h2 class="section-title">{{ $marketingStrategy ? '13' : '12' }}. ENTIRE AGREEMENT</h2>
                     <p class="section-content">
                         This Agreement constitutes the entire understanding between the Parties and supersedes all prior discussions or communications.
                     </p>
                 </div>
 
                 <div class="agreement-section signature-section-wrapper">
-                    <h2 class="section-title">13. ACCEPTANCE & SIGNATURES</h2>
+                    <h2 class="section-title">{{ $marketingStrategy ? '14' : '13' }}. ACCEPTANCE & SIGNATURES</h2>
                     <p class="section-content">
                         By signing below, both Parties agree to the terms and conditions stated herein.
                     </p>

@@ -248,20 +248,41 @@
                         </a>
                     </li>
                     
-                    <li class="{{ request()->routeIs('admin.salaries.*', 'admin.leaves.*') ? 'mm-active' : '' }}">
+                    <li class="{{ request()->routeIs('admin.attendance.*') ? 'mm-active' : '' }}">
                         <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
-                            <i class="flaticon-381-user-9"></i>
-                            <span class="nav-text">Profile, Salary & Leave</span>
+                            <i class="flaticon-381-clock-2"></i>
+                            <span class="nav-text">Attendance Management</span>
                         </a>
                         <ul aria-expanded="false">
-                            <li><a href="{{ route('admin.salaries.index') }}">
+                            <li><a href="{{ route('admin.attendance.dashboard') }}">
+                                <i class="flaticon-381-television text-primary me-2"></i>Live Dashboard
+                            </a></li>
+                            <li><a href="{{ route('admin.attendance.index') }}">
+                                <i class="flaticon-381-list text-info me-2"></i>All Records
+                            </a></li>
+                            <li><a href="{{ route('admin.attendance.settings') }}">
+                                <i class="flaticon-381-settings-1 text-warning me-2"></i>Attendance Rules
+                            </a></li>
+                            <li><a href="{{ route('admin.attendance.holidays') }}">
+                                <i class="flaticon-381-calendar-1 text-danger me-2"></i>Manage Holidays
+                            </a></li>
+                        </ul>
+                    </li>
+                    
+                    <li class="{{ request()->routeIs('admin.salary.*', 'admin.leaves.*') ? 'mm-active' : '' }}">
+                        <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
+                            <i class="flaticon-381-user-9"></i>
+                            <span class="nav-text">Salary & Leave</span>
+                        </a>
+                        <ul aria-expanded="false">
+                            <li><a href="{{ route('admin.salary.index') }}">
                                 <i class="flaticon-381-price-tag text-success me-2"></i>Salary Management
                             </a></li>
                             <li><a href="{{ route('admin.leaves.index') }}">
                                 <i class="flaticon-381-list text-primary me-2"></i>Leave Requests
                             </a></li>
-                            <li><a href="{{ route('admin.leaves.balances') }}">
-                                <i class="flaticon-381-calendar-1 text-info me-2"></i>Leave Balances
+                            <li><a href="{{ route('admin.salary.report') }}">
+                                <i class="flaticon-381-notepad text-info me-2"></i>Salary Reports
                             </a></li>
                         </ul>
                     </li>

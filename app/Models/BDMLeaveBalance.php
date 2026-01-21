@@ -17,9 +17,24 @@ class BDMLeaveBalance extends Model
         'unpaid_leave',
         'casual_leave_balance',
         'sick_leave_balance',
+        'casual_leave_allocated',
+        'sick_leave_allocated',
         'casual_leave_used_this_month',
         'sick_leave_used_this_month',
         'current_month',
+        'year_month',
+    ];
+
+    protected $casts = [
+        'casual_leave' => 'integer',
+        'sick_leave' => 'integer',
+        'unpaid_leave' => 'integer',
+        'casual_leave_balance' => 'integer',
+        'sick_leave_balance' => 'integer',
+        'casual_leave_allocated' => 'integer',
+        'sick_leave_allocated' => 'integer',
+        'casual_leave_used_this_month' => 'integer',
+        'sick_leave_used_this_month' => 'integer',
     ];
 
     public function bdm(): BelongsTo
@@ -27,6 +42,34 @@ class BDMLeaveBalance extends Model
         return $this->belongsTo(BDM::class, 'bdm_id');
     }
 
+    /**
+     * Get casual leave remaining for the year
+     */
+    public function getCasualLeaveRemaining(): int
+    {
+        return $this->casual_leave_balance ?? 0;
+    }
+
+    /**
+     * Get sick leave remaining for the year
+     */
+    public function getSickLeaveRemaining(): int
+    {
+        return $this->sick_leave_balance ?? 0;
+    }
+
+    /**
+     * Get total leaves taken (approved only)
+     */
+    public function getTotalLeavesTaken(): int
+    {
+        return ($this->casual_leave_allocated ?? 0) - ($this->casual_leave_balance ?? 0) +
+               ($this->sick_leave_allocated ?? 0) - ($this->sick_leave_balance ?? 0);
+    }
+
+    /**
+     * Reset monthly usage when month changes
+     */
     public function resetMonthlyUsage(): void
     {
         $currentMonth = Carbon::now()->format('Y-m');
@@ -40,27 +83,40 @@ class BDMLeaveBalance extends Model
         }
     }
 
-    public function canTakeCasualLeave(): bool
+    /**
+     * Update leave balance after approval
+     */
+    public function updateAfterApprovedLeave(string $leaveType, int $days = 1): void
     {
-        $this->resetMonthlyUsage();
-        return $this->casual_leave_balance > 0 && $this->casual_leave_used_this_month < 1;
+        if ($leaveType === 'casual') {
+            $this->decrement('casual_leave_balance', $days);
+        } elseif ($leaveType === 'sick') {
+            $this->decrement('sick_leave_balance', $days);
+        }
     }
 
-    public function canTakeSickLeave(): bool
+    /**
+     * Update leave balance when leave is rejected
+     */
+    public function revertRejectedLeave(string $leaveType, int $days = 1): void
     {
-        $this->resetMonthlyUsage();
-        return $this->sick_leave_balance > 0 && $this->sick_leave_used_this_month < 1;
+        if ($leaveType === 'casual') {
+            $this->increment('casual_leave_balance', $days);
+        } elseif ($leaveType === 'sick') {
+            $this->increment('sick_leave_balance', $days);
+        }
     }
 
-    public function deductCasualLeave(): void
+    /**
+     * Set leave allocation for the year
+     */
+    public function setAllocation(int $casualLeaves, int $sickLeaves): void
     {
-        $this->decrement('casual_leave_balance');
-        $this->increment('casual_leave_used_this_month');
-    }
-
-    public function deductSickLeave(): void
-    {
-        $this->decrement('sick_leave_balance');
-        $this->increment('sick_leave_used_this_month');
+        $this->update([
+            'casual_leave_allocated' => $casualLeaves,
+            'casual_leave_balance' => $casualLeaves,
+            'sick_leave_allocated' => $sickLeaves,
+            'sick_leave_balance' => $sickLeaves,
+        ]);
     }
 }

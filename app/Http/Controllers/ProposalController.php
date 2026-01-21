@@ -11,6 +11,7 @@ use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -157,8 +158,8 @@ class ProposalController extends Controller
             'posters_per_month' => 'required|integer|min:1',
             'reels_per_week' => 'required|integer|min:0',
             'includes_video_editing' => 'nullable',
-            'services' => 'nullable|array',
-            'services.*' => 'string',
+            'scope_of_work' => 'nullable|string',
+            'marketing_strategy' => 'nullable|string',
             'payment_mode' => 'required|string',
             'gst_applicable' => 'required|string',
             'additional_notes' => 'nullable|string|max:1000'
@@ -913,6 +914,270 @@ We look forward to helping {$data['company_name']} achieve digital marketing suc
     }
 
     /**
+     * Accept proposal and generate contract
+     */
+    public function accept(Request $request, Proposal $proposal)
+    {
+        $validated = $request->validate([
+            'final_amount' => 'required|numeric|min:0',
+            'start_date' => 'required|date',
+            'agreement_duration' => 'required|string|max:255',
+            'milestones' => 'nullable|string|max:5000',
+            'terms_and_conditions' => 'nullable|string|max:5000'
+        ]);
+
+        DB::beginTransaction();
+        
+        try {
+            // Update proposal status
+            $proposal->update([
+                'status' => 'accepted',
+                'responded_at' => now()
+            ]);
+
+            // Get metadata to extract payment schedule and other details
+            $metadata = json_decode($proposal->metadata, true) ?? [];
+            
+            // Calculate final amount with GST if available
+            $gstPercentage = $metadata['gst_percentage'] ?? 18;
+            $baseAmount = $metadata['total_cost'] ?? $validated['final_amount'];
+            $gstAmount = ($baseAmount * $gstPercentage) / 100;
+            $finalAmountWithGst = $baseAmount + $gstAmount;
+            
+            // Build payment schedule from metadata
+            $paymentScheduleText = $this->buildPaymentScheduleFromMetadata($metadata, $finalAmountWithGst);
+            
+            // Use generated payment schedule
+            $finalPaymentSchedule = $paymentScheduleText;
+
+            // Ensure we have a customer_id: try proposal->customer_id, else find by email, else create a Customer
+            $customerId = $proposal->customer_id ?? null;
+            if (empty($customerId)) {
+                $possibleEmail = $proposal->customer_email ?? ($metadata['customer_email'] ?? null);
+                $possibleName = $proposal->customer_name ?? ($proposal->lead->customer_name ?? ($metadata['customer_name'] ?? null));
+                $possiblePhone = $proposal->customer_phone ?? ($metadata['customer_phone'] ?? null);
+
+                if ($possibleEmail) {
+                    $existing = Customer::where('email', $possibleEmail)->first();
+                    if ($existing) {
+                        $customerId = $existing->id;
+                    }
+                }
+
+                if (empty($customerId)) {
+                    // create a lightweight customer record
+                    $newCustomer = Customer::create([
+                        'customer_name' => $possibleName ?? 'Unknown',
+                        'email' => $possibleEmail ?? null,
+                        'number' => $possiblePhone ?? null,
+                        'added_date' => now()->toDateString(),
+                        'active' => true,
+                    ]);
+
+                    $customerId = $newCustomer->id;
+                }
+
+                // persist back to proposal for future reference
+                $proposal->customer_id = $customerId;
+                $proposal->save();
+            }
+
+            // Determine contract view based on project type
+            $contractView = $this->getContractViewByProjectType($proposal->project_type);
+            
+            // Generate contract content using the appropriate template
+            $contractContent = $this->renderContractFromTemplate($proposal, $contractView, [
+                'final_amount' => $validated['final_amount'],
+                'start_date' => $validated['start_date'],
+                'agreement_duration' => $validated['agreement_duration'],
+                'payment_schedule' => $finalPaymentSchedule,
+                'terms_and_conditions' => $validated['terms_and_conditions'] ?? ''
+            ]);
+
+            // Create Contract record (include all DB-required fields)
+            $contract = Contract::create([
+                'proposal_id' => $proposal->id,
+                'customer_id' => $customerId,
+                'customer_name' => $proposal->customer_name ?? ($proposal->lead->customer_name ?? ($metadata['customer_name'] ?? null)),
+                'customer_email' => $proposal->customer_email ?? ($proposal->lead->customer_email ?? ($metadata['customer_email'] ?? null)),
+                'customer_phone' => $proposal->customer_phone ?? ($proposal->lead->customer_phone ?? ($metadata['customer_phone'] ?? null)),
+                'contract_number' => $this->generateContractNumber(),
+                'contract_content' => $contractContent,
+                'project_type' => $proposal->project_type ?? ($metadata['project_title'] ?? 'Website Development'),
+                'final_amount' => $validated['final_amount'],
+                'total_amount' => $finalAmountWithGst ?? $validated['final_amount'],
+                'currency' => $proposal->currency ?? ($metadata['currency'] ?? 'INR'),
+                'start_date' => $validated['start_date'],
+                'expected_completion_date' => $validated['agreement_duration'],
+                'deliverables' => $metadata['deliverables'] ?? $proposal->deliverables ?? '',
+                'payment_schedule' => $finalPaymentSchedule,
+                'milestones' => $validated['milestones'] ?? '',
+                'status' => 'active',
+                'signed_at' => now()
+            ]);
+
+            // Create Invoice record
+            $invoice = Invoice::create([
+                'contract_id' => $contract->id,
+                'customer_id' => $customerId,
+                'invoice_number' => $this->generateInvoiceNumber(),
+                'invoice_date' => now(),
+                'due_date' => now()->addDays(30),
+                'subtotal' => $baseAmount,
+                'tax_percentage' => $gstPercentage,
+                'tax_amount' => $gstAmount,
+                'total_amount' => $finalAmountWithGst,
+                'status' => 'pending',
+                'notes' => $finalPaymentSchedule
+            ]);
+
+            // Add invoice items from metadata if available
+            if (isset($metadata['payment_descriptions']) && isset($metadata['payment_percentages'])) {
+                foreach ($metadata['payment_descriptions'] as $index => $description) {
+                    $percentage = $metadata['payment_percentages'][$index] ?? 0;
+                    $itemAmount = ($finalAmountWithGst * $percentage) / 100;
+                    
+                    InvoiceItem::create([
+                        'invoice_id' => $invoice->id,
+                        'description' => $description,
+                        'quantity' => 1,
+                        'unit_price' => $itemAmount,
+                        'total_price' => $itemAmount
+                    ]);
+                }
+            }
+
+            // Send email notifications
+            $this->sendAcceptanceEmails($proposal, $contract);
+
+            DB::commit();
+            
+            return redirect()->route('proposals.show', $proposal->id)
+                ->with('success', 'Proposal accepted successfully! Contract and invoice have been generated.');
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to accept proposal: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Build payment schedule text from metadata
+     */
+    private function buildPaymentScheduleFromMetadata($metadata, $finalAmount)
+    {
+        $paymentSchedule = "";
+        
+        if (isset($metadata['payment_descriptions']) && isset($metadata['payment_percentages'])) {
+            foreach ($metadata['payment_descriptions'] as $index => $description) {
+                $percentage = $metadata['payment_percentages'][$index] ?? 0;
+                $amount = ($finalAmount * $percentage) / 100;
+                $paymentSchedule .= "{$percentage}% {$description} - ₹" . number_format($amount, 2) . "\n";
+            }
+        }
+        
+        return $paymentSchedule;
+    }
+
+    /**
+     * Get contract view template based on project type
+     */
+    private function getContractViewByProjectType($projectType)
+    {
+        $projectType = strtolower($projectType ?? '');
+        
+        // Check for social media
+        if (strpos($projectType, 'social media') !== false || strpos($projectType, 'social_media') !== false) {
+            return 'proposals.contract.social-media-contract';
+        }
+        
+        // Check for e-commerce
+        if (strpos($projectType, 'e-commerce') !== false || strpos($projectType, 'ecommerce') !== false) {
+            return 'proposals.contract.app-website-contract'; // You can create app-website-ecommerce-contract.blade.php later
+        }
+        
+        // Check for mobile app
+        if (strpos($projectType, 'mobile') !== false || strpos($projectType, 'app') !== false) {
+            return 'proposals.contract.app-website-contract'; // Same template, just title changes
+        }
+        
+        // Check for website
+        if (strpos($projectType, 'website') !== false || strpos($projectType, 'web') !== false) {
+            return 'proposals.contract.app-website-contract';
+        }
+        
+        // Default to app-website contract
+        return 'proposals.contract.app-website-contract';
+    }
+
+    /**
+     * Render contract from Blade template
+     */
+    private function renderContractFromTemplate($proposal, $contractView, $additionalData)
+    {
+        return view($contractView, [
+            'proposal' => $proposal,
+            'contract_data' => $additionalData
+        ])->render();
+    }
+
+    /**
+     * Generate unique contract number
+     */
+    private function generateContractNumber()
+    {
+        $year = date('Y');
+        $month = date('m');
+        $lastContract = Contract::whereYear('created_at', $year)
+            ->whereMonth('created_at', $month)
+            ->orderBy('id', 'desc')
+            ->first();
+        
+        $sequence = $lastContract ? (intval(substr($lastContract->contract_number, -4)) + 1) : 1;
+        
+        return 'CONT-' . $year . $month . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Generate unique invoice number
+     */
+    private function generateInvoiceNumber()
+    {
+        $year = date('Y');
+        $month = date('m');
+        $lastInvoice = Invoice::whereYear('created_at', $year)
+            ->whereMonth('created_at', $month)
+            ->orderBy('id', 'desc')
+            ->first();
+        
+        $sequence = $lastInvoice ? (intval(substr($lastInvoice->invoice_number, -4)) + 1) : 1;
+        
+        return 'INV-' . $year . $month . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Send acceptance notification emails
+     */
+    private function sendAcceptanceEmails($proposal, $contract)
+    {
+        try {
+            // Send to customer
+            if ($proposal->customer_email) {
+                Mail::to($proposal->customer_email)->send(
+                    new \App\Mail\ProposalAcceptedCustomer($proposal, $contract)
+                );
+            }
+            
+            // Send to admin
+            Mail::to('info@konnectixtech.com')->send(
+                new \App\Mail\ProposalAcceptedAdmin($proposal, $contract)
+            );
+        } catch (\Exception $e) {
+            Log::error('Failed to send acceptance emails: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Remove the specified proposal
      */
     public function destroy(Proposal $proposal)
@@ -951,7 +1216,7 @@ We look forward to helping {$data['company_name']} achieve digital marketing suc
         
         TIMELINE:
         Start Date: {$validated['start_date']}
-        Expected Completion: {$validated['expected_completion_date']}
+        Agreement Duration: {$validated['agreement_duration']}
         
         DELIVERABLES:
         " . ($validated['deliverables'] ?? $proposal->deliverables) . "
@@ -1283,6 +1548,41 @@ Konnectix Technologies Pvt. Ltd.
         return view($view, [
             'proposal' => $proposal,
             'contentHtml' => Str::markdown($proposal->proposal_content ?? '')
+        ]);
+    }
+
+    /**
+     * View generated contract as webpage (for accepted proposals)
+     */
+    public function viewContract(Proposal $proposal)
+    {
+        // Only show contract for accepted proposals
+        if ($proposal->status !== 'accepted') {
+            return redirect()->route('proposals.show', $proposal->id)
+                ->with('error', 'Contract is only available for accepted proposals.');
+        }
+
+        // Determine which contract template to use based on project type
+        $contractView = $this->getContractViewByProjectType($proposal->project_type);
+        
+        // Get the contract record
+        $contract = Contract::where('proposal_id', $proposal->id)->first();
+        
+        if (!$contract) {
+            return redirect()->route('proposals.show', $proposal->id)
+                ->with('error', 'Contract not found. Please contact support.');
+        }
+
+        return view($contractView, [
+            'proposal' => $proposal,
+            'contract' => $contract,
+            'contract_data' => [
+                'final_amount' => $contract->total_amount,
+                'start_date' => $contract->start_date,
+                'agreement_duration' => $contract->expected_completion_date,
+                'payment_schedule' => $contract->payment_terms,
+                'terms_and_conditions' => ''
+            ]
         ]);
     }
 }

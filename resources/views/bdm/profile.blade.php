@@ -4,6 +4,7 @@
 @section('page-title', 'My Profile')
 
 @section('content')
+@if($bdm)
 <div class="row">
     <div class="col-md-8">
         <div class="card">
@@ -110,4 +111,9 @@
         </div>
     </div>
 </div>
+@else
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle"></i> BDM record not found. Please contact administrator.
+</div>
+@endif
 @endsection

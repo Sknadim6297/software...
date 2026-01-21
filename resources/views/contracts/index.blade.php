@@ -42,8 +42,8 @@
                                             <td>{{ $contract->currency }} {{ number_format($contract->final_amount, 2) }}</td>
                                             <td>
                                                 <small>
-                                                    {{ \Carbon\Carbon::parse($contract->start_date)->format('d M') }} - 
-                                                    {{ \Carbon\Carbon::parse($contract->expected_completion_date)->format('d M Y') }}
+                                                    {{ \Carbon\Carbon::parse($contract->start_date)->format('d M Y') }}<br>
+                                                    <span class="text-muted">{{ $contract->expected_completion_date }}</span>
                                                 </small>
                                             </td>
                                             <td>

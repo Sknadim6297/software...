@@ -45,7 +45,7 @@
                                 <div class="card-body">
                                     <p><strong>Amount:</strong><br>{{ $contract->currency }} {{ number_format($contract->final_amount, 2) }}</p>
                                     <p><strong>Start Date:</strong><br>{{ \Carbon\Carbon::parse($contract->start_date)->format('d M Y') }}</p>
-                                    <p><strong>Completion Date:</strong><br>{{ \Carbon\Carbon::parse($contract->expected_completion_date)->format('d M Y') }}</p>
+                                    <p><strong>Agreement Duration:</strong><br>{{ $contract->expected_completion_date }}</p>
                                     <p><strong>Created:</strong><br>{{ $contract->created_at->format('d M Y, h:i A') }}</p>
                                 </div>
                             </div>

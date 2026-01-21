@@ -33,14 +33,26 @@
             font-family: "DM Serif Display", serif;
         }
         
+        /* BDM Design - Modern Teal/Blue Gradient */
         .sign {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+            position: relative;
+            overflow: hidden;
         }
         
-        .sign .text-center a img {
-            max-height: 80px;
-            width: auto;
+        .sign::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="rgba(255,255,255,0.1)" fill-opacity="1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,144C960,149,1056,139,1152,133.3C1248,128,1344,128,1392,128L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom;
+            background-size: cover;
+            opacity: 0.2;
         }
+        
+        .sign .text-center a img { max-height: 80px; width: auto; position: relative; z-index: 1; }
         
         .img-fix {
             max-width: 100%;
@@ -49,6 +61,74 @@
         
         .mobile-logo {
             display: none;
+        }
+        
+        /* BDM Form Styling */
+        .sign-in-your {
+            background: #f8f9fa;
+        }
+        
+        .sign-in-your h4 {
+            color: #0083b0;
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 22px;
+        }
+        
+        .sign-in-your > span {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .sign-in-your .form-control {
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 13px 16px;
+            font-size: 14px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        
+        .sign-in-your .form-control:focus {
+            border-color: #00b4db;
+            box-shadow: 0 0 0 0.2rem rgba(0, 180, 219, 0.15);
+            background: white;
+        }
+        
+        .sign-in-your .form-control::placeholder {
+            color: #adb5bd;
+        }
+        
+        .sign-in-your .btn-primary {
+            background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 13px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .sign-in-your .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(0, 180, 219, 0.35);
+        }
+        
+        .sign-in-your a {
+            color: #0083b0;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .sign-in-your a:hover {
+            color: #00b4db;
+            text-decoration: underline;
+        }
+        
+        .form-check-label {
+            color: #495057;
+            font-size: 14px;
         }
         
         @media (max-width: 767px) {

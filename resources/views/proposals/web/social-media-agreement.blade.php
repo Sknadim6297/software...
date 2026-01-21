@@ -489,6 +489,9 @@
         $services = $meta['services'] ?? [];
         $paymentMode = $meta['payment_mode'] ?? 'Bank Transfer / UPI';
         $gstApplicable = $meta['gst_applicable'] ?? 'Additional as applicable';
+
+        $scopeOfWork = $meta['scope_of_work'] ?? '';
+        $marketingStrategy = $meta['marketing_strategy'] ?? '';
     @endphp
 
     <!-- PAGE 1 -->
@@ -517,18 +520,26 @@
                 <p style="text-align: center; margin-bottom: 20px;"><strong>Platforms Covered:</strong> {{ $platformsText }}</p>
 
                 <h2>Scope of Work</h2>
-                <p>
-                    We propose a complete social media marketing solution to enhance {{ $companyName }}'s digital presence, drive
-                    quality leads, and increase brand awareness across {{ $platformsText }}.
-                </p>
+                @if($scopeOfWork)
+                    {!! $scopeOfWork !!}
+                @else
+                    <p>
+                        We propose a complete social media marketing solution to enhance {{ $companyName }}'s digital presence, drive
+                        quality leads, and increase brand awareness across {{ $platformsText }}.
+                    </p>
 
-                <h3 style="font-size: 18px; margin-top: 15px;"><strong>Content Creation & Posting</strong></h3>
-                <ul>
-                    <li>{{ $postersPerMonth }} Posters per Month (Static/Carousel/Infographic based on marketing objective)</li>
-                    <li>{{ $reelsPerWeek }} Reels per Week (Product-focused, testimonial, behind-the-scenes, etc.)</li>
-                    <li>Video Editing Support: Any video content shared by your team will be professionally edited and optimized for social media</li>
-                </ul>
+                    <h3 style="font-size: 18px; margin-top: 15px;"><strong>Content Creation & Posting</strong></h3>
+                    <ul>
+                        <li>{{ $postersPerMonth }} Posters per Month (Static/Carousel/Infographic based on marketing objective)</li>
+                        <li>{{ $reelsPerWeek }} Reels per Week (Product-focused, testimonial, behind-the-scenes, etc.)</li>
+                        <li>Video Editing Support: Any video content shared by your team will be professionally edited and optimized for social media</li>
+                    </ul>
+                @endif
 
+                @if($marketingStrategy)
+                <h2 style="margin-top: 25px;">Marketing Strategy</h2>
+                {!! $marketingStrategy !!}
+                @else
                 <h2 style="margin-top: 25px;">Marketing Strategy</h2>
 
                 <h3 style="font-size: 18px; margin-top: 15px;"><strong>Platform Management</strong></h3>
@@ -551,6 +562,7 @@
                     <li>A/B Testing of creatives & audience targeting</li>
                     <li>Real-time ad monitoring and optimization for ROI</li>
                 </ul>
+                @endif
             </div>
         </div>
 
@@ -588,18 +600,6 @@
 
         <div class="content">
             <div class="agreement-content">
-                <h3 style="font-size: 18px;"><strong>Capturing Inquiries & Monitoring</strong></h3>
-                <ul>
-                    <li>Capturing inquiries from builders, developers, and institutions</li>
-                    <li>Weekly lead reports with follow-up tracking support</li>
-                </ul>
-
-                <h3 style="font-size: 18px; margin-top: 15px;"><strong>Growth Monitoring</strong></h3>
-                <ul>
-                    <li>Monthly performance report (Reach, Engagement, Leads, Followers)</li>
-                    <li>Strategy refinement based on insights</li>
-                </ul>
-
                 <h2 style="margin-top: 30px;">Financials</h2>
 
                 <table>

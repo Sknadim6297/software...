@@ -556,172 +556,116 @@
         <div class="content">
             <div class="agreement-content">
                 @php
-                    // Try to use proposal_content if available
-                    $content = $proposal->proposal_content;
-                    
-                    // If proposal_content is empty or missing, try to reconstruct from metadata
-                    if (empty($content)) {
-                        $metadata = json_decode($proposal->metadata, true) ?? [];
-                        
-                        // Get GST info from proposed_amount if needed
-                        $totalCost = $metadata['total_cost'] ?? $proposal->proposed_amount ?? 0;
-                        $gstPercentage = $metadata['gst_percentage'] ?? 18;
-                        $gstAmount = ($totalCost * $gstPercentage) / 100;
-                        $finalAmount = $totalCost + $gstAmount;
-                        
-                        // Get other fields
-                        $projectTitle = $metadata['project_title'] ?? $proposal->project_description ?? 'APP & WEBSITE DEVELOPMENT';
-                        $projectDescription = $metadata['project_description'] ?? '';
-                        $objectives = $metadata['objectives'] ?? '';
-                        $scopeOfWork = $metadata['scope_of_work'] ?? '';
-                        $timelineWeeks = $metadata['timeline_weeks'] ?? 4;
-                        $supportMonths = $metadata['support_months'] ?? 0;
-                        $domainProvidedBy = $metadata['domain_provided_by'] ?? 'Client';
-                        $hostingDuration = $metadata['hosting_duration'] ?? '';
-                        $clientResponsibilities = $metadata['client_responsibilities'] ?? [];
-                        $paymentDescriptions = $metadata['payment_descriptions'] ?? [];
-                        $paymentPercentages = $metadata['payment_percentages'] ?? [];
-                        $additionalTerms = $metadata['additional_terms'] ?? '';
-                        
-                        // Build payment schedule
-                        $paymentSchedule = "";
-                        if (!empty($paymentDescriptions)) {
-                            foreach ($paymentDescriptions as $index => $description) {
-                                $percentage = $paymentPercentages[$index] ?? 0;
-                                $amount = ($finalAmount * $percentage) / 100;
-                                $paymentSchedule .= "- {$percentage}% {$description} (₹" . number_format($amount) . ")\n";
-                            }
+                    // Always reconstruct agreement from metadata to ensure simplified sections
+                    $metadata = json_decode($proposal->metadata, true) ?? [];
+
+                    // Get GST info from proposed_amount if needed
+                    $totalCost = $metadata['total_cost'] ?? $proposal->proposed_amount ?? 0;
+                    $gstPercentage = $metadata['gst_percentage'] ?? 18;
+                    $gstAmount = ($totalCost * $gstPercentage) / 100;
+                    $finalAmount = $totalCost + $gstAmount;
+
+                    // Get other fields
+                    $projectTitle = $metadata['project_title'] ?? $proposal->project_description ?? 'APP & WEBSITE DEVELOPMENT';
+                    $projectDescription = $metadata['project_description'] ?? '';
+                    $objectives = $metadata['objectives'] ?? '';
+                    $scopeOfWork = $metadata['scope_of_work'] ?? '';
+                    $deliverables = $metadata['deliverables'] ?? '';
+                    $timelineWeeks = $metadata['timeline_weeks'] ?? 4;
+                    $paymentDescriptions = $metadata['payment_descriptions'] ?? [];
+                    $paymentPercentages = $metadata['payment_percentages'] ?? [];
+
+                    // Build payment schedule
+                    $paymentSchedule = "";
+                    if (!empty($paymentDescriptions)) {
+                        foreach ($paymentDescriptions as $index => $description) {
+                            $percentage = $paymentPercentages[$index] ?? 0;
+                            $amount = ($finalAmount * $percentage) / 100;
+                            $paymentSchedule .= "- {$percentage}% {$description} (₹" . number_format($amount) . ")\n";
                         }
-                        
-                        // Reconstruct the full agreement content
-                        $content = "# " . strtoupper($projectTitle) . " AGREEMENT\n\n";
-                        $content .= "This Agreement is made on " . date('d.m.Y') . "\n\n";
-                        
-                        $content .= "**BETWEEN**\n\n";
-                        $content .= "**" . $proposal->lead->customer_name . "**,  \n";
-                        $content .= "hereinafter referred to as the **\"Client\"**,\n\n";
-                        
-                        $content .= "**AND**\n\n";
-                        $content .= "**Konnectix Technologies Pvt. Ltd.**,  \n";
-                        $content .= "hereinafter referred to as the **\"Service Provider.\"**\n\n";
-                        
-                        $content .= "The Client and the Service Provider shall collectively be referred to as the **\"Parties.\"**\n\n";
-                        $content .= "---\n\n";
-                        
-                        $content .= "## 1. PURPOSE OF THE AGREEMENT\n\n";
-                        $content .= "The purpose of this Agreement is to define the terms and conditions under which the Service Provider shall design and develop a " . $projectTitle . " for the Client.\n\n";
-                        
-                        if (!empty($projectDescription)) {
-                            $content .= "## 1.1 PROJECT OVERVIEW\n\n" . $projectDescription . "\n\n";
-                        }
-                        
-                        if (!empty($objectives)) {
-                            $content .= "## 1.2 OBJECTIVES\n\n" . $objectives . "\n\n";
-                        }
-                        
-                        $content .= "## 2. SCOPE OF WORK\n\n";
-                        $content .= "The Service Provider agrees to provide the following services:\n\n";
-                        
-                        if (!empty($scopeOfWork)) {
-                            $content .= $scopeOfWork . "\n\n";
-                        } else {
-                            $content .= "- Professional website/app design and development\n";
-                            $content .= "- Responsive design for all devices\n";
-                            $content .= "- User-friendly interface\n\n";
-                        }
-                        
-                        $content .= "**Note:** Any features or changes beyond the above scope shall be considered additional work and charged separately upon mutual agreement.\n\n";
-                        
-                        $content .= "## 3. PROJECT TIMELINE\n\n";
-                        $content .= "- The project shall commence after receipt of the initial payment and required materials from the Client\n";
-                        $content .= "- Estimated project completion timeline: **" . $timelineWeeks . " weeks**\n";
-                        $content .= "- Any delay due to late content, approvals, or feedback from the Client shall extend the timeline accordingly\n\n";
-                        
-                        $content .= "## 4. FEES & PAYMENT TERMS\n\n";
-                        $content .= "- **Base Project Cost:** ₹" . number_format($totalCost) . "\n";
-                        $content .= "- **GST (" . $gstPercentage . "%):** ₹" . number_format($gstAmount) . "/-\n";
-                        $content .= "- **Total Project Cost:** ₹" . number_format($finalAmount) . "\n\n";
-                        
-                        if (!empty($paymentSchedule)) {
-                            $content .= "**Payment Schedule:**\n" . $paymentSchedule . "\n";
-                        }
-                        
-                        $content .= "The website/app shall not be made live until the full and final payment is received.\n\n";
-                        
-                        $content .= "## 5. DOMAIN & HOSTING\n\n";
-                        $content .= "- The domain name shall be provided by the **" . $domainProvidedBy . "**\n";
-                        if (!empty($hostingDuration)) {
-                            $content .= "- " . $hostingDuration . "\n";
-                        }
-                        $content .= "- The Service Provider shall not be responsible for delays caused due to domain-related issues from the Client's end\n\n";
-                        
-                        $content .= "## 6. CLIENT RESPONSIBILITIES\n\n";
-                        $content .= "The Client agrees to:\n";
-                        if (!empty($clientResponsibilities)) {
-                            foreach ($clientResponsibilities as $responsibility) {
-                                $content .= "- " . $responsibility . "\n";
-                            }
-                        } else {
-                            $content .= "- Provide all necessary content and materials\n";
-                            $content .= "- Ensure timely approvals and feedback\n";
-                        }
-                        $content .= "\n";
-                        
-                        $content .= "## 7. INTELLECTUAL PROPERTY RIGHTS\n\n";
-                        $content .= "- Ownership of the website/app and related files shall be transferred to the Client only after full payment\n";
-                        $content .= "- The Service Provider retains the right to display the completed project in its portfolio unless restricted in writing\n\n";
-                        
-                        $content .= "## 8. WARRANTY & SUPPORT\n\n";
-                        if ($supportMonths > 0) {
-                            $content .= "- The Service Provider shall provide " . $supportMonths . " months of technical support and maintenance from the date of project completion\n";
-                        } else {
-                            $content .= "- Technical support and maintenance shall be provided as mutually agreed upon\n";
-                        }
-                        $content .= "- Support shall include bug fixes, minor updates, and server-related issues\n";
-                        $content .= "- Additional support beyond the stipulated period shall be charged separately\n\n";
-                        
-                        $content .= "## 9. TERMINATION\n\n";
-                        $content .= "- Either Party may terminate this Agreement with written notice\n";
-                        $content .= "- Payments made shall be non-refundable\n";
-                        $content .= "- In case of termination after project commencement, the initial payment shall be forfeited\n\n";
-                        
-                        $content .= "## 10. LIMITATION OF LIABILITY\n\n";
-                        $content .= "The Service Provider shall not be liable for:\n";
-                        $content .= "- Downtime or failure caused by third-party services including domain registrars and hosting providers\n";
-                        $content .= "- Any indirect loss of business, revenue, or data\n\n";
-                        
-                        $content .= "## 11. GOVERNING LAW & JURISDICTION\n\n";
-                        $content .= "This Agreement shall be governed by and construed in accordance with the laws of India, and courts of Kolkata shall have exclusive jurisdiction.\n\n";
-                        
-                        $content .= "## 12. ENTIRE AGREEMENT\n\n";
-                        $content .= "This Agreement constitutes the entire understanding between the Parties and supersedes all prior discussions or communications.\n";
-                        
-                        if (!empty($additionalTerms)) {
-                            $content .= "\n## 13. ADDITIONAL TERMS\n\n" . $additionalTerms . "\n";
-                        }
-                        
-                        $content .= "\n---\n\n";
-                        $content .= "## " . (!empty($additionalTerms) ? "14" : "13") . ". ACCEPTANCE & SIGNATURES\n\n";
-                        $content .= "By signing below, both Parties agree to the terms and conditions stated herein.\n\n";
-                        $content .= "**For " . $proposal->lead->customer_name . " (Client)**  \n";
-                        $content .= "Name: " . $proposal->lead->customer_name . "  \n";
-                        $content .= "Signature: _________________  \n";
-                        $content .= "Date: _________________\n\n";
-                        
-                        $content .= "**For Konnectix Technologies Pvt. Ltd. (Service Provider)**  \n";
-                        $content .= "Name: Ishita Banerjee  \n";
-                        $content .= "Designation: Director  \n";
-                        $content .= "Signature: _________________  \n";
-                        $content .= "Date: " . date('d.m.Y') . "\n\n";
-                        
-                        $content .= "---\n\n";
-                        $content .= "**Contact Information:**  \n";
-                        $content .= "Konnectix Technologies Pvt. Ltd.  \n";
-                        $content .= "📞 7003228913 / 9123354003  \n";
-                        $content .= "✉ info@konnectixtech.com  \n";
-                        $content .= "🌐 www.konnectixtech.com  \n";
-                        $content .= "📍 Dum Dum, Kolkata - 700 074";
                     }
+
+                    // Reconstruct the full agreement content
+                    $content = "# " . strtoupper($projectTitle) . " AGREEMENT\n\n";
+                    $content .= "This Agreement is made on " . date('d.m.Y') . "\n\n";
+
+                    $content .= "**BETWEEN**\n\n";
+                    $content .= "**" . $proposal->lead->customer_name . "**,  \n";
+                    $content .= "hereinafter referred to as the **\"Client\"**,\n\n";
+
+                    $content .= "**AND**\n\n";
+                    $content .= "**Konnectix Technologies Pvt. Ltd.**,  \n";
+                    $content .= "hereinafter referred to as the **\"Service Provider.\"**\n\n";
+
+                    $content .= "The Client and the Service Provider shall collectively be referred to as the **\"Parties.\"**\n\n";
+                    $content .= "---\n\n";
+
+                    $content .= "## 1. PURPOSE OF THE AGREEMENT\n\n";
+                    $content .= "The purpose of this Agreement is to define the terms and conditions under which the Service Provider shall design and develop a " . $projectTitle . " for the Client.\n\n";
+
+                    if (!empty($projectDescription)) {
+                        $content .= "## 1.1 PROJECT OVERVIEW\n\n" . $projectDescription . "\n\n";
+                    }
+
+                    if (!empty($objectives)) {
+                        $content .= "## 1.2 OBJECTIVES\n\n" . $objectives . "\n\n";
+                    }
+
+                    $content .= "## 2. SCOPE OF WORK\n\n";
+                    $content .= "The Service Provider agrees to provide the following services:\n\n";
+
+                    if (!empty($scopeOfWork)) {
+                        $content .= $scopeOfWork . "\n\n";
+                    } else {
+                        $content .= "- Professional website/app design and development\n";
+                        $content .= "- Responsive design for all devices\n";
+                        $content .= "- User-friendly interface\n\n";
+                    }
+
+                    $content .= "**Note:** Any features or changes beyond the above scope shall be considered additional work and charged separately upon mutual agreement.\n\n";
+
+                    $content .= "## 3. PROJECT TIMELINE\n\n";
+                    $content .= "- The project shall commence after receipt of the initial payment and required materials from the Client\n";
+                    $content .= "- Estimated project completion timeline: **" . $timelineWeeks . " weeks**\n";
+                    $content .= "- Any delay due to late content, approvals, or feedback from the Client shall extend the timeline accordingly\n\n";
+
+                    $content .= "## 4. FEES & PAYMENT TERMS\n\n";
+                    $content .= "- **Base Project Cost:** ₹" . number_format($totalCost) . "\n";
+                    $content .= "- **GST (" . $gstPercentage . "%):** ₹" . number_format($gstAmount) . "/-\n";
+                    $content .= "- **Total Project Cost:** ₹" . number_format($finalAmount) . "\n\n";
+
+                    if (!empty($paymentSchedule)) {
+                        $content .= "**Payment Schedule:**\n" . $paymentSchedule . "\n";
+                    }
+
+                    $content .= "---\n\n";
+
+                    $content .= "## 6. DELIVERABLES\n\n";
+                    if (!empty($deliverables)) {
+                        $content .= $deliverables . "\n\n";
+                    } else {
+                        $content .= "- Fully Functional and Live Website\n";
+                        $content .= "- Admin Panel Access (if CMS-based)\n";
+                        $content .= "- 1-Month Complimentary Support Post-Launch\n";
+                        $content .= "- Basic Training Session for Admin Use (if applicable)\n\n";
+                    }
+
+                    $content .= "---\n\n";
+
+                    $content .= "## 7. APPROVAL\n\n";
+                    $content .= "Please review and confirm your acceptance of the proposal.\n\n";
+                    $content .= "**Client Name:** " . $proposal->lead->customer_name . "  \n";
+                    $content .= "**Company Name:** " . ($proposal->lead->company_name ?? 'N/A') . "  \n";
+                    $content .= "**Signature:** _________________  \n";
+                    $content .= "**Date:** _________________\n\n";
+
+                    $content .= "---\n\n";
+
+                    $content .= "## 8. CONTACT INFORMATION\n\n";
+                    $content .= "**Konnectix Technologies Pvt. Ltd.**  \n";
+                    $content .= "📞 Phone: 9123354003  \n";
+                    $content .= "📧 Email: info@konnectixtech.com  \n";
+                    $content .= "🌐 Website: www.konnectixtech.com";
                 @endphp
                 
                 {!! \Illuminate\Support\Str::markdown($content) !!}

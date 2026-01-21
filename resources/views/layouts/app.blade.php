@@ -420,8 +420,32 @@
                     {{-- BDM Personal Management --}}
                     <li>
                         <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
+                            <i class="flaticon-381-clock-2"></i>
+                            <span class="nav-text">Attendance & Salary</span>
+                        </a>
+                        <ul aria-expanded="false">
+                            <li><a href="{{ route('attendance.today') }}">
+                                <i class="flaticon-381-check text-success me-2"></i>Today's Attendance
+                            </a></li>
+                            <li><a href="{{ route('attendance.month-history') }}">
+                                <i class="flaticon-381-list text-primary me-2"></i>Month History
+                            </a></li>
+                            <li><a href="{{ route('attendance.monthly-summary') }}">
+                                <i class="flaticon-381-notepad text-info me-2"></i>Monthly Summary
+                            </a></li>
+                            <li><a href="{{ route('bdm.leave-salary.index') }}">
+                                <i class="flaticon-381-calendar-1 text-warning me-2"></i>Leave Requests
+                            </a></li>
+                            <li><a href="{{ route('bdm.leave-salary.index') }}">
+                                <i class="flaticon-381-price-tag text-success me-2"></i>My Salary
+                            </a></li>
+                        </ul>
+                    </li>
+                    
+                    <li>
+                        <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
                             <i class="flaticon-381-user-9"></i>
-                            <span class="nav-text">Profile, Salary & Leave</span>
+                            <span class="nav-text">Profile & Documents</span>
                         </a>
                         <ul aria-expanded="false">
                             <li><a href="{{ route('bdm.profile') }}">
@@ -430,24 +454,18 @@
                             <li><a href="{{ route('bdm.documents') }}">
                                 <i class="flaticon-381-file-1 text-info me-2"></i>My Documents
                             </a></li>
-                            <li><a href="{{ route('bdm.salary') }}">
-                                <i class="flaticon-381-price-tag text-success me-2"></i>Salary & Remuneration
-                            </a></li>
-                            <li><a href="{{ route('bdm.leaves') }}">
-                                <i class="flaticon-381-calendar-1 text-warning me-2"></i>Leave Management
-                            </a></li>
                         </ul>
                     </li>
                     
-                    <li>
+                    {{-- <li>
                         <a class="ai-icon" href="{{ route('bdm.targets') }}" aria-expanded="false">
                             <i class="flaticon-381-diploma"></i>
                             <span class="nav-text">Target Management</span>
                         </a>
-                    </li>
+                    </li> --}}
 
                     {{-- Website, Software & Application Management --}}
-                    <li class="{{ request()->routeIs('projects.*') ? 'mm-active' : '' }}">
+                    {{-- <li class="{{ request()->routeIs('projects.*') ? 'mm-active' : '' }}">
                         <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
                             <i class="flaticon-381-settings-1"></i>
                             <span class="nav-text">Website, Software & Application Management</span>
@@ -466,10 +484,10 @@
                                 <i class="flaticon-381-success text-success me-2"></i>Completed
                             </a></li>
                         </ul>
-                    </li>
+                    </li> --}}
 
                     {{-- Renewal & Service Management --}}
-                    <li class="{{ request()->routeIs('service-renewals.*') ? 'mm-active' : '' }}">
+                    {{-- <li class="{{ request()->routeIs('service-renewals.*') ? 'mm-active' : '' }}">
                         <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
                             <i class="flaticon-381-refresh"></i>
                             <span class="nav-text">Renewal & Service Management</span>
@@ -492,7 +510,7 @@
                             </a></li>
                         </ul>
                     </li>
-                   
+                    --}}
                 </ul>
 			</div>
         </div>

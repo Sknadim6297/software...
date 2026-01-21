@@ -45,7 +45,7 @@ class ContractController extends Controller
         $validated = $request->validate([
             'final_amount' => 'required|numeric|min:0',
             'start_date' => 'required|date',
-            'expected_completion_date' => 'required|date|after:start_date',
+            'expected_completion_date' => 'required|string|max:255',
             'deliverables' => 'nullable|string',
             'milestones' => 'nullable|string',
             'payment_schedule' => 'nullable|string',

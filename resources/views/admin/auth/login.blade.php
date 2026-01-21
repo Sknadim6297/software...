@@ -24,15 +24,77 @@
         html, body { overflow: hidden; height: 100%; }
         * { font-family: "Momo Trust Display", sans-serif; }
         h1, h2, h3, h4, h5, h6 { font-family: "DM Serif Display", serif; }
-        .sign { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .sign .text-center a img { max-height: 80px; width: auto; }
+        
+        /* Admin Design - Purple Premium Style */
+        .sign { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sign::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: float 20s linear infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        
+        .sign .text-center a img { max-height: 80px; width: auto; position: relative; z-index: 1; }
         .img-fix { max-width: 100%; height: auto; }
         .mobile-logo { display: none; }
+        
+        /* Admin Form Styling */
+        .sign-in-your h4 {
+            color: #333;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .sign-in-your .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 15px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .sign-in-your .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+        }
+        
+        .sign-in-your .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .sign-in-your .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
         @media (max-width: 767px) {
             .sign { display: none !important; }
             .mobile-logo { display: block !important; text-align: center; margin-bottom: 30px; }
             .mobile-logo img { max-height: 60px; width: auto; }
         }
+        
         /* Password toggle */
         .input-group .btn-toggle-pass { border: 1px solid #ced4da; border-left: none; }
         .input-group .form-control { border-right: none; }

@@ -38,7 +38,7 @@ class Contract extends Model
         'final_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'start_date' => 'date',
-        'expected_completion_date' => 'date',
+        'expected_completion_date' => 'string',
         'signed_at' => 'datetime',
         'finalized_at' => 'datetime',
         'sent_to_customer_at' => 'datetime',

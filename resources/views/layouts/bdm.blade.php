@@ -210,8 +210,8 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="{{ route('bdm.leaves') }}" class="nav-link {{ request()->routeIs('bdm.leaves*') ? 'active' : '' }}">
-                    <i class="fas fa-calendar-check"></i> Leave Management
+                <a href="{{ route('bdm.leave-salary.index') }}" class="nav-link {{ request()->routeIs('bdm.leave-salary*') ? 'active' : '' }}">
+                    <i class="fas fa-calendar-check"></i> Leave & Salary Slip
                 </a>
             </li>
             <li class="nav-item">

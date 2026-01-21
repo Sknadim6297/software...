@@ -11,6 +11,7 @@ class Proposal extends Model
 
     protected $fillable = [
         'lead_id',
+        'customer_id',
         'lead_type',
         'customer_name',
         'customer_email',
@@ -45,6 +46,14 @@ class Proposal extends Model
     public function lead()
     {
         return $this->belongsTo(Lead::class);
+    }
+
+    /**
+     * Get the customer associated with the proposal
+     */
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
     }
 
     /**

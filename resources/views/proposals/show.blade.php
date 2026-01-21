@@ -379,8 +379,8 @@
                     <div class="alert alert-info">
                         <strong>What happens next:</strong>
                         <ul class="mb-0">
-                            <li>✅ Contract will be automatically generated</li>
-                            <li>✅ Invoice will be automatically created</li>
+                            <li>✅ Contract will be automatically generated based on project type</li>
+                            <li>✅ Invoice will be automatically created with payment schedule</li>
                             <li>✅ Customer will be added to Customer Management Portal</li>
                             <li>✅ Emails will be sent to customer and admin</li>
                         </ul>
@@ -398,13 +398,8 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Expected Completion Date <span class="text-danger">*</span></label>
-                        <input type="date" name="expected_completion_date" class="form-control" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Deliverables</label>
-                        <textarea name="deliverables" class="form-control" rows="3">{{ $proposal->deliverables }}</textarea>
+                        <label class="form-label">Agreement Duration <span class="text-danger">*</span></label>
+                        <input type="text" name="agreement_duration" class="form-control" placeholder="e.g., 12 months, 6 months, Ongoing" required>
                     </div>
 
                     <div class="mb-3">
@@ -413,13 +408,8 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Payment Schedule</label>
-                        <textarea name="payment_schedule" class="form-control" rows="2">{{ $proposal->payment_terms }}</textarea>
-                    </div>
-
-                    <div class="mb-3">
                         <label class="form-label">Terms & Conditions (Optional)</label>
-                        <textarea name="terms_and_conditions" class="form-control" rows="3"></textarea>
+                        <textarea name="terms_and_conditions" class="form-control" rows="3" placeholder="Add any additional terms and conditions..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">

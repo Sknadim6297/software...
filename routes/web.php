@@ -15,15 +15,23 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use Illuminate\Support\Facades\Artisan;
 
+// Employee Controllers
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\LeaveRequestController;
+use App\Http\Controllers\SalaryController;
+use App\Http\Controllers\BDMLeaveSalaryController;
+
 // Admin Controllers
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\DocumentController;
-use App\Http\Controllers\Admin\SalaryController;
-use App\Http\Controllers\Admin\LeaveController;
+use App\Http\Controllers\Admin\AdminSalaryController;
+use App\Http\Controllers\Admin\AdminLeaveController;
+use App\Http\Controllers\Admin\AttendanceController as AdminAttendanceController;
 use App\Http\Controllers\Admin\TargetController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\BDMLeaveSalaryController as AdminBDMLeaveSalaryController;
 
 // Admin Authentication Routes
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -39,6 +47,73 @@ Route::prefix('admin')->name('admin.')->group(function () {
 Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
     // Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    
+    // Attendance Management
+    Route::prefix('attendance')->name('attendance.')->group(function () {
+        Route::get('/', [AdminAttendanceController::class, 'dashboard'])->name('dashboard');
+        Route::get('/all', [AdminAttendanceController::class, 'index'])->name('index');
+        Route::get('/{attendance}/edit', [AdminAttendanceController::class, 'edit'])->name('edit');
+        Route::put('/{attendance}', [AdminAttendanceController::class, 'update'])->name('update');
+        Route::post('/add-manual', [AdminAttendanceController::class, 'addManual'])->name('add-manual');
+        Route::post('/{attendance}/unlock-checkout', [AdminAttendanceController::class, 'unlockCheckout'])->name('unlock-checkout');
+        Route::post('/{attendance}/remove-penalty', [AdminAttendanceController::class, 'removePenalty'])->name('remove-penalty');
+        Route::get('/employee/{user}/history', [AdminAttendanceController::class, 'employeeHistory'])->name('employee-history');
+        Route::get('/settings', [AdminAttendanceController::class, 'settings'])->name('settings');
+        Route::post('/settings/update', [AdminAttendanceController::class, 'updateSettings'])->name('update-settings');
+        Route::get('/holidays', [AdminAttendanceController::class, 'holidays'])->name('holidays');
+        Route::post('/holidays/add', [AdminAttendanceController::class, 'addHoliday'])->name('add-holiday');
+        Route::delete('/holidays/{holiday}', [AdminAttendanceController::class, 'deleteHoliday'])->name('delete-holiday');
+    });
+    
+    // Salary Management
+    Route::prefix('salary')->name('salary.')->group(function () {
+        Route::get('/', [AdminSalaryController::class, 'index'])->name('index');
+        Route::get('/{salary}', [AdminSalaryController::class, 'show'])->name('show');
+        Route::get('/employee/{user}/settings', [AdminSalaryController::class, 'editSettings'])->name('settings');
+        Route::put('/employee/{user}/settings', [AdminSalaryController::class, 'updateSettings'])->name('update-settings');
+        Route::post('/generate-monthly', [AdminSalaryController::class, 'generateMonthly'])->name('generate-monthly');
+        Route::post('/process-month', [AdminSalaryController::class, 'processMonth'])->name('process-month');
+        Route::post('/export', [AdminSalaryController::class, 'exportSheet'])->name('export');
+        Route::post('/email-payslips', [AdminSalaryController::class, 'emailPayslips'])->name('email-payslips');
+        Route::get('/reports', [AdminSalaryController::class, 'report'])->name('report');
+    });
+    
+    // BDM Leave & Salary Management (New Module)
+    Route::prefix('leave-salary')->name('leave-salary.')->group(function () {
+        // Leave Management
+        Route::prefix('leaves')->name('leaves.')->group(function () {
+            Route::get('/', [AdminBDMLeaveSalaryController::class, 'index'])->name('index');
+            Route::get('/{leave}', [AdminBDMLeaveSalaryController::class, 'show'])->name('show');
+            Route::post('/{leave}/approve', [AdminBDMLeaveSalaryController::class, 'approve'])->name('approve');
+            Route::post('/{leave}/reject', [AdminBDMLeaveSalaryController::class, 'reject'])->name('reject');
+            Route::get('/balances', [AdminBDMLeaveSalaryController::class, 'leaveBalances'])->name('balances');
+            Route::post('/allocate/{bdm}', [AdminBDMLeaveSalaryController::class, 'setLeaveAllocation'])->name('allocate');
+            Route::get('/reports/monthly', [AdminBDMLeaveSalaryController::class, 'monthlyLeaveReport'])->name('monthly-report');
+        });
+        
+        // Salary Management
+        Route::prefix('salary')->name('salary.')->group(function () {
+            Route::get('/', [AdminBDMLeaveSalaryController::class, 'salaryIndex'])->name('index');
+            Route::get('/{salary}', [AdminBDMLeaveSalaryController::class, 'salaryShow'])->name('show');
+            Route::post('/{salary}/regenerate', [AdminBDMLeaveSalaryController::class, 'regenerateSalary'])->name('regenerate');
+            Route::post('/generate-monthly', [AdminBDMLeaveSalaryController::class, 'generateMonthlySalaries'])->name('generate-monthly');
+            Route::post('/process-month', [AdminBDMLeaveSalaryController::class, 'processMonthSalaries'])->name('process-month');
+            Route::post('/export', [AdminBDMLeaveSalaryController::class, 'exportSalarySheet'])->name('export');
+            Route::post('/email-payslips', [AdminBDMLeaveSalaryController::class, 'emailPayslips'])->name('email-payslips');
+        });
+    });
+    
+    // BDM Leave Management (Old routes - to be deprecated)
+    Route::prefix('admin/leaves')->name('admin.leaves.')->group(function () {
+        Route::get('/', [AdminLeaveController::class, 'index'])->name('index');
+        Route::get('/balances', [AdminLeaveController::class, 'balances'])->name('balances');
+        Route::get('/{leave}', [AdminLeaveController::class, 'show'])->name('show');
+        Route::post('/{leave}/approve', [AdminLeaveController::class, 'approve'])->name('approve');
+        Route::post('/{leave}/reject', [AdminLeaveController::class, 'reject'])->name('reject');
+        Route::get('/bdm/{bdm}/history', [AdminLeaveController::class, 'employeeHistory'])->name('employee-history');
+        Route::get('/reports/monthly', [AdminLeaveController::class, 'report'])->name('report');
+        Route::get('/reports/summary', [AdminLeaveController::class, 'monthlySummary'])->name('summary');
+    });
     
     // Employee Management
     Route::resource('employees', EmployeeController::class);
@@ -56,15 +131,6 @@ Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
     Route::resource('salaries', SalaryController::class);
     Route::get('salaries/{salary}/download', [SalaryController::class, 'download'])->name('salaries.download');
     Route::post('salaries/{salary}/upload-slip', [SalaryController::class, 'uploadSlip'])->name('salaries.upload-slip');
-    
-    // Leave Management
-    Route::get('leaves', [LeaveController::class, 'index'])->name('leaves.index');
-    Route::get('leaves/{leave}', [LeaveController::class, 'show'])->name('leaves.show');
-    Route::post('leaves/{leave}/approve', [LeaveController::class, 'approve'])->name('leaves.approve');
-    Route::post('leaves/{leave}/reject', [LeaveController::class, 'reject'])->name('leaves.reject');
-    Route::delete('leaves/{leave}', [LeaveController::class, 'destroy'])->name('leaves.destroy');
-    Route::get('leave-balances', [LeaveController::class, 'balances'])->name('leaves.balances');
-    Route::post('leave-balances/{balance}/update', [LeaveController::class, 'updateBalance'])->name('leaves.update-balance');
     
     // Target Management
     Route::resource('targets', TargetController::class);
@@ -188,6 +254,9 @@ Route::middleware(['auth', 'bdm.check'])->group(function () {
         
         // View Agreement as Webpage
         Route::get('/{proposal}/agreement', [ProposalController::class, 'viewAgreement'])->name('agreement');
+        
+        // View Contract as Webpage (for accepted proposals)
+        Route::get('/{proposal}/contract', [ProposalController::class, 'viewContract'])->name('contract');
     });
 
     // Contract Management Routes
@@ -207,6 +276,24 @@ Route::middleware(['auth', 'bdm.check'])->group(function () {
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'generatePdf'])->name('invoices.pdf');
     Route::get('/invoices/contract/{id}/details', [InvoiceController::class, 'getContractDetails'])->name('invoices.contract.details');
     Route::post('/invoices/get-invoice-number', [InvoiceController::class, 'getInvoiceNumber'])->name('invoices.get-invoice-number');
+
+    // Attendance Management Routes
+    Route::prefix('attendance')->name('attendance.')->group(function () {
+        Route::get('/today', [AttendanceController::class, 'today'])->name('today');
+        Route::post('/check-in', [AttendanceController::class, 'checkIn'])->name('check-in');
+        Route::post('/check-out', [AttendanceController::class, 'checkOut'])->name('check-out');
+        Route::get('/select-date', [AttendanceController::class, 'selectDate'])->name('select-date');
+        Route::get('/month-history', [AttendanceController::class, 'monthHistory'])->name('month-history');
+        Route::get('/monthly-summary', [AttendanceController::class, 'monthlySummary'])->name('monthly-summary');
+    });
+
+    // Salary Management Routes
+    Route::prefix('salary')->name('salary.')->group(function () {
+        Route::get('/', [SalaryController::class, 'index'])->name('index');
+        Route::get('/{salary}', [SalaryController::class, 'show'])->name('show');
+        Route::get('/{salary}/download', [SalaryController::class, 'downloadPayslip'])->name('download');
+        Route::get('/current/calculate', [SalaryController::class, 'calculateCurrent'])->name('calculate-current');
+    });
 
     // BDM Panel Routes
     Route::prefix('bdm')->name('bdm.')->group(function () {
@@ -229,6 +316,16 @@ Route::middleware(['auth', 'bdm.check'])->group(function () {
         // Leaves
         Route::get('/leaves', [BDMController::class, 'showLeaves'])->name('leaves');
         Route::post('/leaves/apply', [BDMController::class, 'applyLeave'])->name('leaves.apply');
+        
+        // New Leave & Salary Slip Module
+        Route::prefix('leave-salary')->name('leave-salary.')->group(function () {
+            Route::get('/', [BDMLeaveSalaryController::class, 'index'])->name('index');
+            Route::get('/apply', [BDMLeaveSalaryController::class, 'applyLeaveForm'])->name('apply-form');
+            Route::post('/apply', [BDMLeaveSalaryController::class, 'applyLeave'])->name('apply');
+            Route::get('/history', [BDMLeaveSalaryController::class, 'leaveHistory'])->name('history');
+            Route::get('/{salary}/download', [BDMLeaveSalaryController::class, 'downloadSalarySlip'])->name('salary-download');
+            Route::get('/{salary}/details', [BDMLeaveSalaryController::class, 'salarySlipDetails'])->name('salary-details');
+        });
         
         // Targets
         Route::get('/targets', [BDMController::class, 'showTargets'])->name('targets');
