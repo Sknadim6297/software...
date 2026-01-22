@@ -84,15 +84,15 @@
                             <tbody>
                                 @forelse($salaries as $salary)
                                     <tr>
-                                        <td>{{ $salary->user->name }}</td>
-                                        <td>₹{{ number_format($salary->base_salary, 2) }}</td>
+                                        <td>{{ $salary->bdm->user->name ?? 'N/A' }}</td>
+                                        <td>₹{{ number_format($salary->basic_salary, 2) }}</td>
                                         <td>
-                                            <span class="badge badge-success">{{ $salary->present_days }}</span> /
-                                            <span class="badge badge-danger">{{ $salary->absent_days }}</span> /
-                                            <span class="badge badge-warning">{{ $salary->half_days }}</span>
+                                            <span class="badge badge-success">{{ $salary->total_present_days ?? 0 }}</span> /
+                                            <span class="badge badge-danger">{{ $salary->total_leaves ?? 0 }}</span> /
+                                            <span class="badge badge-warning">0</span>
                                         </td>
-                                        <td><span class="badge badge-info">{{ $salary->late_count }}</span></td>
-                                        <td class="text-danger">₹{{ number_format($salary->total_deductions, 2) }}</td>
+                                        <td><span class="badge badge-info">0</span></td>
+                                        <td class="text-danger">₹{{ number_format($salary->deductions, 2) }}</td>
                                         <td><strong class="text-success">₹{{ number_format($salary->net_salary, 2) }}</strong></td>
                                         <td>
                                             @if($salary->is_processed)
@@ -105,9 +105,11 @@
                                             <a href="{{ route('admin.salary.show', $salary) }}" class="btn btn-sm btn-primary">
                                                 <i class="fa fa-eye"></i>
                                             </a>
-                                            <a href="{{ route('admin.salary.settings', $salary->user) }}" class="btn btn-sm btn-info">
-                                                <i class="fa fa-cog"></i>
-                                            </a>
+                                            @if($salary->bdm && $salary->bdm->user)
+                                                <a href="{{ route('admin.salary.settings', $salary->bdm->user) }}" class="btn btn-sm btn-info">
+                                                    <i class="fa fa-cog"></i>
+                                                </a>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty

@@ -16,6 +16,14 @@
                 </a>
             </div>
             <div class="card-body">
+                @isset($demoFallback)
+                    @if($demoFallback)
+                        <div class="alert alert-info d-flex align-items-center" role="alert">
+                            <i class="flaticon-381-info me-2"></i>
+                            <span>Showing sample projects so you can explore the module. Create your own project to see your assignments here.</span>
+                        </div>
+                    @endif
+                @endisset
                 {{-- Filters --}}
                 <div class="row mb-4">
                     <div class="col-md-3">
@@ -89,14 +97,14 @@
                                     <td>
                                         <div class="btn-group" role="group">
                                             <a href="{{ route('projects.show', $project->id) }}" class="btn btn-sm btn-info" title="View Details">
-                                                <i class="flaticon-381-eye"></i>
+                                                <i class="fa fa-eye"></i>
                                             </a>
                                             <a href="{{ route('projects.edit', $project->id) }}" class="btn btn-sm btn-primary" title="Edit Project">
-                                                <i class="flaticon-381-edit"></i>
+                                                <i class="fa fa-edit"></i>
                                             </a>
                                             @if($project->status === 'In Progress' && $project->next_pending_installment)
                                                 <a href="{{ route('projects.take-payment', $project->id) }}" class="btn btn-sm btn-success" title="Take Payment">
-                                                    <i class="flaticon-381-coin"></i>
+                                                    <i class="fa fa-money"></i>
                                                 </a>
                                             @endif
                                         </div>

@@ -22,6 +22,7 @@ class BDM extends Model
         'email',
         'phone',
         'employee_code',
+        'designation',
         'joining_date',
         'current_ctc',
         'status',

@@ -92,7 +92,7 @@
                             @forelse($leaves as $leave)
                                 <tr>
                                     <td>{{ $leave->bdm->user->name ?? 'N/A' }}</td>
-                                    <td><strong>{{ $leave->leave_date->format('d M, Y') }}</strong></td>
+                                    <td><strong>{{ $leave->leave_date ? $leave->leave_date->format('d M, Y') : 'N/A' }}</strong></td>
                                     <td>
                                         @if($leave->leave_type == 'casual')
                                             <span class="badge badge-info">Casual Leave</span>
@@ -103,7 +103,7 @@
                                         @endif
                                     </td>
                                     <td>{{ Str::limit($leave->reason, 40) }}</td>
-                                    <td>{{ $leave->applied_at->format('d M, Y') }}</td>
+                                    <td>{{ $leave->applied_at ? $leave->applied_at->format('d M, Y') : 'N/A' }}</td>
                                     <td>
                                         @if($leave->status === 'approved')
                                             <span class="badge badge-success">Approved</span>

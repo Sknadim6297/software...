@@ -425,7 +425,7 @@
                         </a>
                         <ul aria-expanded="false">
                             <li><a href="{{ route('attendance.today') }}">
-                                <i class="flaticon-381-check text-success me-2"></i>Today's Attendance
+                                <i class="flaticon-381-success text-success me-2"></i>Today's Attendance
                             </a></li>
                             <li><a href="{{ route('attendance.month-history') }}">
                                 <i class="flaticon-381-list text-primary me-2"></i>Month History
@@ -457,15 +457,15 @@
                         </ul>
                     </li>
                     
-                    {{-- <li>
+                    <li>
                         <a class="ai-icon" href="{{ route('bdm.targets') }}" aria-expanded="false">
                             <i class="flaticon-381-diploma"></i>
                             <span class="nav-text">Target Management</span>
                         </a>
-                    </li> --}}
+                    </li>
 
                     {{-- Website, Software & Application Management --}}
-                    {{-- <li class="{{ request()->routeIs('projects.*') ? 'mm-active' : '' }}">
+                    <li class="{{ request()->routeIs('projects.*') ? 'mm-active' : '' }}">
                         <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
                             <i class="flaticon-381-settings-1"></i>
                             <span class="nav-text">Website, Software & Application Management</span>
@@ -484,12 +484,12 @@
                                 <i class="flaticon-381-success text-success me-2"></i>Completed
                             </a></li>
                         </ul>
-                    </li> --}}
+                    </li>
 
                     {{-- Renewal & Service Management --}}
-                    {{-- <li class="{{ request()->routeIs('service-renewals.*') ? 'mm-active' : '' }}">
+                    <li class="{{ request()->routeIs('service-renewals.*') ? 'mm-active' : '' }}">
                         <a class="has-arrow ai-icon" href="javascript:void(0);" aria-expanded="false">
-                            <i class="flaticon-381-refresh"></i>
+                            <i class="flaticon-381-back-1"></i>
                             <span class="nav-text">Renewal & Service Management</span>
                         </a>
                         <ul aria-expanded="false">
@@ -499,18 +499,9 @@
                             <li><a href="{{ route('service-renewals.create') }}">
                                 <i class="flaticon-381-add text-success me-2"></i>Create Renewal
                             </a></li>
-                            <li><a href="{{ route('contracts.index') }}">
-                                <i class="flaticon-381-notebook-1 text-warning me-2"></i>Contracts
-                            </a></li>
-                            <li><a href="{{ route('invoices.index') }}">
-                                <i class="flaticon-381-notepad text-info me-2"></i>Invoices
-                            </a></li>
-                            <li><a href="{{ route('projects.index') }}">
-                                <i class="flaticon-381-settings-1 text-secondary me-2"></i>Projects
-                            </a></li>
                         </ul>
                     </li>
-                    --}}
+                   
                 </ul>
 			</div>
         </div>

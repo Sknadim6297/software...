@@ -36,27 +36,27 @@
                         </tr>
                         <tr>
                             <th>Customer Name</th>
-                            <td>{{ $project->customer_name }}</td>
+                            <td>{{ $project->customer->customer_name ?? $project->customer_name ?? 'N/A' }}</td>
                         </tr>
                         <tr>
                             <th>Customer Mobile</th>
-                            <td>{{ $project->customer_mobile }}</td>
+                            <td>{{ $project->customer->number ?? $project->customer_mobile ?? 'N/A' }}</td>
                         </tr>
                         <tr>
                             <th>Customer Email</th>
-                            <td>{{ $project->customer_email }}</td>
+                            <td>{{ $project->customer->email ?? $project->customer_email ?? 'N/A' }}</td>
                         </tr>
                         <tr>
                             <th>BDM</th>
-                            <td>{{ $project->bdm->name ?? 'N/A' }} ({{ $project->bdm->employee_id ?? 'N/A' }})</td>
+                            <td>{{ $project->bdm->name ?? 'N/A' }} ({{ $project->bdm->employee_code ?? 'N/A' }})</td>
                         </tr>
                         <tr>
                             <th>Coordinator</th>
-                            <td>{{ $project->coordinator_name }}</td>
+                            <td>{{ $project->coordinator->name ?? $project->project_coordinator ?? 'N/A' }}</td>
                         </tr>
                         <tr>
                             <th>Start Date</th>
-                            <td>{{ $project->project_start_date ? \Carbon\Carbon::parse($project->project_start_date)->format('d M, Y') : 'N/A' }}</td>
+                            <td>{{ $project->start_date ? \Carbon\Carbon::parse($project->start_date)->format('d M, Y') : 'N/A' }}</td>
                         </tr>
                         <tr>
                             <th>Project Status</th>
@@ -69,105 +69,6 @@
                     </table>
                 </div>
             </div>
-
-            {{-- Domain & Hosting Details --}}
-            @if($project->domain_name || $project->hosting_provider)
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title">Domain & Hosting Details</h4>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5>Domain Details</h5>
-                            <table class="table table-sm table-bordered">
-                                <tr>
-                                    <th>Domain Name</th>
-                                    <td>{{ $project->domain_name ?? 'N/A' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Purchase Date</th>
-                                    <td>{{ $project->domain_purchase_date ? \Carbon\Carbon::parse($project->domain_purchase_date)->format('d M, Y') : 'N/A' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Amount</th>
-                                    <td>₹{{ number_format($project->domain_amount ?? 0, 2) }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Renewal Cycle</th>
-                                    <td>{{ $project->domain_renewal_cycle ?? 'N/A' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Renewal Date</th>
-                                    <td>{{ $project->domain_renewal_date ? \Carbon\Carbon::parse($project->domain_renewal_date)->format('d M, Y') : 'N/A' }}</td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <h5>Hosting Details</h5>
-                            <table class="table table-sm table-bordered">
-                                <tr>
-                                    <th>Provider</th>
-                                    <td>{{ $project->hosting_provider ?? 'N/A' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Purchase Date</th>
-                                    <td>{{ $project->hosting_purchase_date ? \Carbon\Carbon::parse($project->hosting_purchase_date)->format('d M, Y') : 'N/A' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Amount</th>
-                                    <td>₹{{ number_format($project->hosting_amount ?? 0, 2) }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Renewal Cycle</th>
-                                    <td>{{ $project->hosting_renewal_cycle ?? 'N/A' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Renewal Date</th>
-                                    <td>{{ $project->hosting_renewal_date ? \Carbon\Carbon::parse($project->hosting_renewal_date)->format('d M, Y') : 'N/A' }}</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @endif
-
-            {{-- Maintenance Contract --}}
-            @if($project->maintenance_enabled)
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title">Maintenance Contract</h4>
-                </div>
-                <div class="card-body">
-                    <table class="table table-bordered">
-                        <tr>
-                            <th width="30%">Type</th>
-                            <td><span class="badge badge-{{ $project->maintenance_type === 'Free' ? 'success' : 'info' }}">{{ $project->maintenance_type }}</span></td>
-                        </tr>
-                        @if($project->maintenance_type === 'Free')
-                        <tr>
-                            <th>Duration</th>
-                            <td>{{ $project->maintenance_months }} months</td>
-                        </tr>
-                        @else
-                        <tr>
-                            <th>Charge</th>
-                            <td><strong class="text-success">₹{{ number_format($project->maintenance_charge, 2) }}</strong></td>
-                        </tr>
-                        <tr>
-                            <th>Billing Cycle</th>
-                            <td>{{ $project->maintenance_billing_cycle }}</td>
-                        </tr>
-                        @endif
-                        <tr>
-                            <th>Start Date</th>
-                            <td>{{ $project->maintenance_start_date ? \Carbon\Carbon::parse($project->maintenance_start_date)->format('d M, Y') : 'N/A' }}</td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-            @endif
         </div>
 
         {{-- Payment Progress --}}
@@ -258,5 +159,112 @@
             </div>
         </div>
     </div>
+
+    {{-- Domain & Hosting Details --}}
+    @if($project->domain_name || $project->hosting_provider)
+    <div class="row mt-3">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">Domain & Hosting Details</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Domain Details</h5>
+                            <table class="table table-sm table-bordered">
+                                <tr>
+                                    <th width="40%">Domain Name</th>
+                                    <td>{{ $project->domain_name ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Purchase Date</th>
+                                    <td>{{ $project->domain_purchase_date ? \Carbon\Carbon::parse($project->domain_purchase_date)->format('d M, Y') : 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Amount</th>
+                                    <td>₹{{ number_format($project->domain_amount ?? 0, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Renewal Cycle</th>
+                                    <td>{{ $project->domain_renewal_cycle ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Renewal Date</th>
+                                    <td>{{ $project->domain_renewal_date ? \Carbon\Carbon::parse($project->domain_renewal_date)->format('d M, Y') : 'N/A' }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Hosting Details</h5>
+                            <table class="table table-sm table-bordered">
+                                <tr>
+                                    <th width="40%">Provider</th>
+                                    <td>{{ $project->hosting_provider ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Purchase Date</th>
+                                    <td>{{ $project->hosting_purchase_date ? \Carbon\Carbon::parse($project->hosting_purchase_date)->format('d M, Y') : 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Amount</th>
+                                    <td>₹{{ number_format($project->hosting_amount ?? 0, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Renewal Cycle</th>
+                                    <td>{{ $project->hosting_renewal_cycle ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Renewal Date</th>
+                                    <td>{{ $project->hosting_renewal_date ? \Carbon\Carbon::parse($project->hosting_renewal_date)->format('d M, Y') : 'N/A' }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Maintenance Contract --}}
+    @if($project->maintenance_enabled)
+    <div class="row mt-3">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">Maintenance Contract</h4>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <tr>
+                            <th width="30%">Type</th>
+                            <td><span class="badge badge-{{ $project->maintenance_type === 'Free' ? 'success' : 'info' }}">{{ $project->maintenance_type }}</span></td>
+                        </tr>
+                        @if($project->maintenance_type === 'Free')
+                        <tr>
+                            <th>Duration</th>
+                            <td>{{ $project->maintenance_months }} months</td>
+                        </tr>
+                        @else
+                        <tr>
+                            <th>Charge</th>
+                            <td><strong class="text-success">₹{{ number_format($project->maintenance_charge, 2) }}</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Billing Cycle</th>
+                            <td>{{ $project->maintenance_billing_cycle }}</td>
+                        </tr>
+                        @endif
+                        <tr>
+                            <th>Start Date</th>
+                            <td>{{ $project->maintenance_start_date ? \Carbon\Carbon::parse($project->maintenance_start_date)->format('d M, Y') : 'N/A' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
 @endsection

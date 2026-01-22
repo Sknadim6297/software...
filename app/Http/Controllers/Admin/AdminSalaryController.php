@@ -25,7 +25,7 @@ class AdminSalaryController extends Controller
         $monthYear = sprintf('%04d-%02d', $year, $month);
 
         $salaries = BDMSalary::where('month_year', $monthYear)
-            ->with('bdm')
+            ->with('bdm.user')
             ->paginate(20);
 
         return view('admin.salary.index', [
@@ -40,6 +40,7 @@ class AdminSalaryController extends Controller
      */
     public function show(BDMSalary $salary)
     {
+        $salary->load('bdm.user');
         return view('admin.salary.show', ['salary' => $salary]);
     }
 
@@ -222,15 +223,27 @@ class AdminSalaryController extends Controller
 
         $monthYear = sprintf('%04d-%02d', $request->year, $request->month);
         $salaries = BDMSalary::where('month_year', $monthYear)
-            ->with('bdm')
+            ->with('bdm.user')
             ->get();
 
-        foreach ($salaries as $salary) {
-            // TODO: Send email with payslip attachment
-            // Mail::to($salary->user->email)->send(new PayslipMail($salary));
+        if ($salaries->isEmpty()) {
+            return back()->with('error', 'No salary slips available for the selected month. Please generate salaries first.');
         }
 
-        return back()->with('success', sprintf('Payslips emailed to %d employees', $salaries->count()));
+        $emailCount = 0;
+        foreach ($salaries as $salary) {
+            if ($salary->bdm && $salary->bdm->user && $salary->bdm->user->email) {
+                // TODO: Send email with payslip attachment
+                // Mail::to($salary->bdm->user->email)->send(new PayslipMail($salary));
+                $emailCount++;
+            }
+        }
+
+        if ($emailCount > 0) {
+            return back()->with('success', sprintf('Payslips will be emailed to %d employees', $emailCount));
+        } else {
+            return back()->with('error', 'No valid employee emails found to send payslips.');
+        }
     }
 
     /**
@@ -240,21 +253,20 @@ class AdminSalaryController extends Controller
     {
         $year = $request->get('year', now()->year);
         $month = $request->get('month', now()->month);
+        $monthYear = sprintf('%04d-%02d', $year, $month);
 
-        $report = Salary::whereYear('year', $year)
-            ->whereMonth('month', $month)
+        $report = BDMSalary::where('month_year', $monthYear)
             ->selectRaw('
                 COUNT(*) as total_employees,
-                SUM(base_salary) as total_base_salary,
-                SUM(total_deductions) as total_deductions,
+                SUM(basic_salary) as total_base_salary,
+                SUM(deductions) as total_deductions,
                 SUM(net_salary) as total_net_salary,
                 AVG(net_salary) as average_salary
             ')
             ->first();
 
-        $topEarners = Salary::whereYear('year', $year)
-            ->whereMonth('month', $month)
-            ->with('user')
+        $topEarners = BDMSalary::where('month_year', $monthYear)
+            ->with('bdm.user')
             ->orderByDesc('net_salary')
             ->limit(10)
             ->get();

@@ -124,6 +124,10 @@
                                 <td>{{ $employee->employee_code }}</td>
                             </tr>
                             <tr>
+                                <th>Designation:</th>
+                                <td><span class="badge badge-primary">{{ $employee->designation ?? 'BDM' }}</span></td>
+                            </tr>
+                            <tr>
                                 <th>Joining Date:</th>
                                 <td>{{ $employee->joining_date->format('d M Y') }}</td>
                             </tr>

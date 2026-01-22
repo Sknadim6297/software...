@@ -49,9 +49,9 @@
                             @forelse($services as $index => $service)
                             <tr>
                                 <td>{{ $services->firstItem() + $index }}</td>
-                                <td>{{ $service->customer->name }}</td>
-                                <td>{{ $service->customer->email }}</td>
-                                <td>{{ $service->customer->phone }}</td>
+                                <td>{{ $service->customer->customer_name ?? 'N/A' }}</td>
+                                <td>{{ $service->customer->email ?? 'N/A' }}</td>
+                                <td>{{ $service->customer->number ?? 'N/A' }}</td>
                                 <td><span class="badge badge-info">{{ $service->service_type }}</span></td>
                                 <td>{{ $service->start_date->format('d M, Y') }}</td>
                                 <td>

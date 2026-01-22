@@ -10,6 +10,7 @@
     
     <!-- Favicon icon -->
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('template/images/favicon.png') }}">
+    <link href="{{ asset('template/icons/flaticon/flaticon.css') }}" rel="stylesheet">
     <link href="{{ asset('template/vendor/jqvmap/css/jqvmap.min.css') }}" rel="stylesheet">
 	<link rel="stylesheet" href="{{ asset('template/vendor/chartist/css/chartist.min.css') }}">
     <link href="{{ asset('template/vendor/bootstrap-select/dist/css/bootstrap-select.min.css') }}" rel="stylesheet">
@@ -315,18 +316,22 @@
                                 <i class="flaticon-381-list text-primary me-2"></i>All Projects
                             </a></li>
                             <li><a href="{{ route('admin.projects.index', ['status' => 'in-progress']) }}">
-                                <i class="flaticon-381-loading text-warning me-2"></i>In Progress
+                                <i class="flaticon-381-clock-2 text-warning me-2"></i>In Progress
                             </a></li>
                             <li><a href="{{ route('admin.projects.index', ['status' => 'completed']) }}">
                                 <i class="flaticon-381-success text-success me-2"></i>Completed
                             </a></li>
                             <li><a href="{{ route('admin.projects.payments') }}">
-                                <i class="flaticon-381-coin text-info me-2"></i>Payment Tracking
-                            </a></li>
-                            <li><a href="{{ route('admin.projects.maintenance') }}">
-                                <i class="flaticon-381-heart text-danger me-2"></i>Maintenance Contracts
+                                <i class="flaticon-381-calculator text-info me-2"></i>Payment Tracking
                             </a></li>
                         </ul>
+                    </li>
+
+                    <li class="{{ request()->routeIs('admin.projects.maintenance') ? 'mm-active' : '' }}">
+                        <a class="ai-icon" href="{{ route('admin.projects.maintenance') }}">
+                            <i class="flaticon-381-heart"></i>
+                            <span class="nav-text">Renewal & Service Management</span>
+                        </a>
                     </li>
                     
                     <li class="{{ request()->routeIs('admin.reports.*') ? 'mm-active' : '' }}">

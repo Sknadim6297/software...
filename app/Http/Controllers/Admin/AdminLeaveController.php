@@ -81,16 +81,18 @@ class AdminLeaveController extends Controller
             }
         }
 
-        // Mark attendance as leave for that date
-        Attendance::updateOrCreate(
-            [
-                'user_id' => $bdm->user_id,
-                'attendance_date' => $leave->leave_date,
-            ],
-            [
-                'status' => 'leave',
-            ]
-        );
+        // Mark attendance as leave for that date (only if leave_date is set)
+        if ($leave->leave_date) {
+            Attendance::updateOrCreate(
+                [
+                    'user_id' => $bdm->user_id,
+                    'attendance_date' => $leave->leave_date,
+                ],
+                [
+                    'status' => 'leave',
+                ]
+            );
+        }
 
         return back()->with('success', 'Leave request approved successfully');
     }
@@ -203,10 +205,12 @@ class AdminLeaveController extends Controller
      */
     public function balances()
     {
-        $bdms = BDM::with(['user', 'leaveBalance'])->get();
+        $balances = BDM::with(['user', 'leaveBalance'])->get()->map(function($bdm) {
+            return $bdm->leaveBalance;
+        })->filter();
         
         return view('admin.leaves.balances', [
-            'bdms' => $bdms,
+            'balances' => $balances,
         ]);
     }
 }

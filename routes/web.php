@@ -104,7 +104,7 @@ Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
     });
     
     // BDM Leave Management (Old routes - to be deprecated)
-    Route::prefix('admin/leaves')->name('admin.leaves.')->group(function () {
+    Route::prefix('leaves')->name('leaves.')->group(function () {
         Route::get('/', [AdminLeaveController::class, 'index'])->name('index');
         Route::get('/balances', [AdminLeaveController::class, 'balances'])->name('balances');
         Route::get('/{leave}', [AdminLeaveController::class, 'show'])->name('show');
@@ -367,6 +367,7 @@ Route::middleware(['auth', 'bdm.check'])->group(function () {
         // Project Payment Actions
         Route::get('/{project}/take-payment', [ProjectController::class, 'takePayment'])->name('take-payment');
         Route::post('/{project}/process-payment', [ProjectController::class, 'processPayment'])->name('process-payment');
+        Route::post('/{project}/mark-installment-paid', [ProjectController::class, 'markInstallmentPaid'])->name('mark-installment-paid');
         
         // Project Completion
         Route::get('/{project}/complete', [ProjectController::class, 'complete'])->name('complete');

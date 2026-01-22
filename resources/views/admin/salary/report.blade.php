@@ -177,9 +177,9 @@
                                 @foreach($topEarners as $index => $earner)
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
-                                    <td>{{ $earner->user->name }}</td>
-                                    <td>₹{{ number_format($earner->base_salary ?? 0, 2) }}</td>
-                                    <td>₹{{ number_format($earner->total_deductions ?? 0, 2) }}</td>
+                                    <td>{{ $earner->bdm->user->name ?? 'N/A' }}</td>
+                                    <td>₹{{ number_format($earner->basic_salary ?? 0, 2) }}</td>
+                                    <td>₹{{ number_format($earner->deductions ?? 0, 2) }}</td>
                                     <td><strong>₹{{ number_format($earner->net_salary ?? 0, 2) }}</strong></td>
                                 </tr>
                                 @endforeach

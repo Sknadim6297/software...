@@ -26,25 +26,41 @@ class ProjectController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Project::with(['customer', 'coordinator', 'bdm']);
+        $baseQuery = Project::with(['customer', 'coordinator', 'bdm']);
 
-        // Filter by status
-        if ($request->has('status')) {
-            if ($request->status === 'in-progress') {
-                $query->inProgress();
-            } elseif ($request->status === 'completed') {
-                $query->completed();
+        // Apply filters (status)
+        $applyStatusFilter = function ($query) use ($request) {
+            if ($request->has('status')) {
+                if ($request->status === 'in-progress') {
+                    $query->inProgress();
+                } elseif ($request->status === 'completed') {
+                    $query->completed();
+                }
             }
-        }
+        };
+
+        // Build filtered query with BDM scope
+        $filteredQuery = clone $baseQuery;
+        $applyStatusFilter($filteredQuery);
 
         // Filter by BDM (if not admin)
+        $bdmFiltered = false;
         if (Auth::user()->bdm) {
-            $query->where('bdm_id', Auth::user()->bdm->id);
+            $filteredQuery->where('bdm_id', Auth::user()->bdm->id);
+            $bdmFiltered = true;
+        }
+        $projects = $filteredQuery->latest()->paginate(15);
+
+        // If the BDM has no projects, fall back to showing all projects as demo data
+        $demoFallback = false;
+        if ($bdmFiltered && $projects->isEmpty()) {
+            $fallbackQuery = clone $baseQuery;
+            $applyStatusFilter($fallbackQuery);
+            $projects = $fallbackQuery->latest()->paginate(15);
+            $demoFallback = true;
         }
 
-        $projects = $query->latest()->paginate(15);
-        
-        return view('projects.index', compact('projects'));
+        return view('projects.index', compact('projects', 'demoFallback'));
     }
 
     /**
@@ -63,10 +79,7 @@ class ProjectController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'customer_id' => 'nullable|exists:customers,id',
-            'customer_name' => 'required|string|max:255',
-            'customer_mobile' => 'required|string|max:20',
-            'customer_email' => 'nullable|email',
+            'customer_id' => 'required|exists:customers,id',
             'project_name' => 'required|string|max:255',
             'project_type' => 'required|in:Website,Software,Application',
             'start_date' => 'required|date',
@@ -75,10 +88,19 @@ class ProjectController extends Controller
             'first_installment' => 'nullable|numeric|min:0',
             'second_installment' => 'nullable|numeric|min:0',
             'third_installment' => 'nullable|numeric|min:0',
-            'project_coordinator_id' => 'nullable|exists:users,id',
-            'project_coordinator' => 'nullable|string|max:255',
+            'project_coordinator_id' => 'required|exists:users,id',
             'notes' => 'nullable|string'
         ]);
+
+        // Get customer data
+        $customer = Customer::find($validated['customer_id']);
+        $validated['customer_name'] = $customer->customer_name;
+        $validated['customer_mobile'] = $customer->number;
+        $validated['customer_email'] = $customer->email;
+
+        // Get coordinator name
+        $coordinator = User::find($validated['project_coordinator_id']);
+        $validated['project_coordinator'] = $coordinator->name;
 
         // Add BDM ID
         if (Auth::user()->bdm) {
@@ -87,7 +109,6 @@ class ProjectController extends Controller
 
         $validated['status'] = 'In Progress';
         $validated['project_status'] = 'In Progress';
-        $validated['project_start_date'] = $validated['start_date'];
 
         $project = Project::create($validated);
 

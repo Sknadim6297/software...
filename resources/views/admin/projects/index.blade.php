@@ -125,7 +125,7 @@
                                         </td>
                                         <td>
                                             <a href="{{ route('admin.projects.show', $project->id) }}" class="btn btn-sm btn-info" title="View Details">
-                                                <i class="flaticon-381-eye"></i>
+                                                <i class="fa fa-eye"></i>
                                             </a>
                                         </td>
                                     </tr>

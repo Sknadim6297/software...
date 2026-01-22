@@ -1,12 +1,12 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Employees / BDMs')
+@section('title', 'Employees')
 
 @section('content')
 <div class="row page-titles">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-        <li class="breadcrumb-item active"><a href="javascript:void(0)">BDM Management</a></li>
+        <li class="breadcrumb-item active"><a href="javascript:void(0)">Employee Management</a></li>
     </ol>
 </div>
 
@@ -14,9 +14,9 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <h4 class="card-title">BDM List</h4>
+                <h4 class="card-title">Employee List</h4>
                 <a href="{{ route('admin.employees.create') }}" class="btn btn-primary btn-sm">
-                    <i class="fa fa-plus me-2"></i>Add New BDM
+                    <i class="fa fa-plus me-2"></i>Add New Employee
                 </a>
             </div>
             <div class="card-body">
@@ -27,6 +27,7 @@
                                 <th><strong>#</strong></th>
                                 <th><strong>CODE</strong></th>
                                 <th><strong>NAME</strong></th>
+                                <th><strong>DESIGNATION</strong></th>
                                 <th><strong>EMAIL</strong></th>
                                 <th><strong>PHONE</strong></th>
                                 <th><strong>JOINING DATE</strong></th>
@@ -41,6 +42,7 @@
                                     <td>{{ $loop->iteration }}</td>
                                     <td><strong>{{ $bdm->employee_code }}</strong></td>
                                     <td>{{ $bdm->name }}</td>
+                                    <td><span class="badge badge-primary">{{ $bdm->designation ?? 'BDM' }}</span></td>
                                     <td>{{ $bdm->email }}</td>
                                     <td>{{ $bdm->phone }}</td>
                                     <td>{{ $bdm->joining_date->format('d M Y') }}</td>
@@ -100,9 +102,9 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="text-center text-muted py-4">
+                                    <td colspan="10" class="text-center text-muted py-4">
                                         <i class="fa fa-inbox fa-3x mb-3 d-block"></i>
-                                        No BDMs found. <a href="{{ route('admin.employees.create') }}">Add your first BDM</a>
+                                        No employees found. <a href="{{ route('admin.employees.create') }}">Add your first employee</a>
                                     </td>
                                 </tr>
                             @endforelse

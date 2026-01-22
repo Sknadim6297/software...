@@ -33,6 +33,7 @@ class EmployeeController extends Controller
             'highest_education' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:20',
+            'designation' => 'required|string|max:255',
             'joining_date' => 'required|date',
             'current_ctc' => 'required|numeric|min:0',
             'password' => 'required|string|min:8',
@@ -52,10 +53,12 @@ class EmployeeController extends Controller
             $profileImagePath = $request->file('profile_image')->store('bdm/profiles', 'public');
         }
 
-        // Generate employee code
-        $employeeCode = 'BDM' . str_pad(BDM::count() + 1, 4, '0', STR_PAD_LEFT);
+        // Generate employee code based on designation
+        $designation = strtoupper(substr($request->designation, 0, 3));
+        $count = BDM::where('designation', $request->designation)->count() + 1;
+        $employeeCode = $designation . str_pad($count, 4, '0', STR_PAD_LEFT);
 
-        // Create BDM profile
+        // Create Employee profile
         $bdm = BDM::create([
             'user_id' => $user->id,
             'profile_image' => $profileImagePath,
@@ -66,6 +69,7 @@ class EmployeeController extends Controller
             'email' => $request->email,
             'phone' => $request->phone,
             'employee_code' => $employeeCode,
+            'designation' => $request->designation,
             'joining_date' => $request->joining_date,
             'current_ctc' => $request->current_ctc,
             'status' => 'active',
@@ -82,7 +86,7 @@ class EmployeeController extends Controller
         ]);
 
         return redirect()->route('admin.employees.show', $bdm->id)
-            ->with('success', 'BDM profile created successfully!');
+            ->with('success', 'Employee profile created successfully!');
     }
 
     public function show(BDM $employee)
@@ -105,6 +109,7 @@ class EmployeeController extends Controller
             'highest_education' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $employee->user_id,
             'phone' => 'required|string|max:20',
+            'designation' => 'required|string|max:255',
             'current_ctc' => 'required|numeric|min:0',
             'status' => 'required|in:active,inactive,terminated',
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -120,7 +125,7 @@ class EmployeeController extends Controller
             $employee->profile_image = $profileImagePath;
         }
 
-        // Update BDM
+        // Update Employee
         $employee->update([
             'name' => $request->name,
             'father_name' => $request->father_name,
@@ -128,6 +133,7 @@ class EmployeeController extends Controller
             'highest_education' => $request->highest_education,
             'email' => $request->email,
             'phone' => $request->phone,
+            'designation' => $request->designation,
             'current_ctc' => $request->current_ctc,
             'status' => $request->status,
         ]);
@@ -139,7 +145,7 @@ class EmployeeController extends Controller
         ]);
 
         return redirect()->route('admin.employees.show', $employee->id)
-            ->with('success', 'BDM profile updated successfully!');
+            ->with('success', 'Employee profile updated successfully!');
     }
 
     public function destroy(BDM $employee)
@@ -152,7 +158,7 @@ class EmployeeController extends Controller
         ]);
 
         return redirect()->route('admin.employees.index')
-            ->with('success', 'BDM terminated successfully!');
+            ->with('success', 'Employee terminated successfully!');
     }
 
     public function deactivate(BDM $employee)
@@ -162,7 +168,7 @@ class EmployeeController extends Controller
             'can_login' => false,
         ]);
 
-        return back()->with('success', 'BDM deactivated successfully!');
+        return back()->with('success', 'Employee deactivated successfully!');
     }
 
     public function activate(BDM $employee)
@@ -172,7 +178,7 @@ class EmployeeController extends Controller
             'can_login' => true,
         ]);
 
-        return back()->with('success', 'BDM activated successfully!');
+        return back()->with('success', 'Employee activated successfully!');
     }
 
     public function terminate(Request $request, BDM $employee)

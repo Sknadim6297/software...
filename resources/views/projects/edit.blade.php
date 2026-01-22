@@ -22,7 +22,7 @@
                                 <option value="">Select Customer</option>
                                 @foreach($customers as $customer)
                                     <option value="{{ $customer->id }}" {{ $project->customer_id == $customer->id ? 'selected' : '' }}>
-                                        {{ $customer->name }} - {{ $customer->phone }}
+                                        {{ $customer->customer_name }} - {{ $customer->number }}
                                     </option>
                                 @endforeach
                             </select>
